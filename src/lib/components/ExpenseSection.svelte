@@ -53,6 +53,7 @@
   let adding = $state(false);
   let editingId = $state<string | null>(null);
   let showAll = $state(false);
+  let confirmDeleteId = $state<string | null>(null);
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "" });
 
@@ -117,6 +118,15 @@
   function remove(id: string) {
     onChange(items.filter((item) => item.id !== id));
     if (editingId === id) editingId = null;
+    confirmDeleteId = null;
+  }
+
+  function askRemove(id: string) {
+    confirmDeleteId = id;
+  }
+
+  function cancelDelete() {
+    confirmDeleteId = null;
   }
 
   function toggleCheck(id: string) {
@@ -134,7 +144,7 @@
     <button class="add-btn" onclick={startAdd} aria-label="Add item">+</button>
   </div>
 
-  {#if adding || editingId}
+  {#if adding}
     <div class="editor" in:slide={{ duration: 200 }}>
       <div class="editor-fields">
         <label class="field">
@@ -164,7 +174,7 @@
         {/if}
       </div>
       <div class="editor-actions">
-        <button class="btn-save" onclick={commit}>{editingId ? "Save changes" : "Add"}</button>
+        <button class="btn-save" onclick={commit}>Add</button>
         <button class="btn-cancel" onclick={cancel}>Cancel</button>
       </div>
     </div>
@@ -189,9 +199,36 @@
           <span class="item-right">
             <span class="item-amount">{formatCurrency(item.amount)}</span>
             <button class="icon-btn" title="Edit" onclick={() => startEdit(item)}>✎</button>
-            <button class="icon-btn danger" title="Delete" onclick={() => remove(item.id)}>✕</button>
+            <button class="icon-btn danger" title="Delete" onclick={() => askRemove(item.id)}>✕</button>
           </span>
         </li>
+
+        {#if editingId === item.id}
+          <li class="editor-item" in:slide={{ duration: 200 }}>
+            <div class="editor">
+              <div class="editor-fields">
+                <label class="field">
+                  <span>{nameLabel}</span>
+                  <input type="text" bind:value={draft.name} placeholder="e.g. Electricity bill" onkeydown={(e) => e.key === "Enter" && commit()} />
+                </label>
+                <label class="field">
+                  <span>{amountLabel}</span>
+                  <input type="number" min="0" bind:value={draft.amount} placeholder="0" onkeydown={(e) => e.key === "Enter" && commit()} />
+                </label>
+                {#if withMethod}
+                  <label class="field">
+                    <span>Payment method</span>
+                    <input type="text" bind:value={draft.method} placeholder={methodPlaceholder} />
+                  </label>
+                {/if}
+              </div>
+              <div class="editor-actions">
+                <button class="btn-save" onclick={commit}>Save changes</button>
+                <button class="btn-cancel" onclick={cancel}>Cancel</button>
+              </div>
+            </div>
+          </li>
+        {/if}
       {/each}
     </ul>
 
@@ -220,6 +257,23 @@
       {/if}
     </div>
   {/if}
+
+  {#if confirmDeleteId}
+    {@const target = items.find((i) => i.id === confirmDeleteId)}
+    <div class="modal-overlay" role="presentation">
+      <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
+        <span class="modal-icon">🗑️</span>
+        <h4 class="modal-title">Delete this item?</h4>
+        <p class="modal-text">
+          {target ? target.name : "This item"} ({formatCurrency(target ? target.amount : 0)}) will be removed permanently.
+        </p>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick={cancelDelete}>Cancel</button>
+          <button class="btn-danger" onclick={() => { if (confirmDeleteId) remove(confirmDeleteId); }}>Delete</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -242,6 +296,8 @@
   .teal .badge { background: rgba(91, 138, 138, 0.15); color: var(--accent-teal); }
 
   .editor { padding: 1rem 1.25rem; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
+  .editor-item { list-style: none; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
+  .editor-item .editor { border-bottom: none; }
   .editor-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.75rem; }
   .editor-fields .field:last-child:nth-child(3) { grid-column: 1 / -1; }
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
@@ -299,6 +355,26 @@
   .footer-check-stats { display: flex; align-items: baseline; gap: 0.6rem; }
   .footer-remaining { font-size: 0.9rem; font-weight: 700; }
   .footer-sub { font-size: 0.72rem; font-weight: 500; color: var(--text-tertiary); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(26, 23, 20, 0.45);
+    backdrop-filter: blur(3px);
+    padding: 1.25rem;
+  }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg); padding: 1.75rem 1.75rem 1.5rem;
+    width: 100%; max-width: 360px; text-align: center;
+    animation: scaleIn 0.2s ease;
+  }
+  .modal-icon { font-size: 2rem; display: block; margin-bottom: 0.75rem; }
+  .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem; }
+  .modal-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem; }
+  .modal-actions { display: flex; gap: 0.6rem; justify-content: center; }
+  .btn-danger { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--danger); color: white; font-size: 0.825rem; font-weight: 700; }
+  .btn-danger:hover { background: #a85a5a; }
 
   @media (max-width: 640px) {
     .editor-fields { grid-template-columns: 1fr; }
