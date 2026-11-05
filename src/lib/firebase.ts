@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import {
   getFirestore,
   doc,
@@ -23,11 +24,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 const BUDGET_COLLECTION = "budget";
 
 export {
   db,
+  auth,
   app,
   BUDGET_COLLECTION,
   doc,

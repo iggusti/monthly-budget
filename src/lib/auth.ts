@@ -1,31 +1,59 @@
 /**
- * Minimal client-side authentication for Family Budget Harmony.
+ * Authentication for Family Budget Harmony.
  *
- * The family's shared keyword is "enza". On success a flag is kept in
- * localStorage so the app stays signed in across visits. Logging out clears
- * the flag.
+ * The flow is two-layered:
+ *  1. The family's shared keyword ("enza") is verified locally. The keyword
+ *     is not a security boundary by itself — it just gates the UI.
+ *  2. A Firebase **anonymous** sign-in is then performed so that Firestore
+ *     rules can require an authenticated user (no public read/write).
+ *
+ * The anonymous session is persisted by the Firebase SDK, so the app stays
+ * signed in across visits.
  */
 
-const STORAGE_KEY = "fhb-auth";
+import { signInAnonymously } from "firebase/auth";
+import { auth } from "./firebase";
 
-/** The accepted keyword (compared case-insensitively after trimming). */
 const KEYWORD = "enza";
 
-export function isAuthenticated(): boolean {
+/** Whether the keyword gate has been passed in this visit. */
+export function isKeywordGranted(): boolean {
   if (typeof localStorage === "undefined") return false;
-  return localStorage.getItem(STORAGE_KEY) === "true";
+  return localStorage.getItem("fhb-auth") === "true";
 }
 
-/** Returns true when the supplied keyword is accepted and signs in. */
-export function login(keyword: string): boolean {
-  const ok = keyword.trim().toLowerCase() === KEYWORD;
-  if (ok) {
-    localStorage.setItem(STORAGE_KEY, "true");
+function grantKeyword() {
+  localStorage.setItem("fhb-auth", "true");
+}
+
+function revokeKeyword() {
+  localStorage.removeItem("fhb-auth");
+}
+
+/** Verify the keyword and start an anonymous Firebase session. */
+export async function login(keyword: string): Promise<boolean> {
+  if (keyword.trim().toLowerCase() !== KEYWORD) return false;
+  try {
+    await signInAnonymously(auth);
+    grantKeyword();
+    return true;
+  } catch (error) {
+    console.error("Anonymous sign-in failed:", error);
+    return false;
   }
-  return ok;
 }
 
-export function logout(): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.removeItem(STORAGE_KEY);
+/** Sign out of Firebase and clear the keyword gate. */
+export async function logout(): Promise<void> {
+  revokeKeyword();
+  try {
+    await auth.signOut();
+  } catch (error) {
+    console.error("Sign-out failed:", error);
+  }
+}
+
+/** Convenience: authenticated means both gates passed. */
+export function isAuthenticated(): boolean {
+  return isKeywordGranted();
 }

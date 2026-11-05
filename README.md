@@ -1,10 +1,19 @@
 # Family Budget Harmony
 
 A monthly family budget app that keeps husband and wife spending in balance,
-tracks daily expenses, and monitors savings withdrawals.
+tracks daily expenses, and shows how money is funded from salary or savings.
 
-Built with SvelteKit, TypeScript and Firebase Firestore. The data model mirrors
-the `Budgeting Bulanan.xlsx` spreadsheet.
+Built with SvelteKit, TypeScript, Firebase Firestore and Firebase Anonymous
+Authentication. The data model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
+
+## Login
+
+The app is protected by a shared family keyword. Once the keyword is accepted,
+the client performs a Firebase **anonymous** sign-in so that Firestore rules can
+require an authenticated user (no public read/write).
+
+> Anonymous sign-in must be enabled once in the Firebase Console:
+> **Authentication → Sign-in method → Anonymous → Enable**.
 
 ## What you can input
 
@@ -14,20 +23,33 @@ Every entry can be added, edited and removed from the UI:
 2. **Wife income** — monthly salary
 3. **Husband fixed expenses** — utilities, rent, insurance, savings pots, ...
 4. **Wife fixed expenses** — family support, zakat, koperasi, ...
-5. **Husband daily expenses (from salary)** — variable spending with a payment method
-6. **Daily expenses (from savings)** — variable spending funded by withdrawing savings
-7. **Savings withdrawals** — money taken from savings with a purpose
+5. **Husband daily expenses (from salary)** — with payment method
+6. **Husband daily expenses (from savings)** — with payment method
+7. **Wife daily expenses (from salary)** — with payment method
+8. **Wife daily expenses (from savings)** — with payment method
 
-## Balance calculation
+## Calculations
 
 - `Total income = husband income + wife income`
-- `Total expenses = husband fixed + wife fixed + daily from salary + daily from savings`
-- `Balance = total income - total expenses`
-- Per-person balances (husband / wife) are shown under their sections
-- A progress bar shows what percentage of income has been spent
+- `Total fixed expenses = husband fixed + wife fixed`
+- `Balance after fixed = total income − total fixed expenses`
+- `Equal split` — the transfer needed so both spouses hold the same amount after
+  each pays their own fixed expenses:
+  `transfer = (husband income − husband fixed − (wife income − wife fixed)) / 2`
+- Salary-funded and savings-funded daily totals are shown separately per spouse
 
-Each budget period follows the pattern `25 January - 24 February 2026` and is
-stored as one Firestore document (id `YYYY-MM`) in the `budget` collection.
+Each budget period follows the pattern `25 January - 24 February 2026` (the 25th
+cycle) and is stored as one Firestore document (id `YYYY-MM`) in the `budget`
+collection.
+
+## Pages
+
+- `/login` — keyword gate
+- `/` — dashboard: overview cards, month cards (the current period is
+  highlighted; 8 shown by default with a "View more" toggle)
+- `/month/[id]` — edit one budget period: income/header editor, the eight input
+  sections, and a money-flow chart explaining the relationship between the
+  per-person remainder, salary spending and savings spending
 
 ## Project structure
 
@@ -35,13 +57,17 @@ stored as one Firestore document (id `YYYY-MM`) in the `budget` collection.
 src/
   lib/
     types.ts                 data model + calculations
-    firebase.ts              Firebase initialisation
+    firebase.ts              Firebase initialisation (Firestore + Auth)
+    auth.ts                  keyword gate + anonymous sign-in
     budget-store.ts          Firestore read/write helpers
     components/
       ExpenseSection.svelte  reusable editable expense list
   routes/
-    +page.svelte             dashboard (list of months)
+    +layout.svelte           shell with navigation and logout
+    login/+page.svelte       login screen
+    +page.svelte             dashboard
     month/[id]/+page.svelte  edit one budget period
+scripts/                     data seeding / migration helpers
 ```
 
 ## Developing
@@ -58,6 +84,16 @@ npm run build
 npm run preview
 ```
 
-## Firestore
+## Deploying Firestore rules
 
-Allow read/write on the `budget` collection for the app to persist data.
+```sh
+npx firebase-tools deploy --only firestore:rules
+```
+
+The rules allow read/write only for authenticated users:
+
+```
+match /budget/{document} {
+  allow read, write: if request.auth != null;
+}
+```

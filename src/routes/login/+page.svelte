@@ -8,6 +8,8 @@
   let shake = $state(false);
   let focus = $state(false);
   let show = $state(false);
+  let loading = $state(false);
+  let showPassword = $state(false);
 
   onMount(() => {
     if (isAuthenticated()) {
@@ -17,8 +19,13 @@
     setTimeout(() => (show = true), 60);
   });
 
-  function submit() {
-    if (login(keyword)) {
+  async function submit() {
+    if (loading || !keyword.trim()) return;
+    loading = true;
+    error = "";
+    const ok = await login(keyword);
+    loading = false;
+    if (ok) {
       location.href = "/";
     } else {
       error = "Kata kunci tidak cocok. Coba lagi.";
@@ -68,7 +75,7 @@
         <span class="input-icon">🔑</span>
         <input
           id="keyword"
-          type="password"
+          type={showPassword ? "text" : "password"}
           bind:value={keyword}
           placeholder="ketik kata kunci…"
           autocomplete="off"
@@ -76,15 +83,25 @@
           onblur={() => (focus = false)}
           onkeydown={(e) => e.key === "Enter" && submit()}
         />
+        <button
+          type="button"
+          class="toggle-pass"
+          onmousedown={(e) => e.preventDefault()}
+          onclick={() => (showPassword = !showPassword)}
+          title={showPassword ? "Sembunyikan kata kunci" : "Lihat kata kunci"}
+          aria-label={showPassword ? "Sembunyikan kata kunci" : "Lihat kata kunci"}
+        >
+          {showPassword ? "🙈" : "👁️"}
+        </button>
       </div>
 
       {#if error}
         <p class="error" in:fade={{ duration: 200 }}>{error}</p>
       {/if}
 
-      <button class="submit" type="submit" disabled={!keyword.trim()}>
-        <span>Masuk</span>
-        <span class="arrow">→</span>
+      <button class="submit" type="submit" disabled={loading || !keyword.trim()}>
+        <span>{loading ? "Masuk…" : "Masuk"}</span>
+        <span class="arrow">{loading ? "" : "→"}</span>
       </button>
     </form>
 
@@ -161,6 +178,14 @@
   .input-icon { font-size: 1.1rem; }
   .input-wrap input { flex: 1; border: none; outline: none; background: transparent; font-size: 1rem; color: var(--text-primary); }
   .input-wrap input::placeholder { color: #c4bdb6; }
+  .toggle-pass {
+    flex-shrink: 0; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; border-radius: 10px;
+    background: var(--bg-muted); color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .toggle-pass:hover { background: var(--accent-gold-light); color: var(--accent-gold); }
 
   .error { color: var(--danger); font-size: 0.82rem; font-weight: 600; }
 

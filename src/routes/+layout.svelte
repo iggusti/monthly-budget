@@ -9,8 +9,8 @@
     authed = isAuthenticated();
   });
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     location.href = "/login";
   }
 </script>

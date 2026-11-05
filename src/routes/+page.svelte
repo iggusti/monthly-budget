@@ -47,6 +47,25 @@
   const grandFixedExpense = $derived(budgets.reduce((s, b) => s + computeTotals(b).totalFixedExpenses, 0));
   const grandBalance = $derived(grandIncome - grandFixedExpense);
 
+  // The budget for the current period (may be undefined if not created yet).
+  const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
+  const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
+
+  // Daily spending for the CURRENT month only.
+  const currentSalary = $derived(
+    currentTotals ? currentTotals.husbandDailyFromSalaryTotal + currentTotals.wifeDailyFromSalaryTotal : 0
+  );
+  const currentSavings = $derived(
+    currentTotals ? currentTotals.husbandDailyFromSavingsTotal + currentTotals.wifeDailyFromSavingsTotal : 0
+  );
+
+  // Average "each holds after fixed" across budgets that have income.
+  const avgHolds = $derived(() => {
+    const usable = budgets.filter((b) => computeTotals(b).totalIncome > 0);
+    if (!usable.length) return 0;
+    return usable.reduce((s, b) => s + computeTotals(b).equalSplitAmount, 0) / usable.length;
+  });
+
   function monthLabel(id: string): string {
     const [year, month] = id.split("-").map(Number);
     return `${new Date(year, (month || 1) - 1, 1).toLocaleString("en-US", { month: "long" })} ${year}`;
@@ -133,14 +152,32 @@
       <div class="overview-item">
         <span class="overview-label">Total Income</span>
         <span class="overview-value income">{formatCurrency(grandIncome)}</span>
+        <span class="overview-sub">semua bulan · suami + istri</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">Total Fixed Expenses</span>
         <span class="overview-value expense">{formatCurrency(grandFixedExpense)}</span>
+        <span class="overview-sub">semua bulan · tetap suami + istri</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Net Balance</span>
+        <span class="overview-label">Balance after Fixed Expenses</span>
         <span class="overview-value" class:negative={grandBalance < 0}>{formatCurrency(grandBalance)}</span>
+        <span class="overview-sub">semua bulan · income − fixed</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Sisa per orang (rata-rata)</span>
+        <span class="overview-value teal">{formatCurrency(avgHolds())}</span>
+        <span class="overview-sub">semua bulan · setelah fixed, bagi rata</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Harian dari gaji · {monthLabel(currentMonthId)}</span>
+        <span class="overview-value rose">{formatCurrency(currentSalary)}</span>
+        <span class="overview-sub">hanya bulan ini · salary (suami + istri)</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Harian dari tabungan · {monthLabel(currentMonthId)}</span>
+        <span class="overview-value blue">{formatCurrency(currentSavings)}</span>
+        <span class="overview-sub">hanya bulan ini · savings (suami + istri)</span>
       </div>
     </div>
   {/if}
@@ -189,6 +226,7 @@
             <dl class="card-stats">
               <div><dt>Income</dt><dd class="income">{formatCurrency(totals.totalIncome)}</dd></div>
               <div><dt>Fixed</dt><dd>{formatCurrency(totals.totalFixedExpenses)}</dd></div>
+              <div><dt>Per orang</dt><dd class="teal">{formatCurrency(totals.equalSplitAmount)}</dd></div>
               <div><dt>Balance</dt><dd class:negative={totals.balanceAfterFixed < 0}>{formatCurrency(totals.balanceAfterFixed)}</dd></div>
             </dl>
             <div class="card-bar">
@@ -199,8 +237,8 @@
               ></span>
             </div>
             <span class="card-note">
-              {#if isCurrent}Currently in progress · {:else}Closed · {/if}
-              {totals.usedPercentFixed}% of income used on fixed
+              {#if isCurrent}Active · {:else}Closed · {/if}
+              {totals.usedPercentFixed}% income → fixed
             </span>
           {:else}
             <div class="card-empty">
@@ -248,15 +286,19 @@
   .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
   .overview {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.9rem;
     background: var(--surface); border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);
   }
-  .overview-item { display: flex; flex-direction: column; gap: 0.3rem; }
-  .overview-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
-  .overview-value { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+  .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
+  .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .overview-value { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+  .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
   .overview-value.income { color: var(--success); }
   .overview-value.expense { color: var(--accent-gold); }
+  .overview-value.teal { color: var(--accent-teal); }
+  .overview-value.rose { color: var(--accent-rose); }
+  .overview-value.blue { color: var(--accent-blue); }
   .overview-value.negative { color: var(--danger); }
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
@@ -303,6 +345,7 @@
   .card-stats dt { color: var(--text-tertiary); }
   .card-stats dd { font-weight: 700; color: var(--text-secondary); }
   .card-stats dd.income { color: var(--success); }
+  .card-stats dd.teal { color: var(--accent-teal); }
   .card-stats dd.negative { color: var(--danger); }
 
   .card-bar { height: 6px; background: var(--bg-muted); border-radius: 99px; overflow: hidden; }
@@ -333,6 +376,10 @@
   .info-dot.blue { background: var(--accent-blue); }
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }
+
+  @media (max-width: 1200px) {
+    .overview { grid-template-columns: repeat(3, 1fr); }
+  }
 
   @media (max-width: 640px) {
     .overview { grid-template-columns: 1fr; }
