@@ -238,17 +238,6 @@
                 <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
               </div>
             </div>
-            <div class="card-bar">
-              <span
-                class="bar-fill"
-                style:width={`${Math.min(totals.usedPercentFixed, 100)}%`}
-                style:background={totals.usedPercentFixed > 100 ? "var(--danger)" : totals.usedPercentFixed > 80 ? "var(--accent-gold)" : "var(--success)"}
-              ></span>
-            </div>
-            <span class="card-note">
-              {#if isCurrent}Active · {:else}Closed · {/if}
-              {totals.usedPercentFixed}% income → fixed
-            </span>
           {:else}
             <div class="card-empty">
               <span class="card-empty-icon">+</span>
@@ -363,11 +352,6 @@
   .card-group-row b { min-width: 0; overflow-wrap: anywhere; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
   .card-group-row b.rose { color: var(--accent-rose); }
   .card-group-row b.blue { color: var(--accent-blue); }
-
-  .card-bar { height: 6px; background: var(--bg-muted); border-radius: 99px; overflow: hidden; }
-  .bar-fill { display: block; height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-
-  .card-note { font-size: 0.72rem; color: var(--text-tertiary); }
 
   .card-empty {
     display: flex; align-items: center; gap: 0.5rem; justify-content: center;
