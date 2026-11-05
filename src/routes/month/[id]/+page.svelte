@@ -252,6 +252,7 @@
       badge="♂"
       tone="blue"
       checkboxable
+      collapsible
       items={budget.husbandFixed}
       onChange={(items: ExpenseItem[]) => update("husbandFixed", items)}
       footerLabel="Husband fixed — left"
@@ -261,6 +262,7 @@
       badge="♀"
       tone="rose"
       checkboxable
+      collapsible
       items={budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}
       footerLabel="Wife fixed — left"
@@ -270,6 +272,7 @@
       title="5. Husband Daily Expenses (from salary)"
       badge="○"
       tone="gold"
+      collapsible
       items={budget.husbandDailyFromSalary}
       withMethod
       onChange={(items: ExpenseItem[]) =>
@@ -285,6 +288,7 @@
       title="6. Husband Daily Expenses (from savings)"
       badge="↓"
       tone="teal"
+      collapsible
       items={budget.husbandDailyFromSavings}
       withMethod
       onChange={(items: ExpenseItem[]) =>
@@ -300,6 +304,7 @@
       title="7. Wife Daily Expenses (from salary)"
       badge="○"
       tone="rose"
+      collapsible
       items={budget.wifeDailyFromSalary}
       withMethod
       onChange={(items: ExpenseItem[]) =>
@@ -315,6 +320,7 @@
       title="8. Wife Daily Expenses (from savings)"
       badge="↓"
       tone="teal"
+      collapsible
       items={budget.wifeDailyFromSavings}
       withMethod
       onChange={(items: ExpenseItem[]) =>
@@ -387,10 +393,11 @@
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
   .chart-note strong { color: var(--text-primary); }
 
-  .sections { display: flex; flex-direction: column; gap: 1rem; }
+  .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
 
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
+    .sections { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {

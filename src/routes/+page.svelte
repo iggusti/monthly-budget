@@ -377,6 +377,10 @@
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }
 
+  @media (max-width: 1000px) {
+    .overview { grid-template-columns: repeat(2, 1fr); }
+  }
+
   @media (max-width: 640px) {
     .overview { grid-template-columns: 1fr; }
     .months-grid { grid-template-columns: 1fr; }

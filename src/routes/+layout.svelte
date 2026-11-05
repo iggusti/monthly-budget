@@ -92,7 +92,10 @@
 
   @media (max-width: 640px) {
     .topbar { padding: 0 1rem; }
+    .topbar-nav { gap: 0.3rem; }
     .main-content { padding: 1.25rem 1rem 2rem; }
     .nav-user { display: none; }
+    .nav-sep { display: none; }
+    .nav-logout { padding: 0.25rem 0.6rem; font-size: 0.68rem; }
   }
 </style>

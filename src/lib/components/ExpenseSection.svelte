@@ -19,6 +19,10 @@
     methodPlaceholder?: string;
     /** When true each row shows a checkbox and the footer shows remaining total. */
     checkboxable?: boolean;
+    /** When true, only the most recent items are shown with a view more/less toggle. */
+    collapsible?: boolean;
+    /** Number of items shown when collapsed (default 8). */
+    collapseLimit?: number;
     /** Current items. */
     items: ExpenseItem[];
     /** Render a footer with the section total. */
@@ -38,6 +42,8 @@
     withMethod = false,
     methodPlaceholder = "e.g. Cash, BNI, QRIS",
     checkboxable = false,
+    collapsible = false,
+    collapseLimit = 8,
     items,
     footerLabel,
     footerValue,
@@ -46,6 +52,7 @@
 
   let adding = $state(false);
   let editingId = $state<string | null>(null);
+  let showAll = $state(false);
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "" });
 
@@ -54,6 +61,23 @@
     items.reduce((sum, item) => sum + (item.checked ? Number(item.amount) || 0 : 0), 0)
   );
   const remaining = $derived(total - checkedTotal);
+
+  // Item order: unchecked first (so unpaid fixed expenses are visible first).
+  const orderedItems = $derived(
+    checkboxable ? [...items].sort((a, b) => Number(a.checked ?? false) - Number(b.checked ?? false)) : items
+  );
+
+  function computeVisible(): ExpenseItem[] {
+    if (!collapsible || showAll) return orderedItems;
+    const unchecked = orderedItems.filter((i) => !i.checked);
+    const checked = orderedItems.filter((i) => i.checked);
+    if (unchecked.length >= collapseLimit) return unchecked.slice(-collapseLimit);
+    return [...unchecked, ...checked.slice(-(collapseLimit - unchecked.length))];
+  }
+
+  const visibleItems = $derived(computeVisible());
+  const hasMore = $derived(collapsible && !showAll && visibleItems.length < items.length);
+  const hiddenCount = $derived(Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
     draft = { id: makeId(), name: "", amount: 0, method: "" };
@@ -148,7 +172,7 @@
 
   {#if items.length}
     <ul class="items">
-      {#each items as item (item.id)}
+      {#each visibleItems as item (item.id)}
         <li class="item" class:editing={editingId === item.id} class:checked={item.checked}>
           <span class="item-left">
             {#if checkboxable}
@@ -170,6 +194,13 @@
         </li>
       {/each}
     </ul>
+
+    {#if hasMore}
+      <button class="more-btn" onclick={() => (showAll = !showAll)}>
+        {showAll ? "View less" : `View ${hiddenCount} more`}
+        <span class="more-arrow">{showAll ? "↑" : "↓"}</span>
+      </button>
+    {/if}
   {/if}
 
   {#if !items.length && !adding}
@@ -251,6 +282,17 @@
   .icon-btn.danger:hover { background: var(--danger-light); color: var(--danger); }
 
   .empty { padding: 1rem 1.25rem; font-size: 0.82rem; color: var(--text-tertiary); }
+
+  .more-btn {
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    width: 100%; padding: 0.5rem;
+    background: var(--bg-muted); color: var(--text-secondary);
+    font-size: 0.78rem; font-weight: 700;
+    border-top: 1px solid var(--surface-border);
+    transition: all 0.2s;
+  }
+  .more-btn:hover { background: var(--surface); color: var(--accent-gold); }
+  .more-arrow { font-size: 0.8rem; line-height: 1; }
 
   .section-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1.25rem; font-size: 0.8rem; font-weight: 600; border-top: 1px solid var(--surface-border); background: rgba(0, 0, 0, 0.015); }
   .section-footer .negative { color: var(--danger); }

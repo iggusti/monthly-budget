@@ -203,4 +203,10 @@
   .submit:hover:not(:disabled) .arrow { transform: translateX(3px); }
 
   .hint { text-align: center; font-size: 0.78rem; color: var(--text-tertiary); margin-top: 1.3rem; }
+
+  @media (max-width: 420px) {
+    .login-page { padding: 1.25rem 1rem; }
+    .card { padding: 2rem 1.4rem 1.6rem; border-radius: 20px; }
+    .title { font-size: 1.3rem; }
+  }
 </style>
