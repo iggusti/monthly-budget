@@ -33,27 +33,40 @@ This document contains all rules and guidelines that must always be followed whe
 - All monetary values in Indonesian Rupiah (IDR) format
 
 ### Budget Structure Rules
-Based on Excel analysis:
+Based on Excel analysis (`C:\Users\DevTI-TelU\OneDrive\Dokumen\Budgeting Bulanan.xlsx`):
 1. Income: Separate husband and wife income
 2. Fixed Expenses (Husband): Regular monthly expenses like utilities, rent, insurance, etc.
 3. Fixed Expenses (Wife): Regular monthly expenses like family support, zakat, etc.
-4. Daily Expenses: Variable expenses with payment method (cash, transfer, QRIS, etc.)
-5. Savings Withdrawals: Money taken from savings with purpose/description
-6. Balance: Income minus expenses, calculated per person and total
-7. Budget period follows pattern like '25 January - 24 February 2026'
+4. Daily Expenses (from salary): Variable expenses paid from the monthly salary, with payment method
+5. Daily Expenses (from savings): Variable expenses funded by withdrawing savings, with payment method
+6. Savings Withdrawals: Money taken from savings with purpose/description
+7. Balance: Income minus expenses, calculated per person and total
+8. Budget period follows pattern like '25 January - 24 February 2026'
+
+### Data Model Rules
+- One Firestore document per budget period in the `budget` collection, id `YYYY-MM`
+- Types and calculation logic live in `src/lib/types.ts` (`MonthBudget`, `computeTotals`)
+- Firestore access is centralised in `src/lib/budget-store.ts` (fetch/save/delete)
+- Every input must be editable: incomes, fixed expenses, daily expenses and savings withdrawals
+- Unknown/missing fields are normalised via `normalizeBudget` so old documents keep working
 
 ### Database Rules
 - Use Firebase Firestore as database
-- Store data in collections organized by month
-- Keep data structure consistent with Excel format
+- Store data in the `budget` collection, one document per month (id `YYYY-MM`)
+- Keep data structure consistent with the Excel format
 - Use proper types for all documents
+- Deploy rules with `npx firebase-tools deploy --only firestore:rules`
+- Project id: `monthly-budget-580b2` (see `.firebaserc`)
 
 ### File Structure Rules
 - Put shared code in src/lib/
 - Components in src/lib/components/
-- Stores in src/lib/stores/
 - Utilities in src/lib/utils/
 - Routes in src/routes/
+
+### Routing Rules
+- `/` — dashboard: overview totals, list of budget periods, create/delete a month
+- `/month/[id]` — edit one budget period (income editor + the six input sections + savings)
 
 ### Git Rules
 - Repository: https://github.com/iggusti/monthly-budget.git

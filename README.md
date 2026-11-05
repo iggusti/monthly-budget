@@ -1,56 +1,63 @@
-# sv
+# Family Budget Harmony
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A monthly family budget app that keeps husband and wife spending in balance,
+tracks daily expenses, and monitors savings withdrawals.
 
-## Creating a project
+Built with SvelteKit, TypeScript and Firebase Firestore. The data model mirrors
+the `Budgeting Bulanan.xlsx` spreadsheet.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## What you can input
 
-```sh
-# create a new project
-npx sv create my-app
+Every entry can be added, edited and removed from the UI:
+
+1. **Husband income** — monthly salary
+2. **Wife income** — monthly salary
+3. **Husband fixed expenses** — utilities, rent, insurance, savings pots, ...
+4. **Wife fixed expenses** — family support, zakat, koperasi, ...
+5. **Husband daily expenses (from salary)** — variable spending with a payment method
+6. **Daily expenses (from savings)** — variable spending funded by withdrawing savings
+7. **Savings withdrawals** — money taken from savings with a purpose
+
+## Balance calculation
+
+- `Total income = husband income + wife income`
+- `Total expenses = husband fixed + wife fixed + daily from salary + daily from savings`
+- `Balance = total income - total expenses`
+- Per-person balances (husband / wife) are shown under their sections
+- A progress bar shows what percentage of income has been spent
+
+Each budget period follows the pattern `25 January - 24 February 2026` and is
+stored as one Firestore document (id `YYYY-MM`) in the `budget` collection.
+
+## Project structure
+
 ```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@1.2.0 create --template minimal --types ts --no-install .
-```
-
-## Adding features
-
-Add features to your project with `sv add`:
-
-```sh
-npx sv add
-```
-
-For example, to add Tailwind CSS:
-
-```sh
-npx sv add tailwindcss
+src/
+  lib/
+    types.ts                 data model + calculations
+    firebase.ts              Firebase initialisation
+    budget-store.ts          Firestore read/write helpers
+    components/
+      ExpenseSection.svelte  reusable editable expense list
+  routes/
+    +page.svelte             dashboard (list of months)
+    month/[id]/+page.svelte  edit one budget period
 ```
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
 ```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
 
-To create a production version of your app:
-
 ```sh
 npm run build
+npm run preview
 ```
 
-You can preview the production build with `npm run preview`.
+## Firestore
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Allow read/write on the `budget` collection for the app to persist data.

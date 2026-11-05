@@ -1,348 +1,342 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, fly, scale } from "svelte/transition";
-  
-  let months = [
-    { id: "2026-01", label: "January 2026", period: "25 January - 24 February 2026" },
-    { id: "2026-02", label: "February 2026", period: "25 February - 24 March 2026" },
-    { id: "2026-03", label: "March 2026", period: "25 March - 24 April 2026" },
-    { id: "2026-04", label: "April 2026", period: "25 April - 24 May 2026" },
-    { id: "2026-05", label: "May 2026", period: "25 May - 24 June 2026" },
-    { id: "2026-06", label: "June 2026", period: "25 June - 24 July 2026" },
-  ];
-  
-  let showCards = false;
-  
-  onMount(() => {
-    setTimeout(() => showCards = true, 100);
+  import {
+    fetchAllBudgets,
+    saveBudget,
+    deleteBudget
+  } from "#lib/budget-store";
+  import {
+    computeTotals,
+    createEmptyBudget,
+    formatCurrency,
+    monthsOfYear,
+    type MonthBudget
+  } from "#lib/types";
+  import { isAuthenticated } from "#lib/auth";
+
+  let budgets = $state<MonthBudget[]>([]);
+  let loading = $state(true);
+  let busy = $state(false);
+  let showAllMonths = $state(false);
+
+  const thisYear = new Date().getFullYear();
+
+  // Redirect to login when not authenticated.
+  onMount(async () => {
+    if (!isAuthenticated()) {
+      location.href = "/login";
+      return;
+    }
+    budgets = await fetchAllBudgets();
+    loading = false;
   });
+
+  // The current period is the one containing today, based on the 25th cycle.
+  const currentMonthId = $derived(currentPeriodId());
+  // All months from the earliest budget year (or this year) through the current
+  // period, newest first.
+  const orderedMonths = $derived(allMonthsTo(currentMonthId).reverse());
+  // Show the 8 most recent by default; reveal the rest via "View more".
+  const visibleMonths = $derived(showAllMonths ? orderedMonths : orderedMonths.slice(0, 8));
+  const hasMoreMonths = $derived(orderedMonths.length > 8);
+
+  const usedIds = $derived(new Set(budgets.map((b) => b.id)));
+
+  const grandIncome = $derived(budgets.reduce((s, b) => s + computeTotals(b).totalIncome, 0));
+  const grandFixedExpense = $derived(budgets.reduce((s, b) => s + computeTotals(b).totalFixedExpenses, 0));
+  const grandBalance = $derived(grandIncome - grandFixedExpense);
+
+  function monthLabel(id: string): string {
+    const [year, month] = id.split("-").map(Number);
+    return `${new Date(year, (month || 1) - 1, 1).toLocaleString("en-US", { month: "long" })} ${year}`;
+  }
+
+  function monthBudget(id: string): MonthBudget | undefined {
+    return budgets.find((b) => b.id === id);
+  }
+
+  function monthPeriod(id: string): string {
+    const budget = monthBudget(id);
+    if (budget?.period) return budget.period;
+    return "25th → 24th";
+  }
+
+  /**
+   * The budget period that contains today. A period `YYYY-MM` covers the 25th
+   * of month (M-1) through the 24th of month M. For example `2026-10` covers
+   * 25 Oct – 24 Nov. So if today is the 25th or later, we are already in the
+   * current month's period; otherwise we are still in the previous month's.
+   */
+  function currentPeriodId(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 1-based
+    const day = now.getDate();
+    const startMonth = day >= 25 ? month : month - 1;
+    const [targetYear, targetMonth] = startMonth <= 0 ? [year - 1, 12] : [year, startMonth];
+    return `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
+  }
+
+  /**
+   * All month ids from the start of the earliest budget year up to `end`.
+   * Falls back to the current year when no budgets exist yet.
+   */
+  function allMonthsTo(end: string): string[] {
+    const endYear = Number(end.slice(0, 4));
+    const startYear = Math.min(thisYear, endYear);
+    const result: string[] = [];
+    for (let year = startYear; year <= endYear; year++) {
+      for (const id of monthsOfYear(year)) {
+        if (id <= end) result.push(id);
+      }
+    }
+    return result;
+  }
+
+  async function createMonth(id: string) {
+    if (usedIds.has(id)) {
+      location.href = `/month/${id}`;
+      return;
+    }
+    busy = true;
+    const budget = createEmptyBudget(id);
+    await saveBudget(budget);
+    budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
+    busy = false;
+    location.href = `/month/${budget.id}`;
+  }
+
+  async function removeMonth(id: string) {
+    if (!confirm(`Delete ${monthLabel(id)}? This cannot be undone.`)) return;
+    await deleteBudget(id);
+    budgets = budgets.filter((b) => b.id !== id);
+  }
 </script>
 
 <svelte:head>
-  <title>Family Budget Harmony - Home</title>
+  <title>Family Budget Harmony</title>
 </svelte:head>
 
-<div class="home-container">
-  <section class="hero" in:fade={{ duration: 800 }}>
-    <div class="hero-hearts">
-      <span>??</span>
-      <span>??</span>
-      <span>??</span>
-    </div>
-    <h2 class="hero-title">Our Family Budget Journey</h2>
-    <p class="hero-description">
-      Together we balance, together we save, together we dream for our beautiful family
+<div class="page">
+  <div in:fade={{ duration: 500 }} class="hero">
+    <p class="hero-eyebrow">Family Finance Tracker</p>
+    <h1 class="hero-title">Plan together.<br />Save beautifully.</h1>
+    <p class="hero-sub">
+      Track husband and wife income, fixed expenses, daily spending and savings
+      withdrawals — one budget period at a time.
     </p>
-  </section>
+  </div>
 
-  <section class="months-section">
-    <h3 class="section-title" in:fly={{ y: 20, duration: 600, delay: 200 }}>
-      <span>??</span> Select Budget Period
-    </h3>
-    
-    <div class="months-grid">
-      {#if showCards}
-        {#each months as month, i}
-          <a 
-            href="/month/{month.id}" 
-            class="month-card"
-            in:scale={{ duration: 400, delay: i * 100, start: 0.9 }}
-          >
-            <div class="card-decoration">
-              <span class="decoration-circle"></span>
-              <span class="decoration-circle"></span>
-              <span class="decoration-circle"></span>
-            </div>
-            <div class="card-content">
-              <div class="month-icon">???</div>
-              <h4 class="month-label">{month.label}</h4>
-              <p class="month-period">{month.period}</p>
-              <div class="card-footer">
-                <span class="view-text">View Budget</span>
-                <span class="arrow">?</span>
-              </div>
-            </div>
-            <div class="card-shine"></div>
-          </a>
-        {/each}
-      {/if}
+  {#if !loading && budgets.length}
+    <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
+      <div class="overview-item">
+        <span class="overview-label">Total Income</span>
+        <span class="overview-value income">{formatCurrency(grandIncome)}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Total Fixed Expenses</span>
+        <span class="overview-value expense">{formatCurrency(grandFixedExpense)}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">Net Balance</span>
+        <span class="overview-value" class:negative={grandBalance < 0}>{formatCurrency(grandBalance)}</span>
+      </div>
     </div>
-  </section>
+  {/if}
 
-  <section class="family-stats" in:fade={{ duration: 800, delay: 800 }}>
-    <div class="stat-card husband">
-      <span class="stat-icon">??</span>
-      <div class="stat-info">
-        <h4>Husband</h4>
-        <p>Fixed Expenses & Daily Needs</p>
+  <div class="section-label" in:fly={{ y: 14, duration: 450, delay: 120 }}>
+    <span>Budget Periods</span>
+  </div>
+
+  <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
+    {#each visibleMonths as id}
+      {@const exists = usedIds.has(id)}
+      {@const budget = monthBudget(id)}
+      {@const totals = budget ? computeTotals(budget) : null}
+      {@const isCurrent = id === currentMonthId}
+      <div
+        class="month-card"
+        class:current={isCurrent}
+        class:exists={exists}
+        class:past={exists && !isCurrent}
+      >
+        <a
+          href="/month/{id}"
+          class="card-link"
+          onclick={(e) => {
+            if (!exists) {
+              e.preventDefault();
+              createMonth(id);
+            }
+          }}
+        >
+          <div class="card-top">
+            <div class="card-titleblock">
+              <span class="card-month">{monthLabel(id)}</span>
+              <span class="card-period">{monthPeriod(id)}</span>
+            </div>
+            {#if isCurrent && exists}
+              <span class="card-badge current">Active</span>
+            {:else if exists}
+              <span class="card-badge past">Past</span>
+            {:else}
+              <span class="card-badge new">New</span>
+            {/if}
+          </div>
+
+          {#if exists && totals}
+            <dl class="card-stats">
+              <div><dt>Income</dt><dd class="income">{formatCurrency(totals.totalIncome)}</dd></div>
+              <div><dt>Fixed</dt><dd>{formatCurrency(totals.totalFixedExpenses)}</dd></div>
+              <div><dt>Balance</dt><dd class:negative={totals.balanceAfterFixed < 0}>{formatCurrency(totals.balanceAfterFixed)}</dd></div>
+            </dl>
+            <div class="card-bar">
+              <span
+                class="bar-fill"
+                style:width={`${Math.min(totals.usedPercentFixed, 100)}%`}
+                style:background={totals.usedPercentFixed > 100 ? "var(--danger)" : totals.usedPercentFixed > 80 ? "var(--accent-gold)" : "var(--success)"}
+              ></span>
+            </div>
+            <span class="card-note">
+              {#if isCurrent}Currently in progress · {:else}Closed · {/if}
+              {totals.usedPercentFixed}% of income used on fixed
+            </span>
+          {:else}
+            <div class="card-empty">
+              <span class="card-empty-icon">+</span>
+              <span>No budget yet — tap to create</span>
+            </div>
+          {/if}
+        </a>
       </div>
+    {/each}
+  </div>
+
+  {#if hasMoreMonths}
+    <div class="months-toggle">
+      <button class="toggle-btn" onclick={() => (showAllMonths = !showAllMonths)}>
+        {showAllMonths ? "View less" : `View more (${orderedMonths.length - 8} more)`}
+        <span class="toggle-arrow">{showAllMonths ? "↑" : "↓"}</span>
+      </button>
     </div>
-    <div class="stat-card wife">
-      <span class="stat-icon">??</span>
-      <div class="stat-info">
-        <h4>Wife</h4>
-        <p>Family Support & Personal Needs</p>
-      </div>
+  {/if}
+
+  {#if loading}
+    <div class="empty-state"><span class="empty-icon">◌</span><p>Loading your budgets…</p></div>
+  {:else if budgets.length === 0}
+    <div class="empty-state" in:fade={{ duration: 400 }}>
+      <span class="empty-icon">◻</span>
+      <h3>No budget yet</h3>
+      <p>Create your first budget period from the month buttons above.</p>
     </div>
-    <div class="stat-card family">
-      <span class="stat-icon">????????</span>
-      <div class="stat-info">
-        <h4>Family</h4>
-        <p>Together for our future</p>
-      </div>
-    </div>
-  </section>
+  {/if}
+
+  <div in:fade={{ duration: 500, delay: 400 }} class="info-strip">
+    <div class="info-item"><span class="info-dot blue"></span><span>Husband — income, fixed & daily needs</span></div>
+    <div class="info-item"><span class="info-dot rose"></span><span>Wife — income & fixed expenses</span></div>
+    <div class="info-item"><span class="info-dot teal"></span><span>Savings — daily spending funded from savings</span></div>
+  </div>
 </div>
 
 <style>
-  .home-container {
-    display: flex;
-    flex-direction: column;
-    gap: 3rem;
-  }
+  .page { display: flex; flex-direction: column; gap: 2rem; }
 
-  .hero {
-    text-align: center;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(254, 243, 199, 0.9) 100%);
-    padding: 3rem 2rem;
-    border-radius: 30px;
-    box-shadow: var(--shadow-card);
-    border: 2px solid rgba(251, 191, 36, 0.5);
-    position: relative;
-    overflow: hidden;
-  }
+  .hero { padding: 3rem 0 1rem; border-bottom: 1px solid var(--surface-border); }
+  .hero-eyebrow { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold); margin-bottom: 1rem; }
+  .hero-title { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
+  .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
-  .hero::before {
-    content: "";
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(244, 114, 182, 0.1) 0%, transparent 70%);
-    animation: float 6s ease-in-out infinite;
+  .overview {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+    background: var(--surface); border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);
   }
+  .overview-item { display: flex; flex-direction: column; gap: 0.3rem; }
+  .overview-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+  .overview-value { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; }
+  .overview-value.income { color: var(--success); }
+  .overview-value.expense { color: var(--accent-gold); }
+  .overview-value.negative { color: var(--danger); }
 
-  .hero-hearts {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-  }
+  .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); }
+  .months-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
 
-  .hero-hearts span {
-    animation: heartbeat 2s ease-in-out infinite;
+  .months-toggle { display: flex; justify-content: center; }
+  .toggle-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1.1rem; border-radius: 999px;
+    background: var(--bg-muted); border: 1.5px solid var(--surface-border);
+    color: var(--text-secondary); font-size: 0.82rem; font-weight: 700;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  .hero-hearts span:nth-child(2) {
-    animation-delay: 0.3s;
-  }
-
-  .hero-hearts span:nth-child(3) {
-    animation-delay: 0.6s;
-  }
-
-  .hero-title {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
-    position: relative;
-    z-index: 1;
-    background: linear-gradient(135deg, #d97706 0%, #db2777 50%, #2563eb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-description {
-    font-size: 1.1rem;
-    color: var(--text-secondary);
-    position: relative;
-    z-index: 1;
-  }
-
-  .section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.6rem;
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-  }
-
-  .months-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
+  .toggle-btn:hover { background: var(--surface); border-color: var(--accent-gold); color: var(--accent-gold); }
+  .toggle-arrow { font-size: 0.8rem; line-height: 1; }
 
   .month-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 1.5rem;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: var(--shadow-card);
-    border: 2px solid transparent;
-    background-clip: padding-box;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    display: block;
+    position: relative; background: var(--surface); border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  .month-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--surface-border); }
+  .month-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 
-  .month-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    background: linear-gradient(135deg, #fbbf24, #f472b6, #60a5fa);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    border-radius: 20px;
+  .card-link { text-decoration: none; color: inherit; padding: 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; flex: 1; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+  .card-titleblock { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+  .card-month { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+  .card-period { font-size: 0.74rem; color: var(--text-tertiary); }
+
+  .card-badge {
+    flex-shrink: 0; font-size: 0.62rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 0.22rem 0.6rem; border-radius: 999px;
   }
+  .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold); }
+  .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
+  .card-badge.current { background: var(--success-light); color: var(--success); }
 
-  .month-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 25px 70px rgba(244, 114, 182, 0.35);
+  .card-stats { display: flex; flex-direction: column; gap: 0.35rem; }
+  .card-stats div { display: flex; justify-content: space-between; font-size: 0.82rem; }
+  .card-stats dt { color: var(--text-tertiary); }
+  .card-stats dd { font-weight: 700; color: var(--text-secondary); }
+  .card-stats dd.income { color: var(--success); }
+  .card-stats dd.negative { color: var(--danger); }
+
+  .card-bar { height: 6px; background: var(--bg-muted); border-radius: 99px; overflow: hidden; }
+  .bar-fill { display: block; height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  .card-note { font-size: 0.72rem; color: var(--text-tertiary); }
+
+  .card-empty {
+    display: flex; align-items: center; gap: 0.5rem; justify-content: center;
+    padding: 1.25rem; border: 1.5px dashed var(--surface-border); border-radius: var(--radius-md);
+    color: var(--text-tertiary); font-size: 0.85rem; font-weight: 600;
   }
+  .card-empty-icon { font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); }
 
-  .month-card:hover .card-shine {
-    left: 100%;
-  }
+  /* Current (active) month stands out, but not overdone. */
+  .month-card.current { border-color: rgba(91, 138, 138, 0.55); box-shadow: 0 0 0 1px rgba(91, 138, 138, 0.2), var(--shadow-md); }
+  .month-card.current::before { background: linear-gradient(90deg, var(--accent-teal), var(--accent-gold)); }
+  .month-card.past::before { background: var(--bg-muted); }
 
-  .month-card:hover .arrow {
-    transform: translateX(8px);
-  }
+  .empty-state { text-align: center; padding: 4rem 2rem; background: var(--surface); border: 1px dashed var(--surface-border); border-radius: var(--radius-xl); }
+  .empty-icon { font-size: 2.25rem; display: block; margin-bottom: 1rem; color: var(--text-tertiary); }
+  .empty-state h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .empty-state p { font-size: 0.85rem; color: var(--text-tertiary); }
 
-  .card-decoration {
-    display: flex;
-    gap: 0.4rem;
-    margin-bottom: 1rem;
-    position: relative;
-    z-index: 1;
-  }
+  .info-strip { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1.25rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.825rem; color: var(--text-secondary); }
+  .info-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .info-dot.blue { background: var(--accent-blue); }
+  .info-dot.rose { background: var(--accent-rose); }
+  .info-dot.teal { background: var(--accent-teal); }
 
-  .decoration-circle {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #fbbf24, #f472b6);
-  }
-
-  .decoration-circle:nth-child(2) {
-    background: linear-gradient(135deg, #f472b6, #60a5fa);
-  }
-
-  .decoration-circle:nth-child(3) {
-    background: linear-gradient(135deg, #60a5fa, #34d399);
-  }
-
-  .card-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  .month-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
-    display: inline-block;
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .month-label {
-    font-size: 1.4rem;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-  }
-
-  .month-period {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(251, 191, 36, 0.3);
-    font-weight: 600;
-    color: #d97706;
-  }
-
-  .arrow {
-    transition: transform 0.3s ease;
-    font-size: 1.2rem;
-  }
-
-  .card-shine {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transition: left 0.6s ease;
-    z-index: 0;
-  }
-
-  .family-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-
-  .stat-card {
-    background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    padding: 1.25rem;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: var(--shadow-card);
-    border: 2px solid transparent;
-  }
-
-  .stat-card.husband {
-    border-color: rgba(96, 165, 250, 0.5);
-  }
-
-  .stat-card.wife {
-    border-color: rgba(244, 114, 182, 0.5);
-  }
-
-  .stat-card.family {
-    border-color: rgba(52, 211, 153, 0.5);
-  }
-
-  .stat-icon {
-    font-size: 2rem;
-  }
-
-  .stat-info h4 {
-    font-size: 1.1rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .stat-info p {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-  }
-
-  @media (max-width: 768px) {
-    .hero-title {
-      font-size: 2rem;
-    }
-    .months-grid {
-      grid-template-columns: 1fr;
-    }
+  @media (max-width: 640px) {
+    .overview { grid-template-columns: 1fr; }
+    .months-grid { grid-template-columns: 1fr; }
+    .hero { padding: 2rem 0 1rem; }
   }
 </style>
-

@@ -1,1 +1,4 @@
-// place files you want to import through the `#lib` alias in this folder.
+// Shared library entry point (`#lib` alias).
+export * from "./types";
+export * from "./budget-store";
+export * from "./firebase";

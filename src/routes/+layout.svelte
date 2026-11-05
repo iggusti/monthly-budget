@@ -1,131 +1,98 @@
 <script lang="ts">
   import "../app.css";
+  import { logout, isAuthenticated } from "#lib/auth";
+
+  let { children } = $props();
+
+  let authed = $state(false);
+  $effect(() => {
+    authed = isAuthenticated();
+  });
+
+  function handleLogout() {
+    logout();
+    location.href = "/login";
+  }
 </script>
 
-<div class="app-shell">
-  <header class="app-header">
-    <div class="header-content">
-      <div class="logo-group">
-        <span class="logo-heart">????</span>
-        <div>
-          <h1 class="app-title">Family Budget Harmony</h1>
-          <p class="app-subtitle">Balancing love, money, and dreams together</p>
-        </div>
-      </div>
-      <div class="header-decor">
-        <span class="decor-item">??</span>
-        <span class="decor-item">????????</span>
-        <span class="decor-item">??</span>
-      </div>
+<div class="page-wrapper">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="/" class="logo">
+        <span class="logo-mark">❖</span>
+        <span class="logo-text">Budget Harmony</span>
+      </a>
+      <nav class="topbar-nav">
+        {#if authed}
+          <a href="/" class="nav-link">Dashboard</a>
+          <span class="nav-sep">·</span>
+          <span class="nav-user">Family Plan</span>
+          <button class="nav-logout" onclick={handleLogout} title="Keluar">Keluar</button>
+        {/if}
+      </nav>
     </div>
   </header>
 
-  <main class="app-main">
-    <slot />
+  <main class="main-content">
+    {@render children()}
   </main>
 
-  <footer class="app-footer">
-    <p>Made with ?? for a happy family</p>
+  <footer class="footer">
+    <p>Family Budget Harmony · Stay balanced, save together</p>
   </footer>
 </div>
 
 <style>
-  .app-shell {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
+  .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
 
-  .app-header {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(254, 243, 199, 0.95) 100%);
-    backdrop-filter: blur(10px);
-    border-bottom: 3px solid transparent;
-    border-image: linear-gradient(90deg, #fbbf24, #f472b6, #60a5fa, #34d399) 1;
-    box-shadow: var(--shadow-soft);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250, 249, 247, 0.88);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--surface-border);
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center;
   }
-
-  .header-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1.5rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+  .topbar-inner {
+    max-width: 1100px; margin: 0 auto; width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
   }
-
-  .logo-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+  .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); }
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: white; font-weight: 700;
   }
-
-  .logo-heart {
-    font-size: 2.5rem;
-    animation: heartbeat 2s ease-in-out infinite;
+  .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
+  .nav-link {
+    text-decoration: none; color: var(--text-secondary);
+    font-size: 0.85rem; font-weight: 500;
+    padding: 0.35rem 0.75rem; border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
   }
-
-  .app-title {
-    font-size: 1.8rem;
-    background: linear-gradient(135deg, #d97706 0%, #db2777 50%, #2563eb 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .nav-link:hover { color: var(--text-primary); background: var(--bg-muted); }
+  .nav-sep { color: var(--text-tertiary); font-size: 0.75rem; }
+  .nav-user {
+    font-size: 0.78rem; color: var(--text-tertiary);
+    padding: 0.3rem 0.75rem; background: var(--accent-gold-light);
+    border-radius: 20px; font-weight: 500;
   }
-
-  .app-subtitle {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    margin-top: 0.25rem;
+  .nav-logout {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+    padding: 0.3rem 0.75rem; border-radius: 20px;
+    background: transparent; border: 1px solid var(--surface-border);
+    transition: all 0.2s;
   }
+  .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
+  .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2rem 2rem 3rem; }
+  .footer { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 0.8rem; border-top: 1px solid var(--surface-border); }
 
-  .header-decor {
-    display: flex;
-    gap: 0.75rem;
-    font-size: 1.8rem;
-  }
-
-  .decor-item {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  .decor-item:nth-child(2) {
-    animation-delay: 0.5s;
-  }
-
-  .decor-item:nth-child(3) {
-    animation-delay: 1s;
-  }
-
-  .app-main {
-    flex: 1;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-
-  .app-footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-    background: linear-gradient(180deg, transparent 0%, rgba(252, 231, 243, 0.5) 100%);
-  }
-
-  @media (max-width: 768px) {
-    .header-content {
-      padding: 1rem;
-    }
-    .app-title {
-      font-size: 1.4rem;
-    }
-    .app-main {
-      padding: 1rem;
-    }
+  @media (max-width: 640px) {
+    .topbar { padding: 0 1rem; }
+    .main-content { padding: 1.25rem 1rem 2rem; }
+    .nav-user { display: none; }
   }
 </style>
-
