@@ -27,7 +27,7 @@
           <a href="/" class="nav-link">Dashboard</a>
           <span class="nav-sep">·</span>
           <span class="nav-user">Family Plan</span>
-          <button class="nav-logout" onclick={handleLogout} title="Keluar">Keluar</button>
+          <button class="nav-logout" onclick={handleLogout} title="Sign out">Sign out</button>
         {/if}
       </nav>
     </div>

@@ -43,28 +43,23 @@
 
   const usedIds = $derived(new Set(budgets.map((b) => b.id)));
 
-  const grandIncome = $derived(budgets.reduce((s, b) => s + computeTotals(b).totalIncome, 0));
-  const grandFixedExpense = $derived(budgets.reduce((s, b) => s + computeTotals(b).totalFixedExpenses, 0));
-  const grandBalance = $derived(grandIncome - grandFixedExpense);
-
   // The budget for the current period (may be undefined if not created yet).
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
   const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
 
-  // Daily spending for the CURRENT month only.
-  const currentSalary = $derived(
-    currentTotals ? currentTotals.husbandDailyFromSalaryTotal + currentTotals.wifeDailyFromSalaryTotal : 0
-  );
-  const currentSavings = $derived(
-    currentTotals ? currentTotals.husbandDailyFromSavingsTotal + currentTotals.wifeDailyFromSavingsTotal : 0
-  );
+  // This month's headline numbers.
+  const currentIncome = $derived(currentTotals ? currentTotals.totalIncome : 0);
+  const currentFixedExpense = $derived(currentTotals ? currentTotals.totalFixedExpenses : 0);
+  const currentBalance = $derived(currentIncome - currentFixedExpense);
+  const currentPerPerson = $derived(currentTotals ? currentTotals.equalSplitAmount : 0);
 
-  // Average "each holds after fixed" across budgets that have income.
-  const avgHolds = $derived(() => {
-    const usable = budgets.filter((b) => computeTotals(b).totalIncome > 0);
-    if (!usable.length) return 0;
-    return usable.reduce((s, b) => s + computeTotals(b).equalSplitAmount, 0) / usable.length;
-  });
+  // Daily spending for the CURRENT month only (broken down per spouse).
+  const currentSalaryHusband = $derived(currentTotals ? currentTotals.husbandDailyFromSalaryTotal : 0);
+  const currentSalaryWife = $derived(currentTotals ? currentTotals.wifeDailyFromSalaryTotal : 0);
+  const currentSavingsHusband = $derived(currentTotals ? currentTotals.husbandDailyFromSavingsTotal : 0);
+  const currentSavingsWife = $derived(currentTotals ? currentTotals.wifeDailyFromSavingsTotal : 0);
+  const currentSalary = $derived(currentSalaryHusband + currentSalaryWife);
+  const currentSavings = $derived(currentSavingsHusband + currentSavingsWife);
 
   function monthLabel(id: string): string {
     const [year, month] = id.split("-").map(Number);
@@ -149,35 +144,39 @@
 
   {#if !loading && budgets.length}
     <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
+      <div class="overview-head">
+        <span class="overview-head-title">This month</span>
+        <span class="overview-head-sub">{monthLabel(currentMonthId)}</span>
+      </div>
       <div class="overview-item">
         <span class="overview-label">Total Income</span>
-        <span class="overview-value income">{formatCurrency(grandIncome)}</span>
-        <span class="overview-sub">semua bulan · suami + istri</span>
+        <span class="overview-value income">{formatCurrency(currentIncome)}</span>
+        <span class="overview-sub">husband + wife</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">Total Fixed Expenses</span>
-        <span class="overview-value expense">{formatCurrency(grandFixedExpense)}</span>
-        <span class="overview-sub">semua bulan · tetap suami + istri</span>
+        <span class="overview-value expense">{formatCurrency(currentFixedExpense)}</span>
+        <span class="overview-sub">husband + wife fixed</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">Balance after Fixed Expenses</span>
-        <span class="overview-value" class:negative={grandBalance < 0}>{formatCurrency(grandBalance)}</span>
-        <span class="overview-sub">semua bulan · income − fixed</span>
+        <span class="overview-value" class:negative={currentBalance < 0}>{formatCurrency(currentBalance)}</span>
+        <span class="overview-sub">income − fixed</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Sisa per orang (rata-rata)</span>
-        <span class="overview-value teal">{formatCurrency(avgHolds())}</span>
-        <span class="overview-sub">semua bulan · setelah fixed, bagi rata</span>
+        <span class="overview-label">Per person</span>
+        <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
+        <span class="overview-sub">after fixed, split evenly</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Harian dari gaji · {monthLabel(currentMonthId)}</span>
+        <span class="overview-label">Daily from salary</span>
         <span class="overview-value rose">{formatCurrency(currentSalary)}</span>
-        <span class="overview-sub">hanya bulan ini · salary (suami + istri)</span>
+        <span class="overview-sub">husband {formatCurrency(currentSalaryHusband)} · wife {formatCurrency(currentSalaryWife)}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Harian dari tabungan · {monthLabel(currentMonthId)}</span>
+        <span class="overview-label">Daily from savings</span>
         <span class="overview-value blue">{formatCurrency(currentSavings)}</span>
-        <span class="overview-sub">hanya bulan ini · savings (suami + istri)</span>
+        <span class="overview-sub">husband {formatCurrency(currentSavingsHusband)} · wife {formatCurrency(currentSavingsWife)}</span>
       </div>
     </div>
   {/if}
@@ -223,12 +222,22 @@
           </div>
 
           {#if exists && totals}
-            <dl class="card-stats">
-              <div><dt>Income</dt><dd class="income">{formatCurrency(totals.totalIncome)}</dd></div>
-              <div><dt>Fixed</dt><dd>{formatCurrency(totals.totalFixedExpenses)}</dd></div>
-              <div><dt>Per orang</dt><dd class="teal">{formatCurrency(totals.equalSplitAmount)}</dd></div>
-              <div><dt>Balance</dt><dd class:negative={totals.balanceAfterFixed < 0}>{formatCurrency(totals.balanceAfterFixed)}</dd></div>
-            </dl>
+            <div class="card-person">
+              <span class="card-person-label">Per person</span>
+              <span class="card-person-value">{formatCurrency(totals.equalSplitAmount)}</span>
+            </div>
+            <div class="card-groups">
+              <div class="card-group">
+                <span class="card-group-title">Husband</span>
+                <div class="card-group-row"><span>salary</span><b class="rose">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
+                <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
+              </div>
+              <div class="card-group">
+                <span class="card-group-title">Wife</span>
+                <div class="card-group-row"><span>salary</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
+                <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+              </div>
+            </div>
             <div class="card-bar">
               <span
                 class="bar-fill"
@@ -286,10 +295,13 @@
   .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
   .overview {
-    display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.9rem;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
     background: var(--surface); border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);
   }
+  .overview-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
+  .overview-head-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
+  .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
   .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
   .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
   .overview-value { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -340,13 +352,17 @@
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
   .card-badge.current { background: var(--success-light); color: var(--success); }
 
-  .card-stats { display: flex; flex-direction: column; gap: 0.35rem; }
-  .card-stats div { display: flex; justify-content: space-between; font-size: 0.82rem; }
-  .card-stats dt { color: var(--text-tertiary); }
-  .card-stats dd { font-weight: 700; color: var(--text-secondary); }
-  .card-stats dd.income { color: var(--success); }
-  .card-stats dd.teal { color: var(--accent-teal); }
-  .card-stats dd.negative { color: var(--danger); }
+  .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), #fff); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
+  .card-person-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
+  .card-person-value { font-size: 1.05rem; font-weight: 800; color: var(--accent-teal); }
+
+  .card-groups { display: flex; flex-direction: column; gap: 0.5rem; }
+  .card-group { min-width: 0; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; }
+  .card-group-title { display: block; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem; }
+  .card-group-row { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; min-width: 0; font-size: 0.76rem; color: var(--text-tertiary); padding: 0.12rem 0; }
+  .card-group-row b { min-width: 0; overflow-wrap: anywhere; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .card-group-row b.rose { color: var(--accent-rose); }
+  .card-group-row b.blue { color: var(--accent-blue); }
 
   .card-bar { height: 6px; background: var(--bg-muted); border-radius: 99px; overflow: hidden; }
   .bar-fill { display: block; height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -376,10 +392,6 @@
   .info-dot.blue { background: var(--accent-blue); }
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }
-
-  @media (max-width: 1200px) {
-    .overview { grid-template-columns: repeat(3, 1fr); }
-  }
 
   @media (max-width: 640px) {
     .overview { grid-template-columns: 1fr; }

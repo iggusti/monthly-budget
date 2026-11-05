@@ -28,7 +28,7 @@
     if (ok) {
       location.href = "/";
     } else {
-      error = "Kata kunci tidak cocok. Coba lagi.";
+      error = "Incorrect keyword. Please try again.";
       shake = true;
       setTimeout(() => (shake = false), 500);
     }
@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-  <title>Masuk — Family Budget Harmony</title>
+  <title>Sign in — Family Budget Harmony</title>
 </svelte:head>
 
 <div class="login-page">
@@ -65,19 +65,19 @@
     </div>
 
     <h1 class="title">Family Budget Harmony</h1>
-    <p class="subtitle">Plan bersama, simpan indah.</p>
+    <p class="subtitle">Plan together, save beautifully.</p>
 
     <div class="divider"><span></span></div>
 
     <form onsubmit={(e) => { e.preventDefault(); submit(); }} class="form">
-      <label class="field-label" for="keyword">Kata kunci keluarga</label>
+      <label class="field-label" for="keyword">Family keyword</label>
       <div class="input-wrap" class:focused={focus}>
         <span class="input-icon">🔑</span>
         <input
           id="keyword"
           type={showPassword ? "text" : "password"}
           bind:value={keyword}
-          placeholder="ketik kata kunci…"
+          placeholder="type the keyword…"
           autocomplete="off"
           onfocus={() => (focus = true)}
           onblur={() => (focus = false)}
@@ -100,12 +100,12 @@
       {/if}
 
       <button class="submit" type="submit" disabled={loading || !keyword.trim()}>
-        <span>{loading ? "Masuk…" : "Masuk"}</span>
+        <span>{loading ? "Signing in…" : "Sign in"}</span>
         <span class="arrow">{loading ? "" : "→"}</span>
       </button>
     </form>
 
-    <p class="hint">Hanya keluarga yang tahu kata kuncinya.</p>
+    <p class="hint">Only family members know the keyword.</p>
   </div>
 </div>
 

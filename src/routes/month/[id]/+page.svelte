@@ -33,18 +33,34 @@
     totals.husbandDailyFromSavingsTotal + totals.wifeDailyFromSavingsTotal
   );
 
-  // Proportions (as visual widths) for the flow chart.
-  const maxFlow = $derived(
-    Math.max(
-      totals.totalIncome,
-      totals.totalFixedExpenses,
-      totals.equalSplitAmount,
-      dailyFromSalaryTotal,
-      dailyFromSavingsTotal,
-      1
-    )
-  );
-  const pct = $derived((value: number) => (value / maxFlow) * 100);
+  // Donut segments as fractions of total income (clamped to sum to 100%).
+  const chartSegments = $derived(() => {
+    const income = totals.totalIncome || 1;
+    const fixed = Math.max(totals.totalFixedExpenses, 0);
+    const salary = Math.max(dailyFromSalaryTotal, 0);
+    const savings = Math.max(dailyFromSavingsTotal, 0);
+    const remaining = Math.max(income - fixed - salary - savings, 0);
+    const total = income;
+    return [
+      { key: "fixed", label: "Fixed expenses", value: fixed, frac: fixed / total, color: "var(--accent-gold)" },
+      { key: "salary", label: "Daily from salary", value: salary, frac: salary / total, color: "var(--accent-rose)" },
+      { key: "savings", label: "Daily from savings", value: savings, frac: savings / total, color: "var(--accent-blue)" },
+      { key: "remaining", label: "Remaining", value: remaining, frac: remaining / total, color: "var(--accent-teal)" }
+    ];
+  });
+  // Donut geometry constants.
+  const DONUT_R = 48;
+  const DONUT_C = 2 * Math.PI * DONUT_R;
+
+  // Cumulative fractions for drawing the ring.
+  const chartCumulative = $derived(() => {
+    let acc = 0;
+    return chartSegments().map((seg) => {
+      const start = acc;
+      acc += seg.frac;
+      return { ...seg, start };
+    });
+  });
 
   onMount(async () => {
     if (!isAuthenticated()) {
@@ -161,53 +177,53 @@
 
   <div class="chart-section" in:fly={{ y: 12, duration: 420, delay: 100 }}>
     <div class="chart-header">
-      <span class="chart-title">Bagaimana uang bulan ini mengalir</span>
-      <span class="chart-caption">Total pendapatan {formatCurrency(totals.totalIncome)}</span>
+      <span class="chart-title">How this month's money flows</span>
     </div>
 
-    <!-- Proportional horizontal bars -->
-    <div class="chart-bars">
-      <div class="bar-row" title={`Fixed: ${formatCurrency(totals.totalFixedExpenses)}`}>
-        <span class="bar-label">Fixed expenses</span>
-        <div class="bar-track">
-          <div class="bar-fill fixed" style:width={`${pct(totals.totalFixedExpenses)}%`}></div>
-        </div>
-        <span class="bar-value fixed">− {formatCurrency(totals.totalFixedExpenses)}</span>
+    <div class="chart-body">
+      <!-- Donut ring -->
+      <div class="chart-donut">
+        <svg viewBox="0 0 120 120" width="190" height="190" role="img" aria-label="Income allocation donut">
+          {#each chartCumulative() as seg, i}
+            {@const dash = seg.frac * DONUT_C}
+            {@const offset = -seg.start * DONUT_C}
+            <circle
+              cx="60" cy="60" r={DONUT_R}
+              fill="none"
+              stroke={seg.color}
+              stroke-width="18"
+              stroke-linecap="butt"
+              stroke-dasharray={`${dash} ${DONUT_C - dash}`}
+              stroke-dashoffset={offset}
+              transform="rotate(-90 60 60)"
+              style:transition={`stroke-dashoffset 0.8s ease, stroke-dasharray 0.8s ease`}
+              style:opacity={i === 0 ? "1" : "1"}
+            />
+          {/each}
+          <text x="60" y="56" text-anchor="middle" class="donut-value">{formatCurrency(totals.totalIncome)}</text>
+          <text x="60" y="72" text-anchor="middle" class="donut-label">total income</text>
+        </svg>
       </div>
 
-      <div class="bar-row highlight" title={`Sisa per orang: ${formatCurrency(totals.equalSplitAmount)}`}>
-        <span class="bar-label">Sisa per orang (after fixed)</span>
-        <div class="bar-track">
-          <div class="bar-fill after" style:width={`${pct(totals.equalSplitAmount)}%`}></div>
-        </div>
-        <span class="bar-value after">{formatCurrency(totals.equalSplitAmount)}</span>
-      </div>
-
-      <div class="bar-row" title={`Salary: ${formatCurrency(dailyFromSalaryTotal)}`}>
-        <span class="bar-label">Harian dari gaji (salary)</span>
-        <div class="bar-track">
-          <div class="bar-fill salary" style:width={`${pct(dailyFromSalaryTotal)}%`}></div>
-        </div>
-        <span class="bar-value salary">{formatCurrency(dailyFromSalaryTotal)}</span>
-      </div>
-
-      <div class="bar-row" title={`Savings: ${formatCurrency(dailyFromSavingsTotal)}`}>
-        <span class="bar-label">Harian dari tabungan (savings)</span>
-        <div class="bar-track">
-          <div class="bar-fill savings" style:width={`${pct(dailyFromSavingsTotal)}%`}></div>
-        </div>
-        <span class="bar-value savings">{formatCurrency(dailyFromSavingsTotal)}</span>
+      <!-- Legend -->
+      <div class="chart-legend">
+        {#each chartSegments() as seg}
+          <div class="legend-row" title={formatCurrency(seg.value)}>
+            <span class="legend-dot" style:background={seg.color}></span>
+            <span class="legend-label">{seg.label}</span>
+            <span class="legend-value">{formatCurrency(seg.value)}</span>
+          </div>
+        {/each}
       </div>
     </div>
 
-    <!-- Legend / explanation -->
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
       <span>
-        Setelah fixed expenses dibayar dan dibagi rata, masing-masing memegang
-        <strong>{formatCurrency(totals.equalSplitAmount)}</strong>. Dari jumlah itu,
-        <strong>{formatCurrency(dailyFromSalaryTotal)}</strong> untuk kebutuhan harian dari gaji,
-        dan <strong>{formatCurrency(dailyFromSavingsTotal)}</strong> diambil dari tabungan.
+        Total income {formatCurrency(totals.totalIncome)} is split into fixed expenses,
+        daily spending from salary, daily spending from savings, and the remainder.
+        After fixed is paid and split evenly, each person holds
+        <strong>{formatCurrency(totals.equalSplitAmount)}</strong>.
       </span>
     </div>
   </div>
@@ -352,33 +368,22 @@
   .stat-card.split.negative .stat-value { color: var(--danger); }
 
   .chart-section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); }
-  .chart-header { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
   .chart-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
-  .chart-caption { font-size: 0.78rem; color: var(--text-tertiary); }
 
-  .chart-bars { display: flex; flex-direction: column; gap: 0.9rem; }
-  .bar-row { display: grid; grid-template-columns: 160px 1fr auto; align-items: center; gap: 0.85rem; }
-  .bar-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-align: right; }
-  .bar-track { position: relative; height: 26px; background: var(--bg-muted); border-radius: 8px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 8px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-  .bar-fill.fixed { background: linear-gradient(90deg, var(--accent-gold), #c8956c); }
-  .bar-fill.after { background: linear-gradient(90deg, var(--accent-teal), #467d7d); }
-  .bar-fill.salary { background: linear-gradient(90deg, var(--accent-rose), #c47070); }
-  .bar-fill.savings { background: linear-gradient(90deg, #6b7fa3, #5a7090); }
-  .bar-value {
-    font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em;
-    font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right;
-    color: var(--text-primary);
-  }
-  .bar-value.fixed { color: var(--accent-gold); }
-  .bar-value.after { color: var(--accent-teal); }
-  .bar-value.salary { color: var(--accent-rose); }
-  .bar-value.savings { color: var(--accent-blue); }
-  .bar-row.highlight { background: linear-gradient(135deg, var(--accent-teal-light), #ffffff); border-radius: var(--radius-md); padding: 0.35rem 0.5rem; margin: -0.35rem -0.5rem; }
-  .bar-row.highlight .bar-track { border: 1.5px solid rgba(91, 138, 138, 0.4); }
-  .bar-row.highlight .bar-value { font-size: 1.05rem; }
+  .chart-body { display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; }
 
-  .chart-note { display: flex; gap: 0.6rem; margin-top: 1.1rem; padding: 0.85rem 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+  .chart-donut { flex-shrink: 0; margin: 0 auto; }
+  .donut-value { font-size: 13px; font-weight: 800; fill: var(--text-primary); }
+  .donut-label { font-size: 7px; font-weight: 600; letter-spacing: 0.04em; fill: var(--text-tertiary); text-transform: uppercase; }
+
+  .chart-legend { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0.6rem; }
+  .legend-row { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 0.6rem; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .legend-label { font-size: 0.82rem; color: var(--text-secondary); }
+  .legend-value { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+
+  .chart-note { display: flex; gap: 0.6rem; margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
   .chart-note strong { color: var(--text-primary); }
 
@@ -391,7 +396,7 @@
   @media (max-width: 768px) {
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
-    .bar-row { grid-template-columns: 1fr auto; gap: 0.35rem 0.6rem; }
-    .bar-label { grid-column: 1 / -1; text-align: left; }
+    .chart-body { flex-direction: column; gap: 1.25rem; }
+    .chart-legend { width: 100%; }
   }
 </style>

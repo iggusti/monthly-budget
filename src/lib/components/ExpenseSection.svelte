@@ -118,7 +118,7 @@
           <input
             type="text"
             bind:value={draft.name}
-            placeholder="e.g. Bayar Listrik"
+            placeholder="e.g. Electricity bill"
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
         </label>
