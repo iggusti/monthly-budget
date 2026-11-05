@@ -38,13 +38,11 @@
     const income = totals.totalIncome || 1;
     const fixed = Math.max(totals.totalFixedExpenses, 0);
     const salary = Math.max(dailyFromSalaryTotal, 0);
-    const savings = Math.max(dailyFromSavingsTotal, 0);
-    const remaining = Math.max(income - fixed - salary - savings, 0);
+    const remaining = Math.max(income - fixed - salary, 0);
     const total = income;
     return [
       { key: "fixed", label: "Fixed expenses", value: fixed, frac: fixed / total, color: "var(--accent-gold)" },
       { key: "salary", label: "Daily from salary", value: salary, frac: salary / total, color: "var(--accent-rose)" },
-      { key: "savings", label: "Daily from savings", value: savings, frac: savings / total, color: "var(--accent-blue)" },
       { key: "remaining", label: "Remaining", value: remaining, frac: remaining / total, color: "var(--accent-teal)" }
     ];
   });
@@ -111,16 +109,18 @@
 
 <div class="page">
   <div class="page-header" in:fade={{ duration: 350 }}>
-    <a href="/" class="back-btn">← <span>All months</span></a>
+    <div class="header-top">
+      <a href="/" class="back-btn" aria-label="All months">← <span class="back-text">All months</span></a>
+      <div class="header-side">
+        <span class="save-state" class:saving>
+          {#if loading}Loading…{:else if saving}Saving…{:else if savedAt}Saved {savedAt}{:else}Editable{/if}
+        </span>
+        <button class="edit-btn" onclick={openHeaderEditor}>✎ Edit header</button>
+      </div>
+    </div>
     <div class="header-meta">
       <h1 class="page-title">{budget.title}</h1>
       <p class="page-subtitle">{budget.period}</p>
-    </div>
-    <div class="header-side">
-      <span class="save-state" class:saving>
-        {#if loading}Loading…{:else if saving}Saving…{:else if savedAt}Saved {savedAt}{:else}Editable{/if}
-      </span>
-      <button class="edit-btn" onclick={openHeaderEditor}>✎ Edit header</button>
     </div>
   </div>
 
@@ -213,16 +213,59 @@
             <span class="legend-label">{seg.label}</span>
             <span class="legend-value">{formatCurrency(seg.value)}</span>
           </div>
+          {#if seg.key === "fixed"}
+            <div class="legend-split">
+              <span class="legend-split-label">Husband</span>
+              <span class="legend-split-value gold">{formatCurrency(totals.husbandFixedTotal)}</span>
+              <span class="legend-split-sep">·</span>
+              <span class="legend-split-label">Wife</span>
+              <span class="legend-split-value gold">{formatCurrency(totals.wifeFixedTotal)}</span>
+            </div>
+          {/if}
+          {#if seg.key === "salary"}
+            <div class="legend-split">
+              <span class="legend-split-label">Husband</span>
+              <span class="legend-split-value rose">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</span>
+              <span class="legend-split-sep">·</span>
+              <span class="legend-split-label">Wife</span>
+              <span class="legend-split-value rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</span>
+            </div>
+          {/if}
         {/each}
       </div>
+    </div>
+
+    <!-- Daily from savings: separate block, funded from savings (not income) -->
+    <div class="chart-savings">
+      <div class="savings-head">
+        <span class="savings-icon">🏦</span>
+        <span class="savings-title">Daily from savings</span>
+        <span class="savings-value">{formatCurrency(dailyFromSavingsTotal)}</span>
+      </div>
+      <div class="savings-bar">
+        <span class="savings-fill" style:width={`${Math.min((dailyFromSavingsTotal / (totals.totalIncome || 1)) * 100, 100)}%`}></span>
+      </div>
+      <div class="savings-split">
+        <div class="split-person">
+          <span class="split-person-label">Husband</span>
+          <span class="split-person-value blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</span>
+        </div>
+        <div class="split-person">
+          <span class="split-person-label">Wife</span>
+          <span class="split-person-value blue">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</span>
+        </div>
+      </div>
+      <p class="savings-note">
+        Taken from savings — separate from this month's income.
+      </p>
     </div>
 
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
       <span>
         Total income {formatCurrency(totals.totalIncome)} is split into fixed expenses,
-        daily spending from salary, daily spending from savings, and the remainder.
-        After fixed is paid and split evenly, each person holds
+        daily spending from salary, and the remainder. After fixed is paid and split
+        evenly, each person holds
         <strong>{formatCurrency(totals.equalSplitAmount)}</strong>.
       </span>
     </div>
@@ -337,11 +380,11 @@
 <style>
   .page { display: flex; flex-direction: column; gap: 1.5rem; }
 
-  .page-header { display: flex; align-items: center; gap: 1rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); flex-wrap: wrap; }
+  .page-header { display: flex; flex-direction: column; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
   .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: all 0.2s; }
   .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); }
-  .header-meta { flex: 1; min-width: 180px; }
-  .page-title { font-size: 1.55rem; letter-spacing: -0.02em; }
+  .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
   .header-side { display: flex; align-items: center; gap: 0.75rem; }
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); }
@@ -388,6 +431,26 @@
   .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
   .legend-label { font-size: 0.82rem; color: var(--text-secondary); }
   .legend-value { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+  .legend-split { display: flex; align-items: center; gap: 0.4rem; padding-left: 1.25rem; font-size: 0.78rem; color: var(--text-tertiary); }
+  .legend-split-label { color: var(--text-tertiary); }
+  .legend-split-value { font-weight: 700; }
+  .legend-split-value.rose { color: var(--accent-rose); }
+  .legend-split-value.gold { color: var(--accent-gold); }
+  .legend-split-sep { color: var(--text-tertiary); }
+
+  .chart-savings { margin-top: 1.1rem; padding: 0.9rem 1rem; background: var(--accent-blue-light); border-radius: var(--radius-md); }
+  .savings-head { display: flex; align-items: center; gap: 0.6rem; }
+  .savings-icon { font-size: 1.1rem; }
+  .savings-title { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); flex: 1; }
+  .savings-value { font-size: 0.95rem; font-weight: 800; color: var(--accent-blue); }
+  .savings-bar { height: 8px; background: rgba(107, 127, 163, 0.15); border-radius: 99px; overflow: hidden; margin-top: 0.6rem; }
+  .savings-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-blue), #5a7090); border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+  .savings-note { font-size: 0.74rem; color: var(--text-tertiary); margin-top: 0.5rem; }
+  .savings-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
+  .split-person { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; background: #fff; border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
+  .split-person-label { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .split-person-value { font-size: 0.9rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .split-person-value.blue { color: var(--accent-blue); }
 
   .chart-note { display: flex; gap: 0.6rem; margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
@@ -405,5 +468,11 @@
     .income-fields { grid-template-columns: 1fr; }
     .chart-body { flex-direction: column; gap: 1.25rem; }
     .chart-legend { width: 100%; }
+
+    .back-text { display: none; }
+    .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
+    .save-state { display: none; }
+    .page-title { font-size: 1.3rem; }
+    .edit-btn { padding: 0.45rem 0.85rem; font-size: 0.75rem; }
   }
 </style>

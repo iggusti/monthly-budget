@@ -269,9 +269,10 @@
   {/if}
 
   <div in:fade={{ duration: 500, delay: 400 }} class="info-strip">
-    <div class="info-item"><span class="info-dot blue"></span><span>Husband — income, fixed & daily needs</span></div>
-    <div class="info-item"><span class="info-dot rose"></span><span>Wife — income & fixed expenses</span></div>
-    <div class="info-item"><span class="info-dot teal"></span><span>Savings — daily spending funded from savings</span></div>
+    <div class="info-item"><span class="info-dot blue"></span><span><b>Income & fixed</b> — husband and wife</span></div>
+    <div class="info-item"><span class="info-dot rose"></span><span><b>Daily from salary</b> — husband and wife</span></div>
+    <div class="info-item"><span class="info-dot teal"></span><span><b>Daily from savings</b> — husband and wife</span></div>
+    <div class="info-item"><span class="info-dot gold"></span><span><b>Per person</b> — after fixed, split evenly</span></div>
   </div>
 </div>
 
@@ -370,12 +371,14 @@
   .empty-state h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
   .empty-state p { font-size: 0.85rem; color: var(--text-tertiary); }
 
-  .info-strip { display: flex; flex-wrap: wrap; gap: 1.5rem; padding: 1.25rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
-  .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.825rem; color: var(--text-secondary); }
-  .info-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .info-strip { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; padding: 1.25rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+  .info-item b { color: var(--text-primary); font-weight: 700; }
+  .info-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .info-dot.blue { background: var(--accent-blue); }
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }
+  .info-dot.gold { background: var(--accent-gold); }
 
   @media (max-width: 1000px) {
     .overview { grid-template-columns: repeat(2, 1fr); }
