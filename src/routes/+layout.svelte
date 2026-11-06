@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../app.css";
+  import { page } from "$app/state";
   import { logout, isAuthenticated } from "#lib/auth";
 
   let { children } = $props();
@@ -9,38 +10,45 @@
     authed = isAuthenticated();
   });
 
+  // The login screen is a standalone, full-screen page: no topbar/footer.
+  const isLogin = $derived(page.url.pathname === "/login");
+
   async function handleLogout() {
     await logout();
     location.href = "/login";
   }
 </script>
 
-<div class="page-wrapper">
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a href="/" class="logo">
-        <span class="logo-mark">❖</span>
-        <span class="logo-text">Budget Harmony</span>
-      </a>
-      <nav class="topbar-nav">
-        {#if authed}
-          <a href="/" class="nav-link">Dashboard</a>
-          <span class="nav-sep">·</span>
-          <span class="nav-user">Family Plan</span>
-          <button class="nav-logout" onclick={handleLogout} title="Sign out">Sign out</button>
-        {/if}
-      </nav>
-    </div>
-  </header>
+{#if isLogin}
+  {@render children()}
+{:else}
+  <div class="page-wrapper">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a href="/" class="logo">
+          <span class="logo-mark">❖</span>
+          <span class="logo-text">Budget Harmony</span>
+        </a>
+        <nav class="topbar-nav">
+          {#if authed}
+            <a href="/" class="nav-link">Dashboard</a>
+            <span class="nav-sep">·</span>
+            <span class="nav-user">Family Plan</span>
+            <button class="nav-logout" onclick={handleLogout} title="Sign out">Sign out</button>
+          {/if}
+        </nav>
+      </div>
+    </header>
 
-  <main class="main-content">
-    {@render children()}
-  </main>
+    <main class="main-content">
+      {@render children()}
+    </main>
 
-  <footer class="footer">
-    <p>Family Budget Harmony · Stay balanced, save together</p>
-  </footer>
-</div>
+    <footer class="footer">
+      <p>Family Budget Harmony · Stay balanced, save together</p>
+    </footer>
+  </div>
+{/if}
 
 <style>
   .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; }

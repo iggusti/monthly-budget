@@ -111,17 +111,26 @@
 
 <style>
   .login-page {
-    position: relative; min-height: 100vh;
+    position: relative; min-height: 100vh; min-height: 100dvh;
     display: flex; align-items: center; justify-content: center;
     padding: 2rem 1.25rem;
     background: linear-gradient(160deg, #faf9f7 0%, #f5ece4 45%, #edf4f4 100%);
     overflow: hidden;
+    max-width: 100%;
   }
 
   .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5; }
   .blob1 { width: 320px; height: 320px; background: #c8956c; top: -80px; left: -80px; }
   .blob2 { width: 280px; height: 280px; background: #c47070; bottom: -70px; right: -60px; }
   .blob3 { width: 220px; height: 220px; background: #5b8a8a; bottom: 20%; left: -60px; opacity: 0.35; }
+
+  /* Keep the decorative blobs from creating horizontal overflow on small screens. */
+  @media (max-width: 640px) {
+    .blob { opacity: 0.4; }
+    .blob1 { width: 220px; height: 220px; top: -70px; left: -70px; }
+    .blob2 { width: 200px; height: 200px; bottom: -60px; right: -50px; }
+    .blob3 { width: 160px; height: 160px; left: -50px; }
+  }
 
   .card {
     position: relative; width: 100%; max-width: 400px;
@@ -208,5 +217,11 @@
     .login-page { padding: 1.25rem 1rem; }
     .card { padding: 2rem 1.4rem 1.6rem; border-radius: 20px; }
     .title { font-size: 1.3rem; }
+  }
+
+  @media (max-width: 340px) {
+    .card { padding: 1.6rem 1.1rem 1.4rem; }
+    .title { font-size: 1.15rem; }
+    .subtitle { font-size: 0.82rem; }
   }
 </style>
