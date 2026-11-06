@@ -350,11 +350,35 @@
   .more-btn:hover { background: var(--surface); color: var(--accent-gold); }
   .more-arrow { font-size: 0.8rem; line-height: 1; }
 
-  .section-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1.25rem; font-size: 0.8rem; font-weight: 600; border-top: 1px solid var(--surface-border); background: rgba(0, 0, 0, 0.015); }
+  /* Totals stand out from the list items: a tinted, accented callout row. */
+  .section-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.7rem 1.25rem; font-size: 0.8rem; font-weight: 600;
+    border-top: 1px solid var(--surface-border);
+    border-left: 4px solid var(--footer-accent, var(--surface-border));
+    background: var(--footer-bg, rgba(0, 0, 0, 0.015));
+  }
   .section-footer .negative { color: var(--danger); }
   .footer-check-stats { display: flex; align-items: baseline; gap: 0.6rem; }
   .footer-remaining { font-size: 0.9rem; font-weight: 700; }
   .footer-sub { font-size: 0.72rem; font-weight: 500; color: var(--text-tertiary); }
+
+  .section-footer > span:first-child {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--footer-accent, var(--text-secondary));
+  }
+  .footer-check-stats .footer-remaining,
+  .section-footer > span:last-child {
+    color: var(--footer-accent, var(--text-primary));
+  }
+  .footer-check-stats .footer-sub { color: var(--text-tertiary); }
+  .section-footer .negative,
+  .footer-check-stats .footer-remaining.negative { color: var(--danger); }
+
+  .gold .section-footer { --footer-accent: var(--accent-gold); --footer-bg: rgba(200, 149, 108, 0.08); }
+  .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: rgba(196, 112, 112, 0.08); }
+  .blue .section-footer { --footer-accent: var(--accent-blue); --footer-bg: rgba(107, 127, 163, 0.08); }
+  .teal .section-footer { --footer-accent: var(--accent-teal); --footer-bg: rgba(91, 138, 138, 0.08); }
 
   .modal-overlay {
     position: fixed; inset: 0; z-index: 1000;

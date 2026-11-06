@@ -469,6 +469,9 @@
     .chart-body { flex-direction: column; gap: 1.25rem; }
     .chart-legend { width: 100%; }
 
+    /* Stack the spouse split vertically on small screens. */
+    .savings-split { grid-template-columns: 1fr; }
+
     .back-text { display: none; }
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }
