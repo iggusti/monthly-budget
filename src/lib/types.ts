@@ -113,7 +113,9 @@ export function createEmptyBudget(id: string): MonthBudget {
 
   return {
     id,
-    title: `${start.toLocaleString("en-US", { month: "long" })} ${year}`,
+    // Title reflects the END month of the period (e.g. 2026-10 = "November 2026"
+    // because the period runs 25 Oct – 24 Nov).
+    title: `${end.toLocaleString("en-US", { month: "long" })} ${end.getFullYear()}`,
     period: `${formatDay(start)} - ${formatDay(end)}`,
     husbandIncome: 0,
     wifeIncome: 0,

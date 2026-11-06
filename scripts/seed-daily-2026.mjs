@@ -376,7 +376,8 @@ function monthTitle(monthId) {
   const end = new Date(year, month, 24);
   const fmt = (d) => `${d.getDate()} ${d.toLocaleString("en-US", { month: "long" })}`;
   return {
-    title: `${start.toLocaleString("en-US", { month: "long" })} ${year}`,
+    // Title reflects the END month of the period.
+    title: `${end.toLocaleString("en-US", { month: "long" })} ${end.getFullYear()}`,
     period: `${fmt(start)} - ${fmt(end)} ${end.getFullYear()}`
   };
 }
