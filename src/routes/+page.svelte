@@ -74,8 +74,10 @@
   const currentSavings = $derived(currentSavingsHusband + currentSavingsWife);
 
   function monthLabel(id: string): string {
+    // Reflect the END month of the period (e.g. 2026-10 -> "November 2026").
     const [year, month] = id.split("-").map(Number);
-    return `${new Date(year, (month || 1) - 1, 1).toLocaleString("en-US", { month: "long" })} ${year}`;
+    const end = new Date(year, month || 1, 24);
+    return `${end.toLocaleString("en-US", { month: "long" })} ${end.getFullYear()}`;
   }
 
   function monthBudget(id: string): MonthBudget | undefined {
