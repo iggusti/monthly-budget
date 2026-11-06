@@ -1,3 +1,143 @@
+<script module>
+  /**
+   * Shared drag & drop state across all ExpenseSection instances.
+   * Items may only be dropped into another section in the SAME drag group
+   * (e.g. fixed ↔ fixed, husband salary ↔ husband savings, ...).
+   */
+  const sectionRegistry = new Map();
+
+  const dragState = {
+    active: false,
+    picked: false,
+    item: null,
+    fromKey: null,
+    group: null,
+    startX: 0,
+    startY: 0,
+    ghostEl: null,
+    sourceRowEl: null
+  };
+
+  let docListenersAttached = false;
+
+  function attachGlobalListeners() {
+    if (docListenersAttached) return;
+    docListenersAttached = true;
+    document.addEventListener("pointermove", onPointerMove, { passive: false });
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", cleanupDrag);
+  }
+
+  function onPointerMove(e) {
+    if (!dragState.active) return;
+    const x = e.clientX;
+    const y = e.clientY;
+    if (!dragState.picked) {
+      const dx = x - dragState.startX;
+      const dy = y - dragState.startY;
+      if (Math.hypot(dx, dy) < 10) return; // threshold before "picking" up
+      dragState.picked = true;
+      createGhost();
+    }
+    if (dragState.ghostEl) {
+      dragState.ghostEl.style.left = `${x}px`;
+      dragState.ghostEl.style.top = `${y}px`;
+    }
+    updateHighlights(x, y);
+  }
+
+  function onPointerUp(e) {
+    if (!dragState.active) return;
+    if (dragState.picked) tryDrop(e.clientX, e.clientY);
+    cleanupDrag();
+  }
+
+  function createGhost() {
+    if (!dragState.sourceRowEl) return;
+    const ghost = dragState.sourceRowEl.cloneNode(true);
+    ghost.classList.add("drag-ghost");
+    ghost.style.position = "fixed";
+    ghost.style.left = `${dragState.startX}px`;
+    ghost.style.top = `${dragState.startY}px`;
+    ghost.style.pointerEvents = "none";
+    ghost.style.zIndex = "9999";
+    ghost.style.width = `${dragState.sourceRowEl.offsetWidth}px`;
+    document.body.appendChild(ghost);
+    dragState.ghostEl = ghost;
+    document.body.classList.add("drag-in-progress");
+  }
+
+  function updateHighlights(x, y) {
+    clearHighlights();
+    const root = sectionAtPoint(x, y);
+    if (!root) return;
+    const key = root.dataset.sectionKey;
+    const target = sectionRegistry.get(key);
+    if (target && target.group === dragState.group && target.key !== dragState.fromKey) {
+      root.classList.add("is-drop-target");
+    }
+  }
+
+  function clearHighlights() {
+    sectionRegistry.forEach((entry) => entry.rootEl?.classList.remove("is-drop-target"));
+  }
+
+  function sectionAtPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    return el ? el.closest("[data-section-key]") : null;
+  }
+
+  function tryDrop(x, y) {
+    const root = sectionAtPoint(x, y);
+    if (!root) return;
+    const key = root.dataset.sectionKey;
+    const target = sectionRegistry.get(key);
+    if (
+      target &&
+      target.group === dragState.group &&
+      target.key !== dragState.fromKey &&
+      target.onExternalDrop
+    ) {
+      target.onExternalDrop({ ...dragState.item }, dragState.fromKey);
+    }
+  }
+
+  function cleanupDrag() {
+    dragState.active = false;
+    dragState.picked = false;
+    dragState.ghostEl?.remove();
+    dragState.ghostEl = null;
+    dragState.sourceRowEl = null;
+    clearHighlights();
+    document.body.classList.remove("drag-in-progress");
+  }
+
+  function beginSectionDrag(e, item, key, group, rowEl) {
+    if (!key || !group) return;
+    // Don't start a drag when interacting with controls in the row.
+    if (e.target.closest("button, input, select, a, label.check")) return;
+    dragState.active = true;
+    dragState.picked = false;
+    dragState.item = item;
+    dragState.fromKey = key;
+    dragState.group = group;
+    dragState.startX = e.clientX;
+    dragState.startY = e.clientY;
+    dragState.sourceRowEl = rowEl;
+    attachGlobalListeners();
+    e.preventDefault();
+  }
+
+  function registerSection(key, group, rootEl, onExternalDrop) {
+    if (!key) return;
+    sectionRegistry.set(key, { key, group, rootEl, onExternalDrop });
+  }
+
+  function unregisterSection(key) {
+    if (key) sectionRegistry.delete(key);
+  }
+</script>
+
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { formatCurrency, makeId, type ExpenseItem } from "#lib/types";
@@ -34,6 +174,12 @@
     footerValue?: number;
     /** Called with the updated list whenever the user changes anything. */
     onChange: (items: ExpenseItem[]) => void;
+    /** Unique key identifying this section's budget array (used for drag & drop). */
+    sectionKey?: string;
+    /** Drag group name — items can only be dropped into sections with the same group. */
+    dragGroup?: string;
+    /** Called when an item from another (same-group) section is dropped here. */
+    onExternalDrop?: (item: ExpenseItem, fromKey: string) => void;
   }
 
   let {
@@ -51,13 +197,33 @@
     items,
     footerLabel,
     footerValue,
-    onChange
+    onChange,
+    sectionKey,
+    dragGroup,
+    onExternalDrop
   }: Props = $props();
 
   let adding = $state(false);
   let editingId = $state<string | null>(null);
   let showAll = $state(false);
   let confirmDeleteId = $state<string | null>(null);
+  let rootEl = $state<HTMLElement | null>(null);
+
+  $effect(() => {
+    if (sectionKey) {
+      registerSection(sectionKey, dragGroup, rootEl, onExternalDrop);
+      return () => unregisterSection(sectionKey);
+    }
+  });
+
+  function onRowPointerDown(e: PointerEvent, item: ExpenseItem) {
+    // Only start a drag from the drag handle, so scrolling/tapping elsewhere on
+    // the row still behaves normally (important on touch devices).
+    if (!(e.target as HTMLElement).closest(".drag-handle")) return;
+    if (!rootEl) return;
+    const rowEl = e.currentTarget as HTMLElement;
+    beginSectionDrag(e, item, sectionKey, dragGroup, rowEl);
+  }
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "" });
 
@@ -140,7 +306,7 @@
   }
 </script>
 
-<div class="section {tone}">
+<div class="section {tone}" bind:this={rootEl} data-section-key={sectionKey || ""}>
   <div class="section-head">
     <span class="badge">
       {#if icon}
@@ -193,8 +359,17 @@
   {#if items.length}
     <ul class="items">
       {#each visibleItems as item (item.id)}
-        <li class="item" class:editing={editingId === item.id} class:checked={item.checked}>
+        <li
+          class="item"
+          class:editing={editingId === item.id}
+          class:checked={item.checked}
+          class:draggable={!!sectionKey && !!dragGroup}
+          onpointerdown={(e) => onRowPointerDown(e, item)}
+        >
           <span class="item-left">
+            {#if sectionKey && dragGroup}
+              <span class="drag-handle" aria-hidden="true" title="Drag to move">⠿</span>
+            {/if}
             {#if checkboxable}
               <label class="check" title={item.checked ? "Mark unpaid" : "Mark paid"}>
                 <input type="checkbox" checked={item.checked} onchange={() => toggleCheck(item.id)} />
@@ -322,12 +497,22 @@
 
   .items { list-style: none; }
   .item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background 0.15s; }
+  .item.draggable { cursor: grab; }
+  .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
   .item:hover { background: var(--bg); }
   .item.editing { background: rgba(200, 149, 108, 0.08); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
   .item-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+  .drag-handle {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 6px;
+    color: var(--text-tertiary); font-size: 15px; line-height: 1;
+    cursor: grab; touch-action: none; user-select: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .drag-handle:hover { background: var(--bg-muted); color: var(--text-primary); }
   .check { display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; }
   .check input { position: absolute; opacity: 0; width: 0; height: 0; }
   .checkmark {
@@ -413,5 +598,21 @@
   @media (max-width: 640px) {
     .editor-fields { grid-template-columns: 1fr; }
     .editor-fields .field:last-child:nth-child(3) { grid-column: auto; }
+  }
+
+  /* Global drag & drop visuals (target both mouse and touch). */
+  :global(body.drag-in-progress) { cursor: grabbing; }
+  :global(body.drag-in-progress *) { cursor: grabbing; }
+
+  :global(.drag-ghost) {
+    opacity: 0.7; box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  :global(.section.is-drop-target) {
+    outline: 2px dashed var(--accent-blue);
+    outline-offset: -2px;
+    border-radius: var(--radius-lg);
   }
 </style>

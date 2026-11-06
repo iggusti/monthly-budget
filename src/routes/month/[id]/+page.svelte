@@ -15,7 +15,7 @@
 
   const monthId = $derived(page.params.id ?? "");
 
-  let budget = $state<MonthBudget>(createEmptyBudget(monthId || "2026-01"));
+  let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
   let loading = $state(true);
   let saving = $state(false);
   let savedAt = $state<string>("");
@@ -67,6 +67,12 @@
     }
     if (!monthId) return;
 
+    // If navigating directly to a month other than the default, start from a
+    // correctly-titled empty budget until the live data arrives.
+    if (budget.id !== monthId) {
+      budget = createEmptyBudget(monthId);
+    }
+
     // Live-sync: when the other spouse (or this device) edits this budget in
     // Firestore, update locally immediately — no reload needed.
     const unsubscribe = subscribeBudget(monthId, (next) => {
@@ -98,6 +104,40 @@
 
   function update<K extends keyof MonthBudget>(key: K, value: MonthBudget[K]) {
     persist({ ...budget, [key]: value });
+  }
+
+  // ── Drag & drop between paired sections ─────────────────────────────────
+  // Map a section key -> the budget field it edits.
+  const SECTION_FIELDS: Record<string, keyof MonthBudget> = {
+    hf: "husbandFixed",
+    wf: "wifeFixed",
+    hs: "husbandDailyFromSalary",
+    hsv: "husbandDailyFromSavings",
+    ws: "wifeDailyFromSalary",
+    wsv: "wifeDailyFromSavings"
+  };
+
+  /**
+   * Move an item dropped into `toField` from its original section.
+   * Only valid when the item truly exists in the source section.
+   */
+  function moveItem(item: ExpenseItem, fromKey: string, toField: keyof MonthBudget) {
+    const fromField = SECTION_FIELDS[fromKey];
+    if (!fromField || fromField === toField) return;
+
+    const src = (budget[fromField] as ExpenseItem[]) ?? [];
+    const dst = (budget[toField] as ExpenseItem[]) ?? [];
+    if (!src.some((i) => i.id === item.id)) return;
+
+    const nextSrc = src.filter((i) => i.id !== item.id);
+    const nextDst = [...dst, item];
+
+    const next = {
+      ...budget,
+      [fromField]: nextSrc,
+      [toField]: nextDst
+    } as MonthBudget;
+    persist(next);
   }
 
   function openHeaderEditor() {
@@ -314,6 +354,9 @@
       items={budget.husbandFixed}
       onChange={(items: ExpenseItem[]) => update("husbandFixed", items)}
       footerLabel="Husband fixed — left"
+      sectionKey="hf"
+      dragGroup="fixed"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandFixed")}
     />
     <ExpenseSection
       title="4. Wife Fixed Expenses"
@@ -325,6 +368,9 @@
       items={budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}
       footerLabel="Wife fixed — left"
+      sectionKey="wf"
+      dragGroup="fixed"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeFixed")}
     />
 
     <ExpenseSection
@@ -342,6 +388,9 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.husbandDailyFromSalaryTotal}
+      sectionKey="hs"
+      dragGroup="husband"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandDailyFromSalary")}
     />
 
     <ExpenseSection
@@ -359,6 +408,9 @@
         )}
       footerLabel="Subtotal from savings"
       footerValue={totals.husbandDailyFromSavingsTotal}
+      sectionKey="hsv"
+      dragGroup="husband"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandDailyFromSavings")}
     />
 
     <ExpenseSection
@@ -376,6 +428,9 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.wifeDailyFromSalaryTotal}
+      sectionKey="ws"
+      dragGroup="wife"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSalary")}
     />
 
     <ExpenseSection
@@ -393,6 +448,9 @@
         )}
       footerLabel="Subtotal from savings"
       footerValue={totals.wifeDailyFromSavingsTotal}
+      sectionKey="wsv"
+      dragGroup="wife"
+      onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSavings")}
     />
   </div>
 </div>
@@ -456,7 +514,6 @@
   .legend-split-value { font-weight: 700; }
   .legend-split-value.blue { color: var(--accent-blue); }
   .legend-split-value.rose { color: var(--accent-rose); }
-  .legend-split-value.gold { color: var(--accent-gold); }
   .legend-split-sep { color: var(--text-tertiary); }
 
   .chart-savings { margin-top: 1.1rem; padding: 0.9rem 1rem; background: var(--accent-blue-light); border-radius: var(--radius-md); }
