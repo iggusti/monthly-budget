@@ -22,7 +22,12 @@
   let saving = $state(false);
   let savedAt = $state<string>("");
   let showHeaderEditor = $state(false);
-  let carrySuggestion = $state<{ husband: FixedExpense[]; wife: FixedExpense[] } | null>(null);
+  let carrySuggestion = $state<{
+    husband: FixedExpense[];
+    wife: FixedExpense[];
+    husbandIncome: number;
+    wifeIncome: number;
+  } | null>(null);
 
   let headerDraft = $state({ title: "", period: "" });
 
@@ -103,18 +108,32 @@
     return `${year}-${String(month - 1).padStart(2, "0")}`;
   }
 
-  /** If this month has no fixed items, offer to copy all fixed from the previous month (reset to unchecked). */
+  /** If this month is empty (no fixed/income), offer to copy all fixed + income from the previous month. */
   async function checkCarrySuggestion(next: MonthBudget) {
     if (carrySuggestion) return;
-    const hasFixed = (next.husbandFixed?.length ?? 0) > 0 || (next.wifeFixed?.length ?? 0) > 0;
-    if (hasFixed) return;
+    const hasData =
+      (next.husbandFixed?.length ?? 0) > 0 ||
+      (next.wifeFixed?.length ?? 0) > 0 ||
+      (next.husbandIncome ?? 0) > 0 ||
+      (next.wifeIncome ?? 0) > 0;
+    if (hasData) return;
 
     try {
       const prev = await fetchBudget(previousMonthId(monthId));
       const allHusband = prev.husbandFixed ?? [];
       const allWife = prev.wifeFixed ?? [];
-      if (allHusband.length > 0 || allWife.length > 0) {
-        carrySuggestion = { husband: allHusband, wife: allWife };
+      const hasPrevData =
+        allHusband.length > 0 ||
+        allWife.length > 0 ||
+        (prev.husbandIncome ?? 0) > 0 ||
+        (prev.wifeIncome ?? 0) > 0;
+      if (hasPrevData) {
+        carrySuggestion = {
+          husband: allHusband,
+          wife: allWife,
+          husbandIncome: prev.husbandIncome ?? 0,
+          wifeIncome: prev.wifeIncome ?? 0
+        };
       }
     } catch (error) {
       console.error("Failed to check carry-over suggestion:", error);
@@ -123,12 +142,13 @@
 
   function applyCarrySuggestion() {
     if (!carrySuggestion) return;
-    const husband = carrySuggestion.husband.map((i) => ({ ...i, id: makeId(), checked: false }));
-    const wife = carrySuggestion.wife.map((i) => ({ ...i, id: makeId(), checked: false }));
+    const { husband, wife, husbandIncome, wifeIncome } = carrySuggestion;
     persist({
       ...budget,
-      husbandFixed: husband,
-      wifeFixed: wife
+      husbandIncome: husbandIncome || budget.husbandIncome,
+      wifeIncome: wifeIncome || budget.wifeIncome,
+      husbandFixed: husband.map((i) => ({ ...i, id: makeId(), checked: false })),
+      wifeFixed: wife.map((i) => ({ ...i, id: makeId(), checked: false }))
     });
     carrySuggestion = null;
   }
@@ -372,7 +392,7 @@
       <div class="carry-banner-text">
         <span class="carry-banner-icon">🔄</span>
         <span>
-          <b>Copy fixed expenses</b> from {previousMonthId(monthId)} into this month?
+          <b>Copy fixed expenses & income</b> from {previousMonthId(monthId)} into this month?
         </span>
       </div>
       <div class="carry-banner-actions">

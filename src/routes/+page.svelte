@@ -136,7 +136,7 @@
     const budget = createEmptyBudget(id);
 
     // Copy ALL fixed expenses from the previous month (checked and unchecked),
-    // but reset them to unchecked for the new period.
+    // but reset them to unchecked for the new period. Also carry over income.
     const prev = await fetchBudget(previousMonthId(id));
     const carryHusband = prev.husbandFixed ?? [];
     const carryWife = prev.wifeFixed ?? [];
@@ -145,6 +145,13 @@
       budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
       budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
     }
+    if ((prev.husbandIncome ?? 0) > 0) budget.husbandIncome = prev.husbandIncome;
+    if ((prev.wifeIncome ?? 0) > 0) budget.wifeIncome = prev.wifeIncome;
+
+    // Always start a new month with the routine monthly sadaqah (auto donate).
+    budget.husbandDailyFromSalary = [
+      { id: makeId(), name: "Sedekah Jariyah", amount: 30000, method: "Auto Donate" }
+    ];
 
     await saveBudget(budget);
     budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
