@@ -167,7 +167,12 @@
         <span class="save-state" class:saving>
           {#if loading}Loading…{:else if saving}Saving…{:else if savedAt}Saved {savedAt}{:else}Editable{/if}
         </span>
-        <button class="edit-btn" onclick={openHeaderEditor}>✎ Edit header</button>
+        <button class="edit-btn" onclick={openHeaderEditor}>
+          <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+          Edit header
+        </button>
       </div>
     </div>
     <div class="header-meta">
@@ -484,6 +489,7 @@
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); }
   .save-state.saving { color: var(--accent-gold); }
   .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(200, 149, 108, 0.2); }
+  .edit-btn-svg { width: 14px; height: 14px; }
   .edit-btn:hover { background: rgba(200, 149, 108, 0.2); }
 
   .income-panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }

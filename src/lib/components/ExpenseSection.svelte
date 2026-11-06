@@ -391,7 +391,11 @@
           </span>
           <span class="item-right">
             <span class="item-amount">{formatCurrency(item.amount)}</span>
-            <button class="icon-btn" title="Edit" onclick={() => startEdit(item)}>✎</button>
+            <button class="icon-btn" title="Edit" aria-label="Edit item" onclick={() => startEdit(item)}>
+              <svg viewBox="0 0 24 24" class="icon-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+            </button>
             <button class="icon-btn danger" title="Delete" onclick={() => askRemove(item.id)}>✕</button>
           </span>
         </li>
@@ -551,6 +555,7 @@
   .item-right { display: flex; align-items: center; gap: 0.5rem; }
   .item-amount { font-size: 0.86rem; font-weight: 600; color: var(--text-secondary); }
   .icon-btn { width: 26px; height: 26px; border-radius: var(--radius-sm); background: transparent; color: var(--text-tertiary); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
+  .icon-btn-svg { width: 14px; height: 14px; }
   .icon-btn:hover { background: var(--bg-muted); color: var(--text-primary); }
   .icon-btn.danger:hover { background: var(--danger-light); color: var(--danger); }
 
