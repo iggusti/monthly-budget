@@ -441,7 +441,7 @@
       {#if checkboxable}
         <span class="footer-check-stats">
           <span class="footer-remaining" class:negative={remaining < 0}>{formatCurrency(remaining)}</span>
-          <span class="footer-sub">left · {formatCurrency(checkedTotal)} paid</span>
+          <span class="footer-sub">remaining · {formatCurrency(checkedTotal)} paid</span>
         </span>
       {:else}
         <span class:negative={(footerValue ?? total) < 0}>{formatCurrency(footerValue ?? total)}</span>

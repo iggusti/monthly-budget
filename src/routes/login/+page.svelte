@@ -88,8 +88,8 @@
           class="toggle-pass"
           onmousedown={(e) => e.preventDefault()}
           onclick={() => (showPassword = !showPassword)}
-          title={showPassword ? "Sembunyikan kata kunci" : "Lihat kata kunci"}
-          aria-label={showPassword ? "Sembunyikan kata kunci" : "Lihat kata kunci"}
+          title={showPassword ? "Hide keyword" : "Show keyword"}
+          aria-label={showPassword ? "Hide keyword" : "Show keyword"}
         >
           {showPassword ? "🙈" : "👁️"}
         </button>

@@ -353,7 +353,7 @@
       collapsible
       items={budget.husbandFixed}
       onChange={(items: ExpenseItem[]) => update("husbandFixed", items)}
-      footerLabel="Husband fixed — left"
+      footerLabel="Husband fixed — remaining"
       sectionKey="hf"
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandFixed")}
@@ -367,7 +367,7 @@
       collapsible
       items={budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}
-      footerLabel="Wife fixed — left"
+      footerLabel="Wife fixed — remaining"
       sectionKey="wf"
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeFixed")}
@@ -389,11 +389,11 @@
       footerLabel="Subtotal from salary"
       footerValue={totals.husbandDailyFromSalaryTotal}
       footerPlan={{
-        label: "Rencana maksimal",
+        label: "Max planned budget",
         value: totals.equalSplitAmount
       }}
       footerNote={{
-        label: "Sisa uang",
+        label: "Remaining money",
         value: totals.equalSplitAmount - totals.husbandDailyFromSalaryTotal
       }}
       sectionKey="hs"
@@ -437,11 +437,11 @@
       footerLabel="Subtotal from salary"
       footerValue={totals.wifeDailyFromSalaryTotal}
       footerPlan={{
-        label: "Rencana maksimal",
+        label: "Max planned budget",
         value: totals.equalSplitAmount
       }}
       footerNote={{
-        label: "Sisa uang",
+        label: "Remaining money",
         value: totals.equalSplitAmount - totals.wifeDailyFromSalaryTotal
       }}
       sectionKey="ws"
