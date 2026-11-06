@@ -84,6 +84,38 @@ npm run build
 npm run preview
 ```
 
+The static output is written to `build/`.
+
+## Deploying
+
+The app is a fully static SvelteKit build (`@sveltejs/adapter-static`) hosted on
+**Firebase Hosting** and deployed automatically from GitHub via GitHub Actions.
+
+### One-time setup
+
+1. **Service account** — Firebase Console → Project settings → *Service accounts*
+   → *Generate new private key*. Download the JSON file.
+2. **GitHub secret** — repo → Settings → Secrets and variables → Actions →
+   *New repository secret* named
+   `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2`, value = the whole JSON file.
+3. **Anonymous Auth** — Firebase Console → Authentication → Sign-in method →
+   Anonymous → Enable.
+
+### Automatic deploys
+
+Push to `main` (or run the workflow manually from the Actions tab). The workflow
+at `.github/workflows/deploy.yml` builds the app and deploys `build/` to the live
+channel.
+
+Live URL: <https://monthly-budget-580b2.web.app>
+
+### Manual deploy (optional)
+
+```sh
+npm run build
+firebase deploy --only hosting
+```
+
 ## Deploying Firestore rules
 
 ```sh
