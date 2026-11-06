@@ -3,7 +3,7 @@
   import { page } from "$app/state";
   import { fade, fly, slide } from "svelte/transition";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
-  import { fetchBudget, saveBudget } from "#lib/budget-store";
+  import { subscribeBudget, saveBudget } from "#lib/budget-store";
   import {
     computeTotals,
     createEmptyBudget,
@@ -15,7 +15,7 @@
 
   const monthId = $derived(page.params.id ?? "");
 
-  let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
+  let budget = $state<MonthBudget>(createEmptyBudget(monthId || "2026-01"));
   let loading = $state(true);
   let saving = $state(false);
   let savedAt = $state<string>("");
@@ -60,15 +60,27 @@
     });
   });
 
-  onMount(async () => {
+  onMount(() => {
     if (!isAuthenticated()) {
       location.href = "/login";
       return;
     }
     if (!monthId) return;
-    budget = await fetchBudget(monthId);
-    headerDraft = { title: budget.title, period: budget.period };
-    loading = false;
+
+    // Live-sync: when the other spouse (or this device) edits this budget in
+    // Firestore, update locally immediately — no reload needed.
+    const unsubscribe = subscribeBudget(monthId, (next) => {
+      budget = next;
+      // Don't clobber an in-progress header edit.
+      if (!showHeaderEditor) {
+        headerDraft = { title: next.title, period: next.period };
+      }
+      loading = false;
+    });
+
+    return () => {
+      unsubscribe();
+    };
   });
 
   async function persist(next: MonthBudget) {

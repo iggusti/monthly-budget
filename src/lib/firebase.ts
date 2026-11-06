@@ -7,7 +7,8 @@ import {
   getDoc,
   getDocs,
   deleteDoc,
-  collection
+  collection,
+  onSnapshot
 } from "firebase/firestore";
 
 // Firebase configuration
@@ -38,5 +39,6 @@ export {
   getDoc,
   getDocs,
   deleteDoc,
-  collection
+  collection,
+  onSnapshot
 };

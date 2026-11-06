@@ -6,7 +6,8 @@ import {
   getDoc,
   getDocs,
   setDoc,
-  deleteDoc
+  deleteDoc,
+  onSnapshot
 } from "./firebase";
 import { normalizeBudget, type MonthBudget } from "./types";
 
@@ -34,6 +35,48 @@ export async function fetchAllBudgets(): Promise<MonthBudget[]> {
     console.error("Failed to load budgets:", error);
     return [];
   }
+}
+
+/**
+ * Live-subscribe to a single budget document. On any change (from any user)
+ * the callback receives the fresh, normalised budget. Returns an unsubscribe
+ * function.
+ */
+export function subscribeBudget(
+  id: string,
+  onChange: (budget: MonthBudget) => void
+): () => void {
+  return onSnapshot(
+    doc(db, BUDGET_COLLECTION, id),
+    (snapshot) => {
+      if (snapshot.exists()) {
+        onChange(normalizeBudget(id, snapshot.data() as Partial<MonthBudget>));
+      } else {
+        onChange(normalizeBudget(id, undefined));
+      }
+    },
+    (error) => {
+      console.error(`Failed to subscribe to budget ${id}:`, error);
+    }
+  );
+}
+
+/** Live-subscribe to all budget documents, newest first. Returns an unsubscribe function. */
+export function subscribeAllBudgets(
+  onChange: (budgets: MonthBudget[]) => void
+): () => void {
+  return onSnapshot(
+    collection(db, BUDGET_COLLECTION),
+    (snapshot) => {
+      const budgets = snapshot.docs
+        .map((entry) => normalizeBudget(entry.id, entry.data() as Partial<MonthBudget>))
+        .sort((a, b) => b.id.localeCompare(a.id));
+      onChange(budgets);
+    },
+    (error) => {
+      console.error("Failed to subscribe to budgets:", error);
+    }
+  );
 }
 
 /** Persist a budget, stamping the update time. */

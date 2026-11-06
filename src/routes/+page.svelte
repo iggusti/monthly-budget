@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { fade, fly, scale } from "svelte/transition";
   import {
-    fetchAllBudgets,
+    subscribeAllBudgets,
     saveBudget,
     deleteBudget
   } from "#lib/budget-store";
@@ -23,13 +23,22 @@
   const thisYear = new Date().getFullYear();
 
   // Redirect to login when not authenticated.
-  onMount(async () => {
+  onMount(() => {
     if (!isAuthenticated()) {
       location.href = "/login";
       return;
     }
-    budgets = await fetchAllBudgets();
-    loading = false;
+
+    // Live-sync the dashboard: new/edited/deleted months appear immediately
+    // without a reload.
+    const unsubscribe = subscribeAllBudgets((next) => {
+      budgets = next;
+      loading = false;
+    });
+
+    return () => {
+      unsubscribe();
+    };
   });
 
   // The current period is the one containing today, based on the 25th cycle.
