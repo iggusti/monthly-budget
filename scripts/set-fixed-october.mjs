@@ -3,7 +3,7 @@
  * (Kebutuhan Pokok Suami / Istri) from Sheet1.
  * Preserves existing dailyFromSalary and savingsWithdrawals.
  *
- * Run with: node scripts/set-fixed-oktober.mjs
+ * Run with: node scripts/set-fixed-october.mjs
  */
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
