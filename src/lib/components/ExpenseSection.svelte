@@ -253,8 +253,10 @@
   }
 
   const visibleItems = $derived(computeVisible());
-  const hasMore = $derived(collapsible && !showAll && visibleItems.length < items.length);
-  const hiddenCount = $derived(Math.max(items.length - visibleItems.length, 0));
+  // Show the toggle whenever there is more to reveal OR everything is visible
+  // (so the user can collapse back to "View less").
+  const hasMore = $derived(collapsible && items.length > collapseLimit);
+  const hiddenCount = $derived(showAll ? 0 : Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
     draft = { id: makeId(), name: "", amount: 0, method: "" };
