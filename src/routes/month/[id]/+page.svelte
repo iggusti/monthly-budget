@@ -388,6 +388,10 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.husbandDailyFromSalaryTotal}
+      footerNote={{
+        label: "Sisa uang",
+        value: totals.equalSplitAmount - totals.husbandDailyFromSalaryTotal
+      }}
       sectionKey="hs"
       dragGroup="husband"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandDailyFromSalary")}
@@ -428,6 +432,10 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.wifeDailyFromSalaryTotal}
+      footerNote={{
+        label: "Sisa uang",
+        value: totals.equalSplitAmount - totals.wifeDailyFromSalaryTotal
+      }}
       sectionKey="ws"
       dragGroup="wife"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSalary")}

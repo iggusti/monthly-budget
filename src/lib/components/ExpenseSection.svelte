@@ -172,6 +172,8 @@
     footerLabel?: string;
     /** Optional trailing footer value (e.g. a balance). */
     footerValue?: number;
+    /** Optional extra note row under the footer (label + value), e.g. remaining money. */
+    footerNote?: { label: string; value: number };
     /** Called with the updated list whenever the user changes anything. */
     onChange: (items: ExpenseItem[]) => void;
     /** Unique key identifying this section's budget array (used for drag & drop). */
@@ -197,6 +199,7 @@
     items,
     footerLabel,
     footerValue,
+    footerNote,
     onChange,
     sectionKey,
     dragGroup,
@@ -443,6 +446,13 @@
     </div>
   {/if}
 
+  {#if footerNote}
+    <div class="section-note">
+      <span>{footerNote.label}</span>
+      <span class="section-note-value" class:negative={footerNote.value < 0}>{formatCurrency(footerNote.value)}</span>
+    </div>
+  {/if}
+
   {#if confirmDeleteId}
     {@const target = items.find((i) => i.id === confirmDeleteId)}
     <div class="modal-overlay" role="presentation">
@@ -569,6 +579,16 @@
   .footer-check-stats .footer-sub { color: var(--text-tertiary); }
   .section-footer .negative,
   .footer-check-stats .footer-remaining.negative { color: var(--danger); }
+
+  .section-note {
+    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 1.25rem; font-size: 0.78rem; font-weight: 600;
+    border-top: 1px solid var(--surface-border);
+    background: color-mix(in srgb, var(--footer-accent, var(--accent-blue)) 7%, transparent);
+    color: var(--text-secondary);
+  }
+  .section-note .section-note-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .section-note .section-note-value.negative { color: var(--danger); }
 
   .gold .section-footer { --footer-accent: var(--accent-gold); --footer-bg: rgba(200, 149, 108, 0.08); }
   .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: rgba(196, 112, 112, 0.08); }
