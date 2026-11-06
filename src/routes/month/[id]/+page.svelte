@@ -3,13 +3,15 @@
   import { page } from "$app/state";
   import { fade, fly, slide } from "svelte/transition";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
-  import { subscribeBudget, saveBudget } from "#lib/budget-store";
+  import { subscribeBudget, fetchBudget, saveBudget } from "#lib/budget-store";
   import {
     computeTotals,
     createEmptyBudget,
     formatCurrency,
+    makeId,
     type MonthBudget,
-    type ExpenseItem
+    type ExpenseItem,
+    type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
 
@@ -20,6 +22,7 @@
   let saving = $state(false);
   let savedAt = $state<string>("");
   let showHeaderEditor = $state(false);
+  let carrySuggestion = $state<{ husband: FixedExpense[]; wife: FixedExpense[] } | null>(null);
 
   let headerDraft = $state({ title: "", period: "" });
 
@@ -81,6 +84,10 @@
       if (!showHeaderEditor) {
         headerDraft = { title: next.title, period: next.period };
       }
+      // Only suggest carry-over once, after the first load.
+      if (loading) {
+        checkCarrySuggestion(next);
+      }
       loading = false;
     });
 
@@ -88,6 +95,43 @@
       unsubscribe();
     };
   });
+
+  /** Previous calendar month id (`YYYY-MM`). */
+  function previousMonthId(id: string): string {
+    const [year, month] = id.split("-").map(Number);
+    if (month <= 1) return `${year - 1}-12`;
+    return `${year}-${String(month - 1).padStart(2, "0")}`;
+  }
+
+  /** If this month has no fixed items but the previous month has unpaid ones, offer to copy them. */
+  async function checkCarrySuggestion(next: MonthBudget) {
+    if (carrySuggestion) return;
+    const hasFixed = (next.husbandFixed?.length ?? 0) > 0 || (next.wifeFixed?.length ?? 0) > 0;
+    if (hasFixed) return;
+
+    try {
+      const prev = await fetchBudget(previousMonthId(monthId));
+      const unpaidHusband = (prev.husbandFixed ?? []).filter((i) => !i.checked);
+      const unpaidWife = (prev.wifeFixed ?? []).filter((i) => !i.checked);
+      if (unpaidHusband.length > 0 || unpaidWife.length > 0) {
+        carrySuggestion = { husband: unpaidHusband, wife: unpaidWife };
+      }
+    } catch (error) {
+      console.error("Failed to check carry-over suggestion:", error);
+    }
+  }
+
+  function applyCarrySuggestion() {
+    if (!carrySuggestion) return;
+    const husband = carrySuggestion.husband.map((i) => ({ ...i, id: makeId() }));
+    const wife = carrySuggestion.wife.map((i) => ({ ...i, id: makeId() }));
+    persist({
+      ...budget,
+      husbandFixed: husband,
+      wifeFixed: wife
+    });
+    carrySuggestion = null;
+  }
 
   async function persist(next: MonthBudget) {
     budget = next;
@@ -323,6 +367,21 @@
     </div>
   </div>
 
+  {#if carrySuggestion}
+    <div class="carry-banner" in:fly={{ y: 8, duration: 300 }}>
+      <div class="carry-banner-text">
+        <span class="carry-banner-icon">🔄</span>
+        <span>
+          <b>Unpaid fixed expenses found</b> in {previousMonthId(monthId)} — copy them into this month?
+        </span>
+      </div>
+      <div class="carry-banner-actions">
+        <button class="carry-btn" onclick={applyCarrySuggestion}>Copy</button>
+        <button class="carry-btn ghost" onclick={() => (carrySuggestion = null)}>Dismiss</button>
+      </div>
+    </div>
+  {/if}
+
   <div class="sections" in:fade={{ duration: 350, delay: 120 }}>
     <ExpenseSection
       title="1. Husband Income"
@@ -552,6 +611,27 @@
   .chart-note strong { color: var(--text-primary); }
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
+
+  .carry-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1.1rem;
+    background: var(--accent-gold-light); border: 1px solid rgba(200, 149, 108, 0.35);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;
+  }
+  .carry-banner-text { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 200px; }
+  .carry-banner-icon { font-size: 1.15rem; flex-shrink: 0; }
+  .carry-banner-text b { color: var(--text-primary); }
+  .carry-banner-actions { display: flex; gap: 0.5rem; }
+  .carry-btn {
+    padding: 0.45rem 1rem; border-radius: var(--radius-sm);
+    background: var(--text-primary); color: #fff; font-size: 0.8rem; font-weight: 700;
+    transition: all 0.2s;
+  }
+  .carry-btn:hover { background: #2d2a27; }
+  .carry-btn.ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--surface-border); }
+  .carry-btn.ghost:hover { background: var(--bg-muted); }
 
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
