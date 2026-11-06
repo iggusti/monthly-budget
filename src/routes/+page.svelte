@@ -3,6 +3,7 @@
   import { fade, fly, scale } from "svelte/transition";
   import {
     subscribeAllBudgets,
+    fetchBudget,
     saveBudget,
     deleteBudget
   } from "#lib/budget-store";
@@ -10,8 +11,10 @@
     computeTotals,
     createEmptyBudget,
     formatCurrency,
+    makeId,
     monthsOfYear,
-    type MonthBudget
+    type MonthBudget,
+    type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
 
@@ -117,6 +120,13 @@
     return result;
   }
 
+  /** ID of the calendar month before `id` (`YYYY-MM`). */
+  function previousMonthId(id: string): string {
+    const [year, month] = id.split("-").map(Number);
+    if (month <= 1) return `${year - 1}-12`;
+    return `${year}-${String(month - 1).padStart(2, "0")}`;
+  }
+
   async function createMonth(id: string) {
     if (usedIds.has(id)) {
       location.href = `/month/${id}`;
@@ -124,6 +134,17 @@
     }
     busy = true;
     const budget = createEmptyBudget(id);
+
+    // Carry over unpaid fixed expenses from the previous month.
+    const prev = await fetchBudget(previousMonthId(id));
+    const carryHusband = (prev.husbandFixed ?? []).filter((i) => !i.checked);
+    const carryWife = (prev.wifeFixed ?? []).filter((i) => !i.checked);
+    if (carryHusband.length > 0 || carryWife.length > 0) {
+      const newId = () => makeId();
+      budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId() }));
+      budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId() }));
+    }
+
     await saveBudget(budget);
     budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
     busy = false;
