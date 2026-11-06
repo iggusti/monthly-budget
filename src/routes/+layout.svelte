@@ -27,7 +27,7 @@
       <div class="topbar-inner">
         <a href="/" class="logo">
           <span class="logo-mark">❖</span>
-          <span class="logo-text">Budget Harmony</span>
+          <span class="logo-text">Nia & Ilham</span>
         </a>
         <nav class="topbar-nav">
           {#if authed}
@@ -45,7 +45,7 @@
     </main>
 
     <footer class="footer">
-      <p>Family Budget Harmony · Stay balanced, save together</p>
+      <p>Monthly Budget Nia Ilham · Stay balanced, save together</p>
     </footer>
   </div>
 {/if}

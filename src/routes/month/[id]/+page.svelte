@@ -104,7 +104,7 @@
 </script>
 
 <svelte:head>
-  <title>{budget.title} — Family Budget Harmony</title>
+  <title>{budget.title} — Monthly Budget Nia Ilham</title>
 </svelte:head>
 
 <div class="page">

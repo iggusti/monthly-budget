@@ -1,5 +1,5 @@
 /**
- * Authentication for Family Budget Harmony.
+ * Authentication for Monthly Budget Nia Ilham.
  *
  * The flow is two-layered:
  *  1. The family's shared keyword ("enza") is verified locally. The keyword

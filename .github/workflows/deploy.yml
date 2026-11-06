@@ -32,3 +32,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}
           channelId: live
           projectId: monthly-budget-580b2
+          target: nia-ilham

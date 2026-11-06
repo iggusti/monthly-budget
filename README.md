@@ -107,7 +107,10 @@ Push to `main` (or run the workflow manually from the Actions tab). The workflow
 at `.github/workflows/deploy.yml` builds the app and deploys `build/` to the live
 channel.
 
-Live URL: <https://monthly-budget-580b2.web.app>
+Live URL: <https://monthly-budget-nia-ilham.web.app>
+
+> The project also has a legacy site `monthly-budget-580b2.web.app`. The deploy
+> target points at the `monthly-budget-nia-ilham` site via `.firebaserc`.
 
 ### Manual deploy (optional)
 

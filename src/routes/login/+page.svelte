@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-  <title>Sign in — Family Budget Harmony</title>
+  <title>Sign in — Monthly Budget Nia Ilham</title>
 </svelte:head>
 
 <div class="login-page">
@@ -64,7 +64,7 @@
       </svg>
     </div>
 
-    <h1 class="title">Family Budget Harmony</h1>
+    <h1 class="title">Monthly Budget Nia Ilham</h1>
     <p class="subtitle">Plan together, save beautifully.</p>
 
     <div class="divider"><span></span></div>

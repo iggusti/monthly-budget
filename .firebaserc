@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "monthly-budget-580b2"
+  },
+  "targets": {
+    "monthly-budget-580b2": {
+      "hosting": {
+        "nia-ilham": [
+          "monthly-budget-nia-ilham"
+        ]
+      }
+    }
   }
 }

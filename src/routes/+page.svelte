@@ -129,7 +129,7 @@
 </script>
 
 <svelte:head>
-  <title>Family Budget Harmony</title>
+  <title>Monthly Budget Nia Ilham</title>
 </svelte:head>
 
 <div class="page">
