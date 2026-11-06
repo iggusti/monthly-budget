@@ -103,7 +103,7 @@
     return `${year}-${String(month - 1).padStart(2, "0")}`;
   }
 
-  /** If this month has no fixed items but the previous month has unpaid ones, offer to copy them. */
+  /** If this month has no fixed items, offer to copy all fixed from the previous month (reset to unchecked). */
   async function checkCarrySuggestion(next: MonthBudget) {
     if (carrySuggestion) return;
     const hasFixed = (next.husbandFixed?.length ?? 0) > 0 || (next.wifeFixed?.length ?? 0) > 0;
@@ -111,10 +111,10 @@
 
     try {
       const prev = await fetchBudget(previousMonthId(monthId));
-      const unpaidHusband = (prev.husbandFixed ?? []).filter((i) => !i.checked);
-      const unpaidWife = (prev.wifeFixed ?? []).filter((i) => !i.checked);
-      if (unpaidHusband.length > 0 || unpaidWife.length > 0) {
-        carrySuggestion = { husband: unpaidHusband, wife: unpaidWife };
+      const allHusband = prev.husbandFixed ?? [];
+      const allWife = prev.wifeFixed ?? [];
+      if (allHusband.length > 0 || allWife.length > 0) {
+        carrySuggestion = { husband: allHusband, wife: allWife };
       }
     } catch (error) {
       console.error("Failed to check carry-over suggestion:", error);
@@ -123,8 +123,8 @@
 
   function applyCarrySuggestion() {
     if (!carrySuggestion) return;
-    const husband = carrySuggestion.husband.map((i) => ({ ...i, id: makeId() }));
-    const wife = carrySuggestion.wife.map((i) => ({ ...i, id: makeId() }));
+    const husband = carrySuggestion.husband.map((i) => ({ ...i, id: makeId(), checked: false }));
+    const wife = carrySuggestion.wife.map((i) => ({ ...i, id: makeId(), checked: false }));
     persist({
       ...budget,
       husbandFixed: husband,
@@ -372,7 +372,7 @@
       <div class="carry-banner-text">
         <span class="carry-banner-icon">🔄</span>
         <span>
-          <b>Unpaid fixed expenses found</b> in {previousMonthId(monthId)} — copy them into this month?
+          <b>Copy fixed expenses</b> from {previousMonthId(monthId)} into this month?
         </span>
       </div>
       <div class="carry-banner-actions">

@@ -135,14 +135,15 @@
     busy = true;
     const budget = createEmptyBudget(id);
 
-    // Carry over unpaid fixed expenses from the previous month.
+    // Copy ALL fixed expenses from the previous month (checked and unchecked),
+    // but reset them to unchecked for the new period.
     const prev = await fetchBudget(previousMonthId(id));
-    const carryHusband = (prev.husbandFixed ?? []).filter((i) => !i.checked);
-    const carryWife = (prev.wifeFixed ?? []).filter((i) => !i.checked);
+    const carryHusband = prev.husbandFixed ?? [];
+    const carryWife = prev.wifeFixed ?? [];
     if (carryHusband.length > 0 || carryWife.length > 0) {
       const newId = () => makeId();
-      budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId() }));
-      budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId() }));
+      budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
+      budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
     }
 
     await saveBudget(budget);
