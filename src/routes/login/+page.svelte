@@ -178,17 +178,17 @@
 
   .input-wrap {
     display: flex; align-items: center; gap: 0.6rem;
-    padding: 0.85rem 1rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
     background: #fff; border: 1.5px solid var(--surface-border);
     border-radius: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
   .input-wrap.focused { border-color: var(--accent-gold); box-shadow: 0 0 0 4px rgba(200, 149, 108, 0.15); }
   .input-icon { font-size: 1.1rem; }
-  .input-wrap input { flex: 1; border: none; outline: none; background: transparent; font-size: 1rem; color: var(--text-primary); }
+  .input-wrap input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font-size: 1rem; padding: 0.35rem 0; color: var(--text-primary); }
   .input-wrap input::placeholder { color: #c4bdb6; }
   .toggle-pass {
-    flex-shrink: 0; width: 34px; height: 34px;
+    flex-shrink: 0; width: 38px; height: 38px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.05rem; border-radius: 10px;
     background: var(--bg-muted); color: var(--text-secondary);
