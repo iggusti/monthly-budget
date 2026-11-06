@@ -1,12 +1,15 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { formatCurrency, makeId, type ExpenseItem } from "#lib/types";
+  import BadgeIcon from "./BadgeIcon.svelte";
 
   interface Props {
     /** Section title, e.g. "Husband Fixed Expenses". */
     title: string;
     /** Short badge glyph shown in the section header. */
     badge?: string;
+    /** Optional SVG icon name for the badge (income | fixed | wallet | savings). */
+    icon?: string;
     /** Colour variant: blue | rose | gold | teal. */
     tone?: "blue" | "rose" | "gold" | "teal";
     /** Field label for the item name input. */
@@ -36,6 +39,7 @@
   let {
     title,
     badge = "•",
+    icon,
     tone = "gold",
     nameLabel = "Name",
     amountLabel = "Amount (IDR)",
@@ -138,7 +142,13 @@
 
 <div class="section {tone}">
   <div class="section-head">
-    <span class="badge">{badge}</span>
+    <span class="badge">
+      {#if icon}
+        <BadgeIcon name={icon} />
+      {:else}
+        {badge}
+      {/if}
+    </span>
     <span class="section-title">{title}</span>
     <span class="section-total">{formatCurrency(total)}</span>
     <button class="add-btn" onclick={startAdd} aria-label="Add item">+</button>

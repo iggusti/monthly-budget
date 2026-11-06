@@ -216,16 +216,16 @@
           {#if seg.key === "fixed"}
             <div class="legend-split">
               <span class="legend-split-label">Husband</span>
-              <span class="legend-split-value gold">{formatCurrency(totals.husbandFixedTotal)}</span>
+              <span class="legend-split-value blue">{formatCurrency(totals.husbandFixedTotal)}</span>
               <span class="legend-split-sep">·</span>
               <span class="legend-split-label">Wife</span>
-              <span class="legend-split-value gold">{formatCurrency(totals.wifeFixedTotal)}</span>
+              <span class="legend-split-value rose">{formatCurrency(totals.wifeFixedTotal)}</span>
             </div>
           {/if}
           {#if seg.key === "salary"}
             <div class="legend-split">
               <span class="legend-split-label">Husband</span>
-              <span class="legend-split-value rose">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</span>
+              <span class="legend-split-value blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</span>
               <span class="legend-split-sep">·</span>
               <span class="legend-split-label">Wife</span>
               <span class="legend-split-value rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</span>
@@ -252,7 +252,7 @@
         </div>
         <div class="split-person">
           <span class="split-person-label">Wife</span>
-          <span class="split-person-value blue">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</span>
+          <span class="split-person-value rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</span>
         </div>
       </div>
       <p class="savings-note">
@@ -275,6 +275,7 @@
     <ExpenseSection
       title="1. Husband Income"
       badge="♂"
+      icon="income"
       tone="blue"
       nameLabel="Source"
       items={[{ id: "husband-income", name: "Husband monthly income", amount: budget.husbandIncome }]}
@@ -284,6 +285,7 @@
     <ExpenseSection
       title="2. Wife Income"
       badge="♀"
+      icon="income"
       tone="rose"
       nameLabel="Source"
       items={[{ id: "wife-income", name: "Wife monthly income", amount: budget.wifeIncome }]}
@@ -293,6 +295,7 @@
     <ExpenseSection
       title="3. Husband Fixed Expenses"
       badge="♂"
+      icon="fixed"
       tone="blue"
       checkboxable
       collapsible
@@ -303,6 +306,7 @@
     <ExpenseSection
       title="4. Wife Fixed Expenses"
       badge="♀"
+      icon="fixed"
       tone="rose"
       checkboxable
       collapsible
@@ -314,7 +318,8 @@
     <ExpenseSection
       title="5. Husband Daily Expenses (from salary)"
       badge="○"
-      tone="gold"
+      icon="wallet"
+      tone="blue"
       collapsible
       items={budget.husbandDailyFromSalary}
       withMethod
@@ -330,7 +335,8 @@
     <ExpenseSection
       title="6. Husband Daily Expenses (from savings)"
       badge="↓"
-      tone="teal"
+      icon="savings"
+      tone="blue"
       collapsible
       items={budget.husbandDailyFromSavings}
       withMethod
@@ -346,6 +352,7 @@
     <ExpenseSection
       title="7. Wife Daily Expenses (from salary)"
       badge="○"
+      icon="wallet"
       tone="rose"
       collapsible
       items={budget.wifeDailyFromSalary}
@@ -362,7 +369,8 @@
     <ExpenseSection
       title="8. Wife Daily Expenses (from savings)"
       badge="↓"
-      tone="teal"
+      icon="savings"
+      tone="rose"
       collapsible
       items={budget.wifeDailyFromSavings}
       withMethod
@@ -434,6 +442,7 @@
   .legend-split { display: flex; align-items: center; gap: 0.4rem; padding-left: 1.25rem; font-size: 0.78rem; color: var(--text-tertiary); }
   .legend-split-label { color: var(--text-tertiary); }
   .legend-split-value { font-weight: 700; }
+  .legend-split-value.blue { color: var(--accent-blue); }
   .legend-split-value.rose { color: var(--accent-rose); }
   .legend-split-value.gold { color: var(--accent-gold); }
   .legend-split-sep { color: var(--text-tertiary); }
@@ -451,6 +460,7 @@
   .split-person-label { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
   .split-person-value { font-size: 0.9rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .split-person-value.blue { color: var(--accent-blue); }
+  .split-person-value.rose { color: var(--accent-rose); }
 
   .chart-note { display: flex; gap: 0.6rem; margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }

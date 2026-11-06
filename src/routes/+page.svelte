@@ -229,13 +229,13 @@
             <div class="card-groups">
               <div class="card-group">
                 <span class="card-group-title">Husband</span>
-                <div class="card-group-row"><span>salary</span><b class="rose">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
+                <div class="card-group-row"><span>salary</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
                 <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
               </div>
               <div class="card-group">
                 <span class="card-group-title">Wife</span>
                 <div class="card-group-row"><span>salary</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
-                <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+                <div class="card-group-row"><span>savings</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
               </div>
             </div>
           {:else}
