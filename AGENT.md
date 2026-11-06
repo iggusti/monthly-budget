@@ -3,7 +3,7 @@
 This document contains all rules and guidelines that must always be followed when working on this project. Do not forget these rules.
 
 ### Project Overview
-- Project Name: Family Budget Harmony (monthly-budget)
+- Project Name: Monthly Budget Nia Ilham (monthly-budget)
 - Tech Stack: SvelteKit, TypeScript, Firebase (Firestore + Anonymous Auth)
 - Purpose: Monthly budget application to balance expenses between husband and wife, track daily expenses, and monitor spending funded from savings
 - Reference: Excel file at C:\Users\DevTI-TelU\OneDrive\Dokumen\Budgeting Bulanan.xlsx
@@ -11,13 +11,15 @@ This document contains all rules and guidelines that must always be followed whe
 ### Language Rules
 - Always use English in all code, comments, variable names, function names, file names, documentation, README files, and AGENT.md
 - Never use Indonesian or any other language in code or markdown files
-- Exception: user-facing UI strings may be Indonesian (the app's audience is an Indonesian family)
+- Exception: user-entered **data** (item names, payment methods, etc.) is kept as the user typed it — never translate or modify it
 
 ### Design Rules
 - UI must reflect family values with warm, loving design
 - Color palette: warm oranges, pinks, blues, greens representing family harmony
+- **Gender colors**: blue for husband sections, pink for wife sections (apply consistently across dashboard cards, chart legend, savings split, and section tones)
 - Use fonts: Nunito and Quicksand for friendly, readable text
 - Include family-themed elements: hearts, house, family icons
+- Icons: use the outline SVG set (`BadgeIcon.svelte`) for section categories; use SVG paths for action icons (e.g. pencil), avoid text glyphs that render inconsistently
 - Animations must be smooth and gentle (float, heartbeat effects)
 - Transitions should be subtle and welcoming
 - Use gradients and soft shadows for a cozy feel
@@ -52,6 +54,13 @@ Derived values (never stored):
 - `equalSplitTransfer` / `equalSplitAmount` = the transfer needed so both spouses hold the
   same amount after each pays their own fixed expenses
 - Salary-funded and savings-funded daily totals are shown separately per spouse
+- "Max planned budget" on salary sections = `equalSplitAmount`; "Remaining money" =
+  `equalSplitAmount − subtotal salary`
+
+### Title Rules
+- A budget period's **title reflects its ending month** (e.g. id `2026-10` → "November 2026",
+  covering 25 Oct – 24 Nov). Dashboard `monthLabel` must match this. Keep `createEmptyBudget`
+  and any seed scripts consistent.
 
 ### Authentication Rules
 - The app is gated by a shared family keyword (currently `enza`), handled in `src/lib/auth.ts`
@@ -63,9 +72,25 @@ Derived values (never stored):
 ### Data Model Rules
 - One Firestore document per budget period in the `budget` collection, id `YYYY-MM`
 - Types and calculation logic live in `src/lib/types.ts` (`MonthBudget`, `computeTotals`)
-- Firestore access is centralised in `src/lib/budget-store.ts` (fetch/save/delete)
+- Firestore access is centralised in `src/lib/budget-store.ts` (fetch/save/delete + real-time
+  `subscribeBudget` / `subscribeAllBudgets`)
 - Every input must be editable: incomes, fixed expenses and daily expenses
 - Unknown/missing fields are normalised via `normalizeBudget` so old documents keep working
+
+### Real-time Sync Rules
+- The month page and dashboard subscribe to Firestore via `onSnapshot`; when one spouse edits,
+  the other sees the change immediately without reload
+- Always unsubscribe in the `onMount` cleanup so listeners do not leak
+
+### Drag & Drop Rules
+- Items may only be moved between **paired sections**: `3 ↔ 4`, `5 ↔ 6`, `7 ↔ 8`
+- Drag starts only from the handle (touch-friendly); dropping on any other section is ignored
+- On drop, move the item and persist via the same write path
+
+### Carry-over Rules
+- Creating a new month copies ALL previous-month fixed expenses (reset to unchecked),
+  copies husband/wife income, and seeds the routine "Sedekah Jariyah" 30,000 Auto Donate
+- There is no in-page carry-over banner; carry-over happens automatically on creation
 
 ### Database Rules
 - Use Firebase Firestore as database
@@ -85,7 +110,7 @@ Derived values (never stored):
 ### Routing Rules
 - `/login` — keyword gate; performs anonymous sign-in on success
 - `/` — dashboard: overview cards, month cards (current period highlight, 8 shown by default
-  with "View more"), create/open/delete a month
+  with "View more/less"), create/open/delete a month
 - `/month/[id]` — edit one budget period: income/header editor, the eight input sections,
   money-flow chart
 
@@ -98,7 +123,6 @@ Derived values (never stored):
 ### UI Component Rules
 - Cards must have decorative elements and hover effects
 - Use gradients for headers and important elements
-- Icons should be family-friendly emojis or SVGs
 - All monetary values formatted with Indonesian locale
 - Balance should be highlighted in red if negative
 - The current budget period must stand out from past periods, but subtly

@@ -1,4 +1,4 @@
-# Family Budget Harmony
+# Monthly Budget Nia Ilham
 
 A monthly family budget app that keeps husband and wife spending in balance,
 tracks daily expenses, and shows how money is funded from salary or savings.
@@ -37,16 +37,35 @@ Every entry can be added, edited and removed from the UI:
   each pays their own fixed expenses:
   `transfer = (husband income − husband fixed − (wife income − wife fixed)) / 2`
 - Salary-funded and savings-funded daily totals are shown separately per spouse
+- On the salary daily sections (`5` and `7`), a **"Max planned budget"** row shows
+  `equalSplitAmount` (each hold after fixed), and **"Remaining money"** shows
+  `equalSplitAmount − subtotal salary`.
 
 Each budget period follows the pattern `25 January - 24 February 2026` (the 25th
-cycle) and is stored as one Firestore document (id `YYYY-MM`) in the `budget`
-collection.
+cycle). A period's **title reflects its ending month** (so `2026-01` is titled
+"February 2026"). Each period is stored as one Firestore document (id `YYYY-MM`)
+in the `budget` collection.
+
+## Features
+
+- **Real-time sync** — edits made on one device (e.g. the husband) appear
+  immediately on the other (wife) via Firestore `onSnapshot`, no reload needed.
+- **Drag & drop** — items can be moved between paired sections only:
+  `3 ↔ 4` (husband/wife fixed), `5 ↔ 6` (husband salary/savings),
+  `7 ↔ 8` (wife salary/savings). Drag from the handle; drop target highlights.
+- **Carry-over on new month** — when a new month is created from the dashboard,
+  it copies all fixed expenses from the previous month (reset to unchecked),
+  copies husband/wife income, and seeds the routine **"Sedekah Jariyah"**
+  30,000 Auto Donate item.
+- **Gender colors** — blue for husband sections, pink for wife sections; icons
+  distinguish categories (income, fixed, wallet, savings).
+- **View more / View less** — collapsible sections toggle both directions.
 
 ## Pages
 
 - `/login` — keyword gate
 - `/` — dashboard: overview cards, month cards (the current period is
-  highlighted; 8 shown by default with a "View more" toggle)
+  highlighted; 8 shown by default with a "View more/less" toggle)
 - `/month/[id]` — edit one budget period: income/header editor, the eight input
   sections, and a money-flow chart explaining the relationship between the
   per-person remainder, salary spending and savings spending
@@ -59,15 +78,16 @@ src/
     types.ts                 data model + calculations
     firebase.ts              Firebase initialisation (Firestore + Auth)
     auth.ts                  keyword gate + anonymous sign-in
-    budget-store.ts          Firestore read/write helpers
+    budget-store.ts          Firestore read/write + real-time subscribe helpers
     components/
-      ExpenseSection.svelte  reusable editable expense list
+      ExpenseSection.svelte  reusable editable expense list (drag & drop)
+      BadgeIcon.svelte       outline SVG category icons
   routes/
     +layout.svelte           shell with navigation and logout
     login/+page.svelte       login screen
     +page.svelte             dashboard
     month/[id]/+page.svelte  edit one budget period
-scripts/                     data seeding / migration helpers
+scripts/                     data seeding / migration / repair helpers
 ```
 
 ## Developing
