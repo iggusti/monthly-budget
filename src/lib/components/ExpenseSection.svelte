@@ -174,6 +174,8 @@
     footerValue?: number;
     /** Optional extra note row under the footer (label + value), e.g. remaining money. */
     footerNote?: { label: string; value: number };
+    /** Optional plan/budget cap note row, e.g. the maximal planned budget. */
+    footerPlan?: { label: string; value: number };
     /** Called with the updated list whenever the user changes anything. */
     onChange: (items: ExpenseItem[]) => void;
     /** Unique key identifying this section's budget array (used for drag & drop). */
@@ -200,6 +202,7 @@
     footerLabel,
     footerValue,
     footerNote,
+    footerPlan,
     onChange,
     sectionKey,
     dragGroup,
@@ -446,6 +449,13 @@
     </div>
   {/if}
 
+  {#if footerPlan}
+    <div class="section-note plan">
+      <span>{footerPlan.label}</span>
+      <span class="section-note-value">{formatCurrency(footerPlan.value)}</span>
+    </div>
+  {/if}
+
   {#if footerNote}
     <div class="section-note">
       <span>{footerNote.label}</span>
@@ -587,6 +597,7 @@
     background: color-mix(in srgb, var(--footer-accent, var(--accent-blue)) 7%, transparent);
     color: var(--text-secondary);
   }
+  .section-note.plan { background: transparent; border-top-style: dashed; color: var(--text-tertiary); }
   .section-note .section-note-value { font-weight: 700; font-variant-numeric: tabular-nums; }
   .section-note .section-note-value.negative { color: var(--danger); }
 

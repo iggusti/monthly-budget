@@ -388,6 +388,10 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.husbandDailyFromSalaryTotal}
+      footerPlan={{
+        label: "Rencana maksimal",
+        value: totals.equalSplitAmount
+      }}
       footerNote={{
         label: "Sisa uang",
         value: totals.equalSplitAmount - totals.husbandDailyFromSalaryTotal
@@ -432,6 +436,10 @@
         )}
       footerLabel="Subtotal from salary"
       footerValue={totals.wifeDailyFromSalaryTotal}
+      footerPlan={{
+        label: "Rencana maksimal",
+        value: totals.equalSplitAmount
+      }}
       footerNote={{
         label: "Sisa uang",
         value: totals.equalSplitAmount - totals.wifeDailyFromSalaryTotal
