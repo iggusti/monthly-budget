@@ -302,7 +302,7 @@
         <span class="overview-sub">{t("dashboard.husbandWife")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">{t("dashboard.perPerson")}</span>
+        <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
         <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
         <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
       </div>
