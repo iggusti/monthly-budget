@@ -157,6 +157,17 @@ import Seo from "#lib/components/Seo.svelte";
     totals.husbandDailyFromSavingsTotal + totals.wifeDailyFromSavingsTotal
   );
 
+  // Total expenses = fixed + daily from salary + daily from savings.
+  const totalExpense = $derived(
+    totals.totalFixedExpenses + dailyFromSalaryTotal + dailyFromSavingsTotal
+  );
+  const husbandTotalExpense = $derived(
+    totals.husbandFixedTotal + totals.husbandDailyFromSalaryTotal + totals.husbandDailyFromSavingsTotal
+  );
+  const wifeTotalExpense = $derived(
+    totals.wifeFixedTotal + totals.wifeDailyFromSalaryTotal + totals.wifeDailyFromSavingsTotal
+  );
+
   // Donut segments as fractions of total income (clamped to sum to 100%).
   const chartSegments = $derived(() => {
     const income = totals.totalIncome || 1;
@@ -410,10 +421,10 @@ import Seo from "#lib/components/Seo.svelte";
       </span>
     </div>
     <div class="stat-card expense">
-      <span class="stat-label">{t("month.totalFixed")}</span>
-      <span class="stat-value">{formatCurrency(totals.totalFixedExpenses)}</span>
+      <span class="stat-label">{t("month.totalExpense")}</span>
+      <span class="stat-value">{formatCurrency(totalExpense)}</span>
       <span class="stat-sub">
-        {t("common.husband")} {formatCurrency(totals.husbandFixedTotal)} · {t("common.wife")} {formatCurrency(totals.wifeFixedTotal)}
+        {t("common.husband")} {formatCurrency(husbandTotalExpense)} · {t("common.wife")} {formatCurrency(wifeTotalExpense)}
       </span>
     </div>
     <div class="stat-card balance" class:negative={totals.balanceAfterFixed < 0}>
