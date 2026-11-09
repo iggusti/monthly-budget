@@ -20,11 +20,13 @@
   import { t, lang } from "#lib/i18n.svelte";
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
+  import SearchBar from "#lib/components/SearchBar.svelte";
 
   let budgets = $state<MonthBudget[]>([]);
   let loading = $state(true);
   let busy = $state(false);
   let showAllMonths = $state(false);
+  let searchQuery = $state("");
 
   const thisYear = new Date().getFullYear();
 
@@ -57,6 +59,96 @@
   const hasMoreMonths = $derived(orderedMonths.length > 8);
 
   const usedIds = $derived(new Set(budgets.map((b) => b.id)));
+
+  // ── Cross-month item search ─────────────────────────────────────────────
+  // Section keys mapped 1:1 to the eight budget sections and their labels.
+  const SECTION_KEYS = [
+    "husbandIncome",
+    "wifeIncome",
+    "husbandFixed",
+    "wifeFixed",
+    "husbandDailyFromSalary",
+    "husbandDailyFromSavings",
+    "wifeDailyFromSalary",
+    "wifeDailyFromSavings"
+  ] as const;
+
+  /** A single item match inside a month, tagged with its section label. */
+  interface ItemMatch {
+    id: string;
+    name: string;
+    section: string;
+  }
+
+  /** True when an item's name or payment method contains the query. */
+  function matchesSearch(name: string, method: string | undefined, query: string): boolean {
+    if (!query.trim()) return true;
+    const lowered = query.toLowerCase();
+    return name.toLowerCase().includes(lowered) || (method ?? "").toLowerCase().includes(lowered);
+  }
+
+  /** Collect every item in a budget that matches `query`, with section labels. */
+  function matchingItems(budget: MonthBudget, query: string): ItemMatch[] {
+    const out: ItemMatch[] = [];
+    if (matchesSearch(t("month.husbandIncome"), undefined, query)) {
+      out.push({ id: "husband-income", name: t("month.husbandIncome"), section: t("month.section1") });
+    }
+    if (matchesSearch(t("month.wifeIncome"), undefined, query)) {
+      out.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
+    }
+    SECTION_KEYS.forEach((key, i) => {
+      if (key === "husbandIncome" || key === "wifeIncome") return;
+      const items = (budget[key] ?? []) as { id: string; name: string; method?: string }[];
+      for (const item of items) {
+        if (matchesSearch(item.name, item.method, query)) {
+          out.push({ id: item.id, name: item.name, section: t(`month.section${i + 1}`) });
+        }
+      }
+    });
+    return out;
+  }
+
+  /**
+   * When a query is active, only months that contain a matching item are shown;
+   * each is paired with the matches so they can be listed inside the card.
+   */
+  const searchActive = $derived(searchQuery.trim().length > 0);
+
+  const searchResults = $derived(
+    orderedMonths
+      .map((id) => {
+        const budget = monthBudget(id);
+        const items = budget ? matchingItems(budget, searchQuery) : [];
+        return { id, items };
+      })
+      .filter((r) => r.items.length > 0)
+  );
+
+  /** Month ids currently rendered in the grid (search results or the normal list). */
+  const visibleIds = $derived(
+    searchActive ? searchResults.map((r) => r.id) : visibleMonths
+  );
+
+  // Scroll to the first matching month when a search is committed.
+  $effect(() => {
+    if (searchActive && searchResults.length > 0) {
+      const target = document.getElementById(`month-${searchResults[0].id}`);
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+
+  /** Escape a string for safe use inside a RegExp. */
+  function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /** Wrap the matching part of a name in <mark> for highlighting. */
+  function highlightText(name: string, query: string): string {
+    if (!query.trim()) return name;
+    const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+    return name.replace(regex, "<mark>$1</mark>");
+  }
+
 
   // The budget for the current period (may be undefined if not created yet).
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
@@ -241,6 +333,17 @@
     <span>{t("dashboard.budgetPeriods")}</span>
   </div>
 
+  {#if !loading}
+    <div class="search-row" in:fade={{ duration: 350 }}>
+      <SearchBar
+        query={searchQuery}
+        onQueryChange={(q: string) => (searchQuery = q)}
+        onClear={() => (searchQuery = "")}
+        placeholderKey="dashboard.searchPlaceholder"
+      />
+    </div>
+  {/if}
+
   {#if loading}
     <!-- Month card skeletons -->
     <div class="months-grid" aria-hidden="true">
@@ -276,13 +379,15 @@
     </div>
   {:else}
     <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
-      {#each visibleMonths as id}
+      {#each visibleIds as id}
         {@const exists = usedIds.has(id)}
         {@const budget = monthBudget(id)}
         {@const totals = budget ? computeTotals(budget) : null}
         {@const isCurrent = id === currentMonthId}
+        {@const matches = searchActive ? searchResults.find((r) => r.id === id)?.items ?? [] : []}
         <div
           class="month-card"
+          id="month-{id}"
           class:current={isCurrent}
           class:exists={exists}
           class:past={exists && !isCurrent}
@@ -302,7 +407,9 @@
                 <span class="card-month">{monthLabel(id)}</span>
                 <span class="card-period">{monthPeriod(id)}</span>
               </div>
-              {#if isCurrent && exists}
+              {#if searchActive}
+                <span class="card-badge match">{matches.length}</span>
+              {:else if isCurrent && exists}
                 <span class="card-badge current">{t("dashboard.active")}</span>
               {:else if exists}
                 <span class="card-badge past">{t("dashboard.past")}</span>
@@ -311,7 +418,16 @@
               {/if}
             </div>
 
-            {#if exists && totals}
+            {#if searchActive}
+              <ul class="card-matches">
+                {#each matches as m}
+                  <li class="card-match">
+                    <span class="card-match-section">{m.section}</span>
+                    <span class="card-match-name">{@html highlightText(m.name, searchQuery)}</span>
+                  </li>
+                {/each}
+              </ul>
+            {:else if exists && totals}
               <div class="card-person">
                 <span class="card-person-label">{t("dashboard.perPerson")}</span>
                 <span class="card-person-value">{formatCurrency(totals.equalSplitAmount)}</span>
@@ -338,9 +454,17 @@
         </div>
       {/each}
     </div>
+
+    {#if searchActive && searchResults.length === 0}
+      <div class="empty-state" in:fade={{ duration: 300 }}>
+        <span class="empty-icon">⌕</span>
+        <h3>{t("dashboard.searchEmpty")}</h3>
+        <p>“{searchQuery}”</p>
+      </div>
+    {/if}
   {/if}
 
-  {#if !loading && hasMoreMonths}
+  {#if !loading && hasMoreMonths && !searchActive}
     <div class="months-toggle">
       <button class="toggle-btn" onclick={() => (showAllMonths = !showAllMonths)}>
         {showAllMonths ? t("common.viewLess") : t("dashboard.viewMore", { n: orderedMonths.length - 8 })}
@@ -396,6 +520,9 @@
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
   .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); }
+
+  .search-row { display: flex; justify-content: flex-start; }
+  .search-row :global(.search-bar) { max-width: 420px; }
   .months-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
 
   .months-toggle { display: flex; justify-content: center; }
@@ -432,6 +559,20 @@
   .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold); }
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
   .card-badge.current { background: var(--success-light); color: var(--success); }
+  .card-badge.match { background: var(--accent-gold-light); color: var(--accent-gold); }
+
+  .card-matches { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+  .card-match { display: flex; flex-direction: column; gap: 0.1rem; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
+  .card-match-section { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .card-match-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
+  /* Highlight for matched text inside item names. */
+  .card-matches :global(mark) {
+    background: var(--accent-gold);
+    color: #fff;
+    padding: 0 0.15rem;
+    border-radius: 2px;
+    font-weight: 600;
+  }
 
   .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
   .card-person-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
