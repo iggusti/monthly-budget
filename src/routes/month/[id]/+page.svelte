@@ -36,13 +36,21 @@ import Seo from "#lib/components/Seo.svelte";
     return nameMatch || methodMatch;
   }
 
-  // Section keys in order 1–8, mapped to budget fields.
-  const SECTION_KEYS = ["", "husbandIncome", "wifeIncome", "husbandFixed", "wifeFixed", "husbandDailyFromSalary", "husbandDailyFromSavings", "wifeDailyFromSalary", "wifeDailyFromSavings"] as const;
+  // Section keys mapped 1:1 to sections 1–8 (index 0 = section 1, … index 7 = section 8).
+  const SECTION_KEYS = [
+    "husbandIncome",
+    "wifeIncome",
+    "husbandFixed",
+    "wifeFixed",
+    "husbandDailyFromSalary",
+    "husbandDailyFromSavings",
+    "wifeDailyFromSalary",
+    "wifeDailyFromSavings"
+  ] as const;
 
   // Derived visible items per section after search filtering.
   const visibleItemsPerSection = $derived(
-    SECTION_KEYS.map((_, i) => {
-      const sk = SECTION_KEYS[i];
+    SECTION_KEYS.map((sk, i) => {
       let items: ExpenseItem[] = [];
       if (sk === "husbandIncome") {
         items = [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome, method: undefined }];
@@ -53,7 +61,7 @@ import Seo from "#lib/components/Seo.svelte";
         items = (budget[sk as keyof MonthBudget] ?? []) as ExpenseItem[];
       }
       return {
-        index: i, // 0=section1, 1=section2, ..., 7=section8
+        index: i, // 0=section 1, 1=section 2, …, 7=section 8
         key: sk,
         title: t(`month.section${i + 1}`),
         items: items.filter((it) => matchesSearch(it, searchQuery)),
