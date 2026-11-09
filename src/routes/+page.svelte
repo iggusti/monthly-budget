@@ -14,6 +14,7 @@
     makeId,
     monthsOfYear,
     type MonthBudget,
+    type MonthTotals,
     type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
@@ -180,6 +181,17 @@
 
   function monthBudget(id: string): MonthBudget | undefined {
     return budgets.find((b) => b.id === id);
+  }
+
+  /** Total expenses for a month: fixed + daily from salary + daily from savings. */
+  function totalExpense(totals: MonthTotals): number {
+    return (
+      totals.totalFixedExpenses +
+      totals.husbandDailyFromSalaryTotal +
+      totals.husbandDailyFromSavingsTotal +
+      totals.wifeDailyFromSalaryTotal +
+      totals.wifeDailyFromSavingsTotal
+    );
   }
 
   function monthPeriod(id: string): string {
@@ -431,17 +443,19 @@
               </ul>
             {:else if exists && totals}
               <div class="card-person">
-                <span class="card-person-label">{t("dashboard.perPerson")}</span>
-                <span class="card-person-value">{formatCurrency(totals.equalSplitAmount)}</span>
+                <span class="card-person-label">{t("dashboard.totalExpense")}</span>
+                <span class="card-person-value">{formatCurrency(totalExpense(totals))}</span>
               </div>
               <div class="card-groups">
                 <div class="card-group">
                   <span class="card-group-title">{t("common.husband")}</span>
+                  <div class="card-group-row"><span>{t("common.fixed")}</span><b class="blue">{formatCurrency(totals.husbandFixedTotal)}</b></div>
                   <div class="card-group-row"><span>{t("common.salary")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
                   <div class="card-group-row"><span>{t("common.savings")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
                 </div>
                 <div class="card-group">
                   <span class="card-group-title">{t("common.wife")}</span>
+                  <div class="card-group-row"><span>{t("common.fixed")}</span><b class="rose">{formatCurrency(totals.wifeFixedTotal)}</b></div>
                   <div class="card-group-row"><span>{t("common.salary")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
                   <div class="card-group-row"><span>{t("common.savings")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
                 </div>
