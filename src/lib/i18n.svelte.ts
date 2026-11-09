@@ -98,7 +98,7 @@ const en: Dict = {
   "dashboard.infoPerPerson": "Per person",
   "dashboard.infoPerPersonSub": "after fixed, split evenly",
   "dashboard.confirmDelete": "Delete {month}? This cannot be undone.",
-  "dashboard.searchPlaceholder": "Search items across months…",
+  "dashboard.searchPlaceholder": "Search expenses across months…",
   "dashboard.searchEmpty": "No items found matching",
 
   // ── Month page ────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ const id: Dict = {
   "dashboard.infoPerPerson": "Per orang",
   "dashboard.infoPerPersonSub": "setelah tetap, dibagi rata",
   "dashboard.confirmDelete": "Hapus {month}? Tindakan ini tidak dapat dibatalkan.",
-  "dashboard.searchPlaceholder": "Cari item di semua bulan…",
+  "dashboard.searchPlaceholder": "Cari pengeluaran di semua bulan…",
   "dashboard.searchEmpty": "Tidak ada item yang sesuai",
 
   // ── Month page ────────────────────────────────────────────────────────────
