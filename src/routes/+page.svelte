@@ -523,8 +523,8 @@
   .overview-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
   .overview-head-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
   .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
-  .overview-item { display: flex; flex-direction: column; gap: 0.4rem; }
-  .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .overview-item { display: flex; flex-direction: column; gap: 0.8rem; }
+  .overview-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
   .overview-value { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
   .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
   .overview-value.income { color: var(--success); }
