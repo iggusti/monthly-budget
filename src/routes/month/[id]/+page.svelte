@@ -13,7 +13,8 @@
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
   import { t } from "#lib/i18n.svelte";
-  import Seo from "#lib/components/Seo.svelte";
+  import SearchBar from "#lib/components/SearchBar.svelte";
+import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
 
   const monthId = $derived(page.params.id ?? "");
@@ -24,6 +25,41 @@
   let savedAt = $state<string>("");
   let showHeaderEditor = $state(false);
   let showSectionNav = $state(false);
+  let searchQuery = $state("");
+
+  /** Filter items per section based on the current search query. */
+  function matchesSearch(item: ExpenseItem, query: string): boolean {
+    if (!query.trim()) return true;
+    const lowered = query.toLowerCase();
+    const nameMatch = item.name.toLowerCase().includes(lowered);
+    const methodMatch = (item.method ?? "").toLowerCase().includes(lowered);
+    return nameMatch || methodMatch;
+  }
+
+  // Section keys in order 1–8, mapped to budget fields.
+  const SECTION_KEYS = ["", "husbandIncome", "wifeIncome", "husbandFixed", "wifeFixed", "husbandDailyFromSalary", "husbandDailyFromSavings", "wifeDailyFromSalary", "wifeDailyFromSavings"] as const;
+
+  // Derived visible items per section after search filtering.
+  const visibleItemsPerSection = $derived(
+    SECTION_KEYS.map((_, i) => {
+      const sk = SECTION_KEYS[i];
+      let items: ExpenseItem[] = [];
+      if (sk === "husbandIncome") {
+        items = [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome, method: undefined }];
+      } else if (sk === "wifeIncome") {
+        items = [{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome, method: undefined }];
+      } else {
+        // Use type assertion since sk is a union narrowed by the if/else above.
+        items = (budget[sk as keyof MonthBudget] ?? []) as ExpenseItem[];
+      }
+      return {
+        index: i, // 0=section1, 1=section2, ..., 7=section8
+        key: sk,
+        title: t(`month.section${i + 1}`),
+        items: items.filter((it) => matchesSearch(it, searchQuery)),
+      };
+    })
+  );
 
   // Section titles for the mobile quick-jump menu, in page order.
   const SECTION_NAV_KEYS = [
@@ -227,6 +263,11 @@
     <div class="header-top">
       <a href="/" class="back-btn" aria-label={t("month.allMonths")}>← <span class="back-text">{t("month.allMonths")}</span></a>
       <div class="header-side">
+        <SearchBar
+          query={searchQuery}
+          onQueryChange={(q: string) => (searchQuery = q)}
+          onClear={() => (searchQuery = "")}
+        />
         <span class="save-state" class:saving>
           {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{:else}{t("month.editable")}{/if}
         </span>
@@ -447,34 +488,37 @@
     <ExpenseSection
       sectionId="section-1"
       title={t("month.section1")}
+      sectionIndex={0}
       badge="♂"
       icon="income"
       tone="blue"
       nameLabel={t("month.sourceLabel")}
-      items={[{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome }]}
+      items={visibleItemsPerSection[0]?.items ?? [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome }]}
       onChange={(items: ExpenseItem[]) => update("husbandIncome", items[0]?.amount ?? 0)}
     />
 
     <ExpenseSection
       sectionId="section-2"
       title={t("month.section2")}
+      sectionIndex={1}
       badge="♀"
       icon="income"
       tone="rose"
       nameLabel={t("month.sourceLabel")}
-      items={[{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome }]}
+      items={visibleItemsPerSection[1]?.items ?? [{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome }]}
       onChange={(items: ExpenseItem[]) => update("wifeIncome", items[0]?.amount ?? 0)}
     />
 
     <ExpenseSection
       sectionId="section-3"
       title={t("month.section3")}
+      sectionIndex={2}
       badge="♂"
       icon="fixed"
       tone="blue"
       checkboxable
       collapsible
-      items={budget.husbandFixed}
+      items={visibleItemsPerSection[2]?.items ?? budget.husbandFixed}
       onChange={(items: ExpenseItem[]) => update("husbandFixed", items)}
       footerLabel={t("month.husbandFixedRemaining")}
       sectionKey="hf"
@@ -484,12 +528,13 @@
     <ExpenseSection
       sectionId="section-4"
       title={t("month.section4")}
+      sectionIndex={3}
       badge="♀"
       icon="fixed"
       tone="rose"
       checkboxable
       collapsible
-      items={budget.wifeFixed}
+      items={visibleItemsPerSection[3]?.items ?? budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}
       footerLabel={t("month.wifeFixedRemaining")}
       sectionKey="wf"
@@ -504,7 +549,7 @@
       icon="wallet"
       tone="blue"
       collapsible
-      items={budget.husbandDailyFromSalary}
+      items={visibleItemsPerSection[4]?.items ?? budget.husbandDailyFromSalary}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -544,7 +589,7 @@
       icon="savings"
       tone="blue"
       collapsible
-      items={budget.husbandDailyFromSavings}
+      items={visibleItemsPerSection[5]?.items ?? budget.husbandDailyFromSavings}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -565,7 +610,7 @@
       icon="wallet"
       tone="rose"
       collapsible
-      items={budget.wifeDailyFromSalary}
+      items={visibleItemsPerSection[6]?.items ?? budget.wifeDailyFromSalary}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -594,7 +639,7 @@
       icon="savings"
       tone="rose"
       collapsible
-      items={budget.wifeDailyFromSavings}
+      items={visibleItemsPerSection[7]?.items ?? budget.wifeDailyFromSavings}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(

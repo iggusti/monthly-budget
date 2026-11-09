@@ -232,6 +232,8 @@
     dragGroup?: string;
     /** Called when an item from another (same-group) section is dropped here. */
     onExternalDrop?: (item: ExpenseItem, fromKey: string) => void;
+    /** Optional index (0–7) used for search filtering; maps to section 1–8. */
+    sectionIndex?: number;
   }
 
   let {

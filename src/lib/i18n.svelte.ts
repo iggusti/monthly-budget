@@ -148,6 +148,9 @@ const en: Dict = {
   "month.waitingTransfer": "Waiting for {amount}",
   "month.sectionMenu": "Jump to section",
   "month.sectionMenuClose": "Close section menu",
+  "month.searchPlaceholder": "Search items…",
+  "month.searchEmpty": "No items found matching",
+  "month.clearSearch": "Clear search",
   "month.pageTitle": "{title} — Monthly Budget Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────
@@ -302,6 +305,9 @@ const id: Dict = {
   "month.waitingTransfer": "Menunggu {amount}",
   "month.sectionMenu": "Lompat ke bagian",
   "month.sectionMenuClose": "Tutup menu bagian",
+  "month.searchPlaceholder": "Cari item…",
+  "month.searchEmpty": "Tidak ada item yang sesuai",
+  "month.clearSearch": "Bersihkan pencarian",
   "month.pageTitle": "{title} — Anggaran Bulanan Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────
