@@ -1,12 +1,39 @@
-<script module>
+<script module lang="ts">
+  /** Minimal shape of a draggable item (matches the app's ExpenseItem). */
+  type DragItem = {
+    id: string;
+    name: string;
+    amount: number;
+    method?: string;
+    checked?: boolean;
+  };
+
+  /** A registered section, used as a drag & drop target. */
+  interface SectionEntry {
+    key: string;
+    group: string | undefined;
+    rootEl: HTMLElement | null;
+    onExternalDrop?: (item: DragItem, fromKey: string) => void;
+  }
+
   /**
    * Shared drag & drop state across all ExpenseSection instances.
    * Items may only be dropped into another section in the SAME drag group
    * (e.g. fixed ↔ fixed, husband salary ↔ husband savings, ...).
    */
-  const sectionRegistry = new Map();
+  const sectionRegistry = new Map<string, SectionEntry>();
 
-  const dragState = {
+  const dragState: {
+    active: boolean;
+    picked: boolean;
+    item: DragItem | null;
+    fromKey: string | null;
+    group: string | undefined | null;
+    startX: number;
+    startY: number;
+    ghostEl: HTMLElement | null;
+    sourceRowEl: HTMLElement | null;
+  } = {
     active: false,
     picked: false,
     item: null,
@@ -28,7 +55,7 @@
     document.addEventListener("pointercancel", cleanupDrag);
   }
 
-  function onPointerMove(e) {
+  function onPointerMove(e: PointerEvent) {
     if (!dragState.active) return;
     const x = e.clientX;
     const y = e.clientY;
@@ -46,7 +73,7 @@
     updateHighlights(x, y);
   }
 
-  function onPointerUp(e) {
+  function onPointerUp(e: PointerEvent) {
     if (!dragState.active) return;
     if (dragState.picked) tryDrop(e.clientX, e.clientY);
     cleanupDrag();
@@ -54,7 +81,7 @@
 
   function createGhost() {
     if (!dragState.sourceRowEl) return;
-    const ghost = dragState.sourceRowEl.cloneNode(true);
+    const ghost = dragState.sourceRowEl.cloneNode(true) as HTMLElement;
     ghost.classList.add("drag-ghost");
     ghost.style.position = "fixed";
     ghost.style.left = `${dragState.startX}px`;
@@ -67,12 +94,12 @@
     document.body.classList.add("drag-in-progress");
   }
 
-  function updateHighlights(x, y) {
+  function updateHighlights(x: number, y: number) {
     clearHighlights();
     const root = sectionAtPoint(x, y);
     if (!root) return;
     const key = root.dataset.sectionKey;
-    const target = sectionRegistry.get(key);
+    const target = key ? sectionRegistry.get(key) : undefined;
     if (target && target.group === dragState.group && target.key !== dragState.fromKey) {
       root.classList.add("is-drop-target");
     }
@@ -82,21 +109,23 @@
     sectionRegistry.forEach((entry) => entry.rootEl?.classList.remove("is-drop-target"));
   }
 
-  function sectionAtPoint(x, y) {
+  function sectionAtPoint(x: number, y: number): HTMLElement | null {
     const el = document.elementFromPoint(x, y);
-    return el ? el.closest("[data-section-key]") : null;
+    return el ? (el.closest("[data-section-key]") as HTMLElement | null) : null;
   }
 
-  function tryDrop(x, y) {
+  function tryDrop(x: number, y: number) {
     const root = sectionAtPoint(x, y);
     if (!root) return;
     const key = root.dataset.sectionKey;
-    const target = sectionRegistry.get(key);
+    const target = key ? sectionRegistry.get(key) : undefined;
     if (
       target &&
       target.group === dragState.group &&
       target.key !== dragState.fromKey &&
-      target.onExternalDrop
+      target.onExternalDrop &&
+      dragState.item &&
+      dragState.fromKey
     ) {
       target.onExternalDrop({ ...dragState.item }, dragState.fromKey);
     }
@@ -112,10 +141,16 @@
     document.body.classList.remove("drag-in-progress");
   }
 
-  function beginSectionDrag(e, item, key, group, rowEl) {
+  function beginSectionDrag(
+    e: PointerEvent,
+    item: DragItem,
+    key: string | undefined,
+    group: string | undefined,
+    rowEl: HTMLElement
+  ) {
     if (!key || !group) return;
     // Don't start a drag when interacting with controls in the row.
-    if (e.target.closest("button, input, select, a, label.check")) return;
+    if ((e.target as HTMLElement).closest("button, input, select, a, label.check")) return;
     dragState.active = true;
     dragState.picked = false;
     dragState.item = item;
@@ -128,12 +163,17 @@
     e.preventDefault();
   }
 
-  function registerSection(key, group, rootEl, onExternalDrop) {
+  function registerSection(
+    key: string | undefined,
+    group: string | undefined,
+    rootEl: HTMLElement | null,
+    onExternalDrop?: (item: DragItem, fromKey: string) => void
+  ) {
     if (!key) return;
     sectionRegistry.set(key, { key, group, rootEl, onExternalDrop });
   }
 
-  function unregisterSection(key) {
+  function unregisterSection(key: string | undefined) {
     if (key) sectionRegistry.delete(key);
   }
 </script>
@@ -175,7 +215,12 @@
     /** Optional extra note row under the footer (label + value), e.g. remaining money. */
     footerNote?: { label: string; value: number };
     /** Optional plan/budget cap note row, e.g. the maximal planned budget. */
-    footerPlan?: { label: string; value: number };
+    footerPlan?: {
+      label: string;
+      value: number;
+      /** Optional toggle shown on the plan row (e.g. "transfer received"). */
+      toggle?: { checked: boolean; label: string; hint?: string; onChange: (checked: boolean) => void };
+    };
     /** Called with the updated list whenever the user changes anything. */
     onChange: (items: ExpenseItem[]) => void;
     /** Unique key identifying this section's budget array (used for drag & drop). */
@@ -460,6 +505,22 @@
       <span>{footerPlan.label}</span>
       <span class="section-note-value">{formatCurrency(footerPlan.value)}</span>
     </div>
+    {#if footerPlan.toggle}
+      <div class="section-note plan-toggle">
+        <label class="switch" title={footerPlan.toggle.checked ? "Mark as not yet transferred" : "Mark transfer as received"}>
+          <input
+            type="checkbox"
+            checked={footerPlan.toggle.checked}
+            onchange={(e) => footerPlan?.toggle?.onChange((e.currentTarget as HTMLInputElement).checked)}
+          />
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-label">{footerPlan.toggle.label}</span>
+        </label>
+        {#if footerPlan.toggle.hint}
+          <span class="switch-hint">{footerPlan.toggle.hint}</span>
+        {/if}
+      </div>
+    {/if}
   {/if}
 
   {#if footerNote}
@@ -607,6 +668,27 @@
   .section-note.plan { background: transparent; border-top-style: dashed; color: var(--text-tertiary); }
   .section-note .section-note-value { font-weight: 700; font-variant-numeric: tabular-nums; }
   .section-note .section-note-value.negative { color: var(--danger); }
+
+  .section-note.plan-toggle { justify-content: flex-start; gap: 0.6rem; border-top: none; background: transparent; }
+  .switch { display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer; user-select: none; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch-track {
+    position: relative; width: 36px; height: 20px; flex-shrink: 0;
+    border-radius: 99px; background: var(--bg-muted);
+    border: 1px solid var(--surface-border);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .switch-thumb {
+    position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease;
+  }
+  .switch input:checked + .switch-track { background: var(--accent-teal); border-color: var(--accent-teal); }
+  .switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
+  .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(91, 138, 138, 0.25); }
+  .switch-label { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); }
+  .switch-hint { font-size: 0.72rem; color: var(--text-tertiary); margin-left: auto; }
 
   .gold .section-footer { --footer-accent: var(--accent-gold); --footer-bg: rgba(200, 149, 108, 0.08); }
   .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: rgba(196, 112, 112, 0.08); }

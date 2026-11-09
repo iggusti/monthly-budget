@@ -25,6 +25,18 @@
 
   const totals = $derived(computeTotals(budget));
 
+  // ── Wife → Husband pending transfer ─────────────────────────────────────
+  // A period starts on the 25th of the previous month, but the wife is not paid
+  // until the 1st. So when the equal-split transfer flows Wife → Husband, the
+  // husband must hold back that amount from his daily-from-salary plan until it
+  // actually lands. The section 5 toggle records when it has arrived.
+  const pendingWifeTransfer = $derived(totals.equalSplitTransfer < 0 ? -totals.equalSplitTransfer : 0);
+  const husbandPlanReduction = $derived(
+    pendingWifeTransfer > 0 && !budget.transferReceived ? pendingWifeTransfer : 0
+  );
+  const husbandSalaryPlan = $derived(totals.equalSplitAmount - husbandPlanReduction);
+  const husbandSalaryRemaining = $derived(husbandSalaryPlan - totals.husbandDailyFromSalaryTotal);
+
   // Combined daily totals (husband + wife).
   const dailyFromSalaryTotal = $derived(
     totals.husbandDailyFromSalaryTotal + totals.wifeDailyFromSalaryTotal
@@ -104,6 +116,11 @@
 
   function update<K extends keyof MonthBudget>(key: K, value: MonthBudget[K]) {
     persist({ ...budget, [key]: value });
+  }
+
+  /** Record whether the wife-to-husband equal-split transfer has arrived. */
+  function setTransferReceived(received: boolean) {
+    persist({ ...budget, transferReceived: received });
   }
 
   // ── Drag & drop between paired sections ─────────────────────────────────
@@ -395,11 +412,22 @@
       footerValue={totals.husbandDailyFromSalaryTotal}
       footerPlan={{
         label: "Max planned budget",
-        value: totals.equalSplitAmount
+        value: husbandSalaryPlan,
+        toggle:
+          pendingWifeTransfer > 0
+            ? {
+                checked: budget.transferReceived ?? false,
+                label: "Transfer from wife received",
+                hint: budget.transferReceived
+                  ? undefined
+                  : `Waiting for ${formatCurrency(pendingWifeTransfer)}`,
+                onChange: setTransferReceived
+              }
+            : undefined
       }}
       footerNote={{
         label: "Remaining money",
-        value: totals.equalSplitAmount - totals.husbandDailyFromSalaryTotal
+        value: husbandSalaryRemaining
       }}
       sectionKey="hs"
       dragGroup="husband"

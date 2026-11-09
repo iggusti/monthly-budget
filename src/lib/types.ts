@@ -77,6 +77,15 @@ export interface MonthBudget {
   wifeDailyFromSalary: DailyExpense[];
   wifeDailyFromSavings: DailyExpense[];
 
+  /**
+   * True once the equal-split transfer (Wife → Husband) has actually landed in
+   * the husband's account. At the start of a period (25th of the previous month)
+   * the wife has not been paid yet — her salary arrives on the 1st — so the
+   * husband's daily-from-salary plan is held back by the pending transfer until
+   * this flag is set. Only meaningful when `equalSplitTransfer` is negative.
+   */
+  transferReceived?: boolean;
+
   updatedAt?: string;
 }
 
@@ -124,7 +133,8 @@ export function createEmptyBudget(id: string): MonthBudget {
     husbandDailyFromSalary: [],
     husbandDailyFromSavings: [],
     wifeDailyFromSalary: [],
-    wifeDailyFromSavings: []
+    wifeDailyFromSavings: [],
+    transferReceived: false
   };
 }
 
@@ -156,7 +166,8 @@ export function normalizeBudget(id: string, raw: Partial<MonthBudget> | undefine
     husbandDailyFromSalary: raw.husbandDailyFromSalary ?? (raw as any).dailyFromSalary ?? [],
     husbandDailyFromSavings: raw.husbandDailyFromSavings ?? (raw as any).dailyFromSavings ?? [],
     wifeDailyFromSalary: raw.wifeDailyFromSalary ?? [],
-    wifeDailyFromSavings: raw.wifeDailyFromSavings ?? []
+    wifeDailyFromSavings: raw.wifeDailyFromSavings ?? [],
+    transferReceived: raw.transferReceived ?? false
   };
 }
 

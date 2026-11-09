@@ -56,6 +56,11 @@ Derived values (never stored):
 - Salary-funded and savings-funded daily totals are shown separately per spouse
 - "Max planned budget" on salary sections = `equalSplitAmount`; "Remaining money" =
   `equalSplitAmount − subtotal salary`
+- Pending equal-split transfer: a period starts on the 25th of the previous month, but the
+  wife is paid on the 1st. When `equalSplitTransfer` is Wife → Husband (negative), the
+  husband must hold back that transfer amount from his "Max planned budget" (section 5) until
+  it lands. Section 5 carries a `transferReceived` toggle for this; while it is unchecked the
+  husband's plan and "Remaining money" use `equalSplitAmount − |transfer|`
 
 ### Title Rules
 - A budget period's **title reflects its ending month** (e.g. id `2026-10` → "November 2026",
