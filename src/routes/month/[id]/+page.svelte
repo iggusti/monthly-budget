@@ -294,7 +294,7 @@ import Seo from "#lib/components/Seo.svelte";
           onClear={() => (searchQuery = "")}
         />
         <span class="save-state" class:saving>
-          {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{:else}{t("month.editable")}{/if}
+          {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{/if}
         </span>
       </div>
     </div>

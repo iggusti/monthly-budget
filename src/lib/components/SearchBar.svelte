@@ -1,5 +1,6 @@
 <script lang="ts">
   import { t } from "#lib/i18n.svelte";
+  import { untrack } from "svelte";
 
   /** SearchBar component props. */
   interface Props {
@@ -11,14 +12,35 @@
 
   let { query, onQueryChange, onClear, placeholderKey = "month.searchPlaceholder" } = $props();
 
+  // Local draft of what the user is typing. Search is only committed on Enter,
+  // so editing this does not trigger live filtering.
+  let draft = $state(query);
+
+  // Keep the draft in sync when the parent resets the query externally.
+  // Only track `query` here so typing in the input is not overwritten.
+  $effect(() => {
+    const q = query;
+    untrack(() => {
+      if (q !== draft) draft = q;
+    });
+  });
+
   let escaped = $derived(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // for aria-activedescendant
 
-  function handleInput(e: Event) {
-    const input = e.target as HTMLInputElement;
-    onQueryChange(input.value);
+  // Commit the current draft as the search query.
+  function commitSearch() {
+    if (draft !== query) onQueryChange(draft);
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitSearch();
+    }
   }
 
   function handleClear() {
+    draft = "";
     onClear();
   }
 </script>
@@ -38,15 +60,15 @@
   </svg>
   <input
     type="text"
-    bind:value={query}
-    oninput={handleInput}
+    bind:value={draft}
+    onkeydown={handleKeydown}
     placeholder={t(placeholderKey)}
     class="search-bar-input"
     aria-label={t("month.searchPlaceholder")}
     aria-activedescendant={escaped ? `search-${escaped.replace(/\s+/g, "-").toLowerCase()}` : ""}
     autocomplete="off"
   />
-  {#if query}
+  {#if draft}
     <button
       class="search-bar-clear"
       type="button"
@@ -55,13 +77,16 @@
     >
       <svg
         viewBox="0 0 24 24"
+        class="search-bar-clear-icon"
         fill="none"
         stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
+        stroke-linejoin="round"
         aria-hidden="true"
       >
-        <path d="M36 18l-15-15" />
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
       </svg>
     </button>
   {/if}
@@ -124,19 +149,19 @@
     padding: 0;
     color: var(--text-tertiary);
     cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.15s ease, color 0.15s ease;
+    transition: color 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+  }
+  .search-bar-clear-icon {
+    width: 1rem;
+    height: 1rem;
   }
   .search-bar-clear:hover,
   .search-bar-clear:focus-visible {
     color: var(--accent-gold);
-  }
-  .search-bar:hover .search-bar-clear,
-  .search-bar:focus-within .search-bar-clear {
-    opacity: 1;
   }
   @media (max-width: 768px) {
     .search-bar { max-width: 100%; }
