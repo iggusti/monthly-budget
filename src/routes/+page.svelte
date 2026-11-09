@@ -302,9 +302,9 @@
         <span class="overview-sub">{t("dashboard.husbandWife")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalFixed")}</span>
-        <span class="overview-value expense">{formatCurrency(currentFixedExpense)}</span>
-        <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
+        <span class="overview-label">{t("dashboard.perPerson")}</span>
+        <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
+        <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.balanceAfterFixed")}</span>
@@ -312,9 +312,9 @@
         <span class="overview-sub">{t("dashboard.incomeMinusFixed")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">{t("dashboard.perPerson")}</span>
-        <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
-        <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
+        <span class="overview-label">{t("dashboard.totalFixed")}</span>
+        <span class="overview-value expense">{formatCurrency(currentFixedExpense)}</span>
+        <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
