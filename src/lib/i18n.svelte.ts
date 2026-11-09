@@ -101,7 +101,7 @@ const en: Dict = {
   "dashboard.infoPerPersonSub": "after fixed, split evenly",
   "dashboard.confirmDelete": "Delete {month}? This cannot be undone.",
   "dashboard.searchPlaceholder": "Search expenses across months…",
-  "dashboard.searchEmpty": "No items found matching",
+  "dashboard.searchEmpty": "No expenses found matching",
 
   // ── Month page ────────────────────────────────────────────────────────────
   "month.allMonths": "All months",
@@ -152,8 +152,8 @@ const en: Dict = {
   "month.waitingTransfer": "Waiting for {amount}",
   "month.sectionMenu": "Jump to section",
   "month.sectionMenuClose": "Close section menu",
-  "month.searchPlaceholder": "Search items…",
-  "month.searchEmpty": "No items found matching",
+  "month.searchPlaceholder": "Search expenses…",
+  "month.searchEmpty": "No expenses found matching",
   "month.clearSearch": "Clear search",
   "month.pageTitle": "{title} — Monthly Budget Nia Ilham",
 
@@ -164,10 +164,10 @@ const en: Dict = {
   "expense.method": "Payment method",
   "expense.methodPlaceholder": "e.g. Cash, BNI, QRIS",
   "expense.add": "Add",
-  "expense.addItem": "Add item",
+  "expense.addItem": "Add expense",
   "expense.saveChanges": "Save changes",
   "expense.cancel": "Cancel",
-  "expense.edit": "Edit item",
+  "expense.edit": "Edit expense",
   "expense.delete": "Delete",
   "expense.markPaid": "Mark paid",
   "expense.markUnpaid": "Mark unpaid",
@@ -177,9 +177,9 @@ const en: Dict = {
   "expense.viewMore": "View {n} more",
   "expense.remaining": "remaining",
   "expense.paid": "paid",
-  "expense.deleteTitle": "Delete this item?",
+  "expense.deleteTitle": "Delete this expense?",
   "expense.deleteText": "{name} ({amount}) will be removed permanently.",
-  "expense.thisItem": "This item"
+  "expense.thisItem": "This expense"
 };
 
 const id: Dict = {
@@ -262,7 +262,7 @@ const id: Dict = {
   "dashboard.infoPerPersonSub": "setelah tetap, dibagi rata",
   "dashboard.confirmDelete": "Hapus {month}? Tindakan ini tidak dapat dibatalkan.",
   "dashboard.searchPlaceholder": "Cari pengeluaran di semua bulan…",
-  "dashboard.searchEmpty": "Tidak ada item yang sesuai",
+  "dashboard.searchEmpty": "Tidak ada pengeluaran yang sesuai",
 
   // ── Month page ────────────────────────────────────────────────────────────
   "month.allMonths": "Semua bulan",
@@ -313,8 +313,8 @@ const id: Dict = {
   "month.waitingTransfer": "Menunggu {amount}",
   "month.sectionMenu": "Lompat ke bagian",
   "month.sectionMenuClose": "Tutup menu bagian",
-  "month.searchPlaceholder": "Cari item…",
-  "month.searchEmpty": "Tidak ada item yang sesuai",
+  "month.searchPlaceholder": "Cari pengeluaran…",
+  "month.searchEmpty": "Tidak ada pengeluaran yang sesuai",
   "month.clearSearch": "Bersihkan pencarian",
   "month.pageTitle": "{title} — Anggaran Bulanan Nia Ilham",
 
@@ -325,10 +325,10 @@ const id: Dict = {
   "expense.method": "Metode pembayaran",
   "expense.methodPlaceholder": "mis. Tunai, BNI, QRIS",
   "expense.add": "Tambah",
-  "expense.addItem": "Tambah item",
+  "expense.addItem": "Tambah pengeluaran",
   "expense.saveChanges": "Simpan perubahan",
   "expense.cancel": "Batal",
-  "expense.edit": "Ubah item",
+  "expense.edit": "Ubah pengeluaran",
   "expense.delete": "Hapus",
   "expense.markPaid": "Tandai lunas",
   "expense.markUnpaid": "Tandai belum lunas",
@@ -338,9 +338,9 @@ const id: Dict = {
   "expense.viewMore": "Lihat {n} lagi",
   "expense.remaining": "sisa",
   "expense.paid": "terbayar",
-  "expense.deleteTitle": "Hapus item ini?",
+  "expense.deleteTitle": "Hapus pengeluaran ini?",
   "expense.deleteText": "{name} ({amount}) akan dihapus permanen.",
-  "expense.thisItem": "Item ini"
+  "expense.thisItem": "Pengeluaran ini"
 };
 
 const dictionaries: Record<Lang, Dict> = { en, id };
