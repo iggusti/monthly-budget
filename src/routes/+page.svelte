@@ -443,7 +443,7 @@
               </ul>
             {:else if exists && totals}
               <div class="card-person">
-                <span class="card-person-label">{t("dashboard.totalExpense")}</span>
+                <span class="card-person-label">{t("dashboard.expense")}</span>
                 <span class="card-person-value">{formatCurrency(totalExpense(totals))}</span>
               </div>
               <div class="card-groups">
