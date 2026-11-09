@@ -16,9 +16,9 @@
     // Wallet — everyday spending from salary
     wallet:
       '<path d="M20 7V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2"/><path d="M16 12h4v4h-4a2 2 0 0 1 0-4z"/>',
-    // Piggy bank — savings withdrawals
+    // Chicken money box ("celengan ayam") — savings withdrawals
     savings:
-      '<path d="M19 5c-1.5 0-2.8.4-3.8 1H8.5A5.5 5.5 0 0 0 3 11.5V13a2 2 0 0 0 2 2h1v4h4v-3h2v3h4v-4.5c1-.8 1.7-1.9 1.9-3.1L21 8c.5-1 .4-2-.5-2.5.3-.3.5-.5.5-.5z"/><circle cx="7.5" cy="11.5" r="1"/><path d="M18 5c0 0 .5 1-.5 2"/>'
+      '<path d="M9.5 4.5 8.2 2.6M12 4 12 2.2M14.5 4.5 15.8 2.6"/><path d="M6 11.5c0-2.7 2.6-4.9 5.7-4.9 2.2 0 4.1 1 5.1 2.6h2.4c1 0 1.8.8 1.8 1.8s-.8 1.8-1.8 1.8H17v1.4c0 .9-.4 1.6-1 2.2v2.3h-2.4v-1.6h-3.2v1.6H8v-2.6c-1.2-1-2-2.4-2-4.2Z"/><circle cx="15.4" cy="9.6" r=".6"/><path d="M16.7 7.7h.01"/>',
   };
 </script>
 
