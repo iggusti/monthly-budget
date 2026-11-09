@@ -427,11 +427,11 @@ import Seo from "#lib/components/Seo.svelte";
         {t("common.husband")} {formatCurrency(husbandTotalExpense)} · {t("common.wife")} {formatCurrency(wifeTotalExpense)}
       </span>
     </div>
-    <div class="stat-card balance" class:negative={totals.balanceAfterFixed < 0}>
-      <span class="stat-label">{t("month.balanceAfterFixed")}</span>
-      <span class="stat-value">{formatCurrency(totals.balanceAfterFixed)}</span>
+    <div class="stat-card savings">
+      <span class="stat-label">{t("month.totalDailyFromSavings")}</span>
+      <span class="stat-value">{formatCurrency(dailyFromSavingsTotal)}</span>
       <span class="stat-sub">
-        {t("month.fixedUsed", { percent: totals.usedPercentFixed })}
+        {t("common.husband")} {formatCurrency(totals.husbandDailyFromSavingsTotal)} · {t("common.wife")} {formatCurrency(totals.wifeDailyFromSavingsTotal)}
       </span>
     </div>
     <div class="stat-card split" class:negative={totals.equalSplitTransfer < 0}>
@@ -862,7 +862,7 @@ import Seo from "#lib/components/Seo.svelte";
   .stat-sub { font-size: 0.78rem; color: var(--text-tertiary); display: block; line-height: 1.5; }
   .stat-card.income .stat-value { color: var(--success); }
   .stat-card.expense .stat-value { color: var(--accent-gold); }
-  .stat-card.balance.negative .stat-value { color: var(--danger); }
+  .stat-card.savings .stat-value { color: var(--accent-blue); }
   .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-color: rgba(91, 138, 138, 0.35); }
   .stat-card.split .stat-value { color: var(--accent-teal); }
   .stat-card.split.negative .stat-value { color: var(--danger); }
