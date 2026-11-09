@@ -69,6 +69,23 @@ import Seo from "#lib/components/Seo.svelte";
     })
   );
 
+  // Section mana yang punya match dan section pertama untuk fokus otomatis
+  const matchedSections = $derived(
+    visibleItemsPerSection.map((s) => s.items.length > 0)
+  );
+  const firstMatchedIndex = $derived(matchedSections.indexOf(true));
+
+  // Auto-scroll ke section pertama yang memiliki hasil pencarian
+  $effect(() => {
+    if (searchQuery.trim() && firstMatchedIndex !== -1) {
+      const target = document.getElementById(`section-${firstMatchedIndex + 1}`);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.focus({ preventScroll: true });
+      }
+    }
+  });
+
   // Section titles for the mobile quick-jump menu, in page order.
   const SECTION_NAV_KEYS = [
     "month.section1",
@@ -279,12 +296,6 @@ import Seo from "#lib/components/Seo.svelte";
         <span class="save-state" class:saving>
           {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{:else}{t("month.editable")}{/if}
         </span>
-        <button class="edit-btn" onclick={openHeaderEditor}>
-          <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-          </svg>
-          {t("month.editHeader")}
-        </button>
       </div>
     </div>
     <div class="header-meta">
@@ -294,6 +305,12 @@ import Seo from "#lib/components/Seo.svelte";
       {:else}
         <h1 class="page-title">{budget.title}</h1>
         <p class="page-subtitle">{budget.period}</p>
+        <button class="edit-btn" onclick={openHeaderEditor}>
+          <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+          {t("month.editHeader")}
+        </button>
       {/if}
     </div>
   </div>
@@ -497,6 +514,7 @@ import Seo from "#lib/components/Seo.svelte";
       sectionId="section-1"
       title={t("month.section1")}
       sectionIndex={0}
+      highlightedQuery={searchQuery}
       badge="♂"
       icon="income"
       tone="blue"
@@ -509,6 +527,7 @@ import Seo from "#lib/components/Seo.svelte";
       sectionId="section-2"
       title={t("month.section2")}
       sectionIndex={1}
+      highlightedQuery={searchQuery}
       badge="♀"
       icon="income"
       tone="rose"
@@ -521,6 +540,7 @@ import Seo from "#lib/components/Seo.svelte";
       sectionId="section-3"
       title={t("month.section3")}
       sectionIndex={2}
+      highlightedQuery={searchQuery}
       badge="♂"
       icon="fixed"
       tone="blue"
@@ -537,6 +557,7 @@ import Seo from "#lib/components/Seo.svelte";
       sectionId="section-4"
       title={t("month.section4")}
       sectionIndex={3}
+      highlightedQuery={searchQuery}
       badge="♀"
       icon="fixed"
       tone="rose"
@@ -558,6 +579,7 @@ import Seo from "#lib/components/Seo.svelte";
       tone="blue"
       collapsible
       items={visibleItemsPerSection[4]?.items ?? budget.husbandDailyFromSalary}
+      highlightedQuery={searchQuery}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -598,6 +620,7 @@ import Seo from "#lib/components/Seo.svelte";
       tone="blue"
       collapsible
       items={visibleItemsPerSection[5]?.items ?? budget.husbandDailyFromSavings}
+      highlightedQuery={searchQuery}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -619,6 +642,7 @@ import Seo from "#lib/components/Seo.svelte";
       tone="rose"
       collapsible
       items={visibleItemsPerSection[6]?.items ?? budget.wifeDailyFromSalary}
+      highlightedQuery={searchQuery}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -648,6 +672,7 @@ import Seo from "#lib/components/Seo.svelte";
       tone="rose"
       collapsible
       items={visibleItemsPerSection[7]?.items ?? budget.wifeDailyFromSavings}
+      highlightedQuery={searchQuery}
       withMethod
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -932,7 +957,6 @@ import Seo from "#lib/components/Seo.svelte";
 
     /* Stack the spouse split vertically on small screens. */
     .savings-split { grid-template-columns: 1fr; }
-
     .back-text { display: none; }
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }

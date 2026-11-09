@@ -234,6 +234,8 @@
     onExternalDrop?: (item: ExpenseItem, fromKey: string) => void;
     /** Optional index (0–7) used for search filtering; maps to section 1–8. */
     sectionIndex?: number;
+    /** When set, item names containing this query will be highlighted with <mark>. */
+    highlightedQuery?: string;
   }
 
   let {
@@ -257,13 +259,21 @@
     onChange,
     sectionKey,
     dragGroup,
-    onExternalDrop
+    onExternalDrop,
+    highlightedQuery = ""
   }: Props = $props();
 
   /** Reactive labels so they follow the active language unless overridden. */
   const nameText = $derived(nameLabel ?? t("expense.nameLabel"));
   const amountText = $derived(amountLabel ?? t("expense.amountLabel"));
   const methodText = $derived(methodPlaceholder ?? t("expense.methodPlaceholder"));
+
+  /** Highlight matching text in item names when search query is provided. */
+  function highlightText(name: string, query: string): string {
+    if (!query || !query.trim()) return name;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    return name.replace(regex, "<mark>$1</mark>");
+  }
 
   let adding = $state(false);
   let editingId = $state<string | null>(null);
@@ -441,7 +451,7 @@
               </label>
             {/if}
             <span class="item-name">
-              {item.name}
+              {@html highlightText(item.name, highlightedQuery)}
               {#if item.method}<span class="tag">{item.method}</span>{/if}
             </span>
           </span>
@@ -748,5 +758,14 @@
     outline: 2px dashed var(--accent-blue);
     outline-offset: -2px;
     border-radius: var(--radius-lg);
+  }
+
+  /* Search highlight for matched item names */
+  mark {
+    background: var(--accent-gold);
+    color: #fff;
+    padding: 0 0.15rem;
+    border-radius: 2px;
+    font-weight: 600;
   }
 </style>
