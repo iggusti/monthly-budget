@@ -179,7 +179,10 @@ const en: Dict = {
   "expense.paid": "paid",
   "expense.deleteTitle": "Delete this expense?",
   "expense.deleteText": "{name} ({amount}) will be removed permanently.",
-  "expense.thisItem": "This expense"
+  "expense.thisItem": "This expense",
+  "expense.inactiveTitle": "Inactive month",
+  "expense.inactiveText": "This month is not the active budget period. Changes here affect past records. Continue?",
+  "expense.continue": "Continue"
 };
 
 const id: Dict = {
@@ -340,7 +343,10 @@ const id: Dict = {
   "expense.paid": "terbayar",
   "expense.deleteTitle": "Hapus pengeluaran ini?",
   "expense.deleteText": "{name} ({amount}) akan dihapus permanen.",
-  "expense.thisItem": "Pengeluaran ini"
+  "expense.thisItem": "Pengeluaran ini",
+  "expense.inactiveTitle": "Bulan tidak aktif",
+  "expense.inactiveText": "Bulan ini bukan periode anggaran aktif. Perubahan di sini memengaruhi catatan lampau. Lanjutkan?",
+  "expense.continue": "Lanjutkan"
 };
 
 const dictionaries: Record<Lang, Dict> = { en, id };

@@ -19,6 +19,24 @@ import Seo from "#lib/components/Seo.svelte";
 
   const monthId = $derived(page.params.id ?? "");
 
+  /**
+   * Current budget period id (`YYYY-MM`). The period runs from the 25th of the
+   * previous month through the 24th of the period month, so on the 25th or
+   * later we are already in the current month's period.
+   */
+  function currentPeriodId(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 1-based
+    const day = now.getDate();
+    const startMonth = day >= 25 ? month : month - 1;
+    const [targetYear, targetMonth] = startMonth <= 0 ? [year - 1, 12] : [year, startMonth];
+    return `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
+  }
+
+  /** Month pages outside the active period require confirmation before edits. */
+  const isActiveMonth = $derived(monthId === currentPeriodId());
+
   let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
   let loading = $state(true);
   let saving = $state(false);
@@ -514,6 +532,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[0]}
     <ExpenseSection
       sectionId="section-1"
+      confirmChanges={!isActiveMonth}
       title={t("month.section1")}
       sectionIndex={0}
       highlightedQuery={searchQuery}
@@ -529,6 +548,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[1]}
     <ExpenseSection
       sectionId="section-2"
+      confirmChanges={!isActiveMonth}
       title={t("month.section2")}
       sectionIndex={1}
       highlightedQuery={searchQuery}
@@ -544,6 +564,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[2]}
     <ExpenseSection
       sectionId="section-3"
+      confirmChanges={!isActiveMonth}
       title={t("month.section3")}
       sectionIndex={2}
       highlightedQuery={searchQuery}
@@ -563,6 +584,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[3]}
     <ExpenseSection
       sectionId="section-4"
+      confirmChanges={!isActiveMonth}
       title={t("month.section4")}
       sectionIndex={3}
       highlightedQuery={searchQuery}
@@ -583,6 +605,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[4]}
     <ExpenseSection
       sectionId="section-5"
+      confirmChanges={!isActiveMonth}
       title={t("month.section5")}
       badge="○"
       icon="wallet"
@@ -626,6 +649,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[5]}
     <ExpenseSection
       sectionId="section-6"
+      confirmChanges={!isActiveMonth}
       title={t("month.section6")}
       badge="↓"
       icon="savings"
@@ -650,6 +674,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[6]}
     <ExpenseSection
       sectionId="section-7"
+      confirmChanges={!isActiveMonth}
       title={t("month.section7")}
       badge="○"
       icon="wallet"
@@ -682,6 +707,7 @@ import Seo from "#lib/components/Seo.svelte";
     {#if !searchActive || matchedSections[7]}
     <ExpenseSection
       sectionId="section-8"
+      confirmChanges={!isActiveMonth}
       title={t("month.section8")}
       badge="↓"
       icon="savings"

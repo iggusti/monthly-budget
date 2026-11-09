@@ -236,6 +236,8 @@
     sectionIndex?: number;
     /** When set, item names containing this query will be highlighted with <mark>. */
     highlightedQuery?: string;
+    /** When true, ask for confirmation before adding, editing, or deleting. */
+    confirmChanges?: boolean;
   }
 
   let {
@@ -260,7 +262,8 @@
     sectionKey,
     dragGroup,
     onExternalDrop,
-    highlightedQuery = ""
+    highlightedQuery = "",
+    confirmChanges = false
   }: Props = $props();
 
   /** Reactive labels so they follow the active language unless overridden. */
@@ -279,6 +282,8 @@
   let editingId = $state<string | null>(null);
   let showAll = $state(false);
   let confirmDeleteId = $state<string | null>(null);
+  // A change awaiting confirmation because the month is not the active period.
+  let pendingChange = $state<{ items: ExpenseItem[]; action: "add" | "edit" } | null>(null);
   let rootEl = $state<HTMLElement | null>(null);
 
   $effect(() => {
@@ -348,10 +353,32 @@
     if (withMethod) clean.method = draft.method?.trim() ?? "";
 
     const exists = items.some((item) => item.id === clean.id);
-    onChange(exists ? items.map((item) => (item.id === clean.id ? clean : item)) : [...items, clean]);
+    const nextItems = exists
+      ? items.map((item) => (item.id === clean.id ? clean : item))
+      : [...items, clean];
 
+    // Editing an inactive month requires an explicit confirmation first.
+    if (confirmChanges) {
+      pendingChange = { items: nextItems, action: exists ? "edit" : "add" };
+      return;
+    }
+
+    onChange(nextItems);
     adding = false;
     editingId = null;
+  }
+
+  /** Apply the pending add/edit after the user confirms. */
+  function confirmPending() {
+    if (!pendingChange) return;
+    onChange(pendingChange.items);
+    pendingChange = null;
+    adding = false;
+    editingId = null;
+  }
+
+  function cancelPending() {
+    pendingChange = null;
   }
 
   function cancel() {
@@ -563,9 +590,26 @@
             amount: formatCurrency(target ? target.amount : 0)
           })}
         </p>
+        {#if confirmChanges}
+          <p class="modal-warning">⚠️ {t("expense.inactiveText")}</p>
+        {/if}
         <div class="modal-actions">
           <button class="btn-cancel" onclick={cancelDelete}>{t("expense.cancel")}</button>
           <button class="btn-danger" onclick={() => { if (confirmDeleteId) remove(confirmDeleteId); }}>{t("expense.delete")}</button>
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  {#if pendingChange}
+    <div class="modal-overlay" role="presentation">
+      <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
+        <span class="modal-icon">⚠️</span>
+        <h4 class="modal-title">{t("expense.inactiveTitle")}</h4>
+        <p class="modal-text">{t("expense.inactiveText")}</p>
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick={cancelPending}>{t("expense.cancel")}</button>
+          <button class="btn-danger" onclick={confirmPending}>{t("expense.continue")}</button>
         </div>
       </div>
     </div>
@@ -735,6 +779,12 @@
   .modal-icon { font-size: 2rem; display: block; margin-bottom: 0.75rem; }
   .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.4rem; }
   .modal-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.25rem; }
+  .modal-warning {
+    font-size: 0.78rem; font-weight: 600; line-height: 1.45;
+    color: var(--accent-gold); background: var(--accent-gold-light);
+    border-radius: var(--radius-sm); padding: 0.5rem 0.65rem;
+    margin: -0.6rem 0 1.1rem; text-align: left;
+  }
   .modal-actions { display: flex; gap: 0.6rem; justify-content: center; }
   .btn-danger { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--danger); color: white; font-size: 0.825rem; font-weight: 700; }
   .btn-danger:hover { background: #a85a5a; }
