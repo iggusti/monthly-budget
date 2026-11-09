@@ -70,6 +70,7 @@ import Seo from "#lib/components/Seo.svelte";
   );
 
   // Which sections have a match, and the first one for auto-focus.
+  const searchActive = $derived(searchQuery.trim().length > 0);
   const matchedSections = $derived(
     visibleItemsPerSection.map((section) => section.items.length > 0)
   );
@@ -77,7 +78,7 @@ import Seo from "#lib/components/Seo.svelte";
 
   // Auto-scroll to the first section that has a search result.
   $effect(() => {
-    if (searchQuery.trim() && firstMatchedIndex !== -1) {
+    if (searchActive && firstMatchedIndex !== -1) {
       const target = document.getElementById(`section-${firstMatchedIndex + 1}`);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -510,6 +511,7 @@ import Seo from "#lib/components/Seo.svelte";
   </div>
 
   <div class="sections" in:fade={{ duration: 350, delay: 120 }}>
+    {#if !searchActive || matchedSections[0]}
     <ExpenseSection
       sectionId="section-1"
       title={t("month.section1")}
@@ -522,7 +524,9 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[0]?.items ?? [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome }]}
       onChange={(items: ExpenseItem[]) => update("husbandIncome", items[0]?.amount ?? 0)}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[1]}
     <ExpenseSection
       sectionId="section-2"
       title={t("month.section2")}
@@ -535,7 +539,9 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[1]?.items ?? [{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome }]}
       onChange={(items: ExpenseItem[]) => update("wifeIncome", items[0]?.amount ?? 0)}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[2]}
     <ExpenseSection
       sectionId="section-3"
       title={t("month.section3")}
@@ -553,6 +559,8 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandFixed")}
     />
+    {/if}
+    {#if !searchActive || matchedSections[3]}
     <ExpenseSection
       sectionId="section-4"
       title={t("month.section4")}
@@ -570,7 +578,9 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeFixed")}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[4]}
     <ExpenseSection
       sectionId="section-5"
       title={t("month.section5")}
@@ -611,7 +621,9 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="husband"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandDailyFromSalary")}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[5]}
     <ExpenseSection
       sectionId="section-6"
       title={t("month.section6")}
@@ -633,7 +645,9 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="husband"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandDailyFromSavings")}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[6]}
     <ExpenseSection
       sectionId="section-7"
       title={t("month.section7")}
@@ -663,7 +677,9 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="wife"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSalary")}
     />
+    {/if}
 
+    {#if !searchActive || matchedSections[7]}
     <ExpenseSection
       sectionId="section-8"
       title={t("month.section8")}
@@ -685,7 +701,16 @@ import Seo from "#lib/components/Seo.svelte";
       dragGroup="wife"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSavings")}
     />
+    {/if}
   </div>
+
+  {#if searchActive && firstMatchedIndex === -1}
+    <div class="search-empty" in:fade={{ duration: 300 }}>
+      <span class="search-empty-icon">⌕</span>
+      <h3>{t("month.searchEmpty")}</h3>
+      <p>“{searchQuery}”</p>
+    </div>
+  {/if}
 
   <!-- Mobile-only floating navigation to jump between the eight sections. -->
   <div class="section-nav">
@@ -847,6 +872,15 @@ import Seo from "#lib/components/Seo.svelte";
   .chart-note strong { color: var(--text-primary); }
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
+
+  .search-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    text-align: center; padding: 3.5rem 2rem; background: var(--surface);
+    border: 1px dashed var(--surface-border); border-radius: var(--radius-lg);
+  }
+  .search-empty-icon { font-size: 2rem; color: var(--text-tertiary); }
+  .search-empty h3 { font-size: 1rem; font-weight: 700; }
+  .search-empty p { font-size: 0.85rem; color: var(--text-tertiary); overflow-wrap: anywhere; }
 
   /* ── Mobile quick section navigation ──────────────────────────────────── */
   .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 200; }
