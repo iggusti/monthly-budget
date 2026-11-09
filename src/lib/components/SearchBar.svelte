@@ -96,7 +96,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--bg);
+    background: var(--bg-muted);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-md);
     padding: 0 1rem;
@@ -104,12 +104,13 @@
     width: 100%;
     max-width: 360px;
     font-size: 0.875rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
   .search-bar:hover {
     border-color: var(--accent-gold);
   }
   .search-bar:focus-within {
+    background: var(--surface);
     border-color: var(--accent-gold);
     box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15);
     outline: none;
