@@ -157,7 +157,6 @@
   // This month's headline numbers.
   const currentIncome = $derived(currentTotals ? currentTotals.totalIncome : 0);
   const currentFixedExpense = $derived(currentTotals ? currentTotals.totalFixedExpenses : 0);
-  const currentBalance = $derived(currentIncome - currentFixedExpense);
   const currentPerPerson = $derived(currentTotals ? currentTotals.equalSplitAmount : 0);
 
   // Daily spending for the CURRENT month only (broken down per spouse).
@@ -167,6 +166,9 @@
   const currentSavingsWife = $derived(currentTotals ? currentTotals.wifeDailyFromSavingsTotal : 0);
   const currentSalary = $derived(currentSalaryHusband + currentSalaryWife);
   const currentSavings = $derived(currentSavingsHusband + currentSavingsWife);
+
+  // Total expenses = fixed + daily from salary + daily from savings.
+  const currentTotalExpense = $derived(currentFixedExpense + currentSalary + currentSavings);
 
   function monthLabel(id: string): string {
     // Reflect the END month of the period (e.g. 2026-10 -> "November 2026").
@@ -307,13 +309,13 @@
         <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">{t("dashboard.balanceAfterFixed")}</span>
-        <span class="overview-value" class:negative={currentBalance < 0}>{formatCurrency(currentBalance)}</span>
-        <span class="overview-sub">{t("dashboard.incomeMinusFixed")}</span>
+        <span class="overview-label">{t("dashboard.totalExpense")}</span>
+        <span class="overview-value expense">{formatCurrency(currentTotalExpense)}</span>
+        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalFixed")}</span>
-        <span class="overview-value expense">{formatCurrency(currentFixedExpense)}</span>
+        <span class="overview-value violet">{formatCurrency(currentFixedExpense)}</span>
         <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
       </div>
       <div class="overview-item">
@@ -516,7 +518,7 @@
   .overview-value.teal { color: var(--accent-teal); }
   .overview-value.rose { color: var(--accent-rose); }
   .overview-value.blue { color: var(--accent-blue); }
-  .overview-value.negative { color: var(--danger); }
+  .overview-value.violet { color: var(--accent-violet); }
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
   .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); }
