@@ -523,9 +523,9 @@
   .overview-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
   .overview-head-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
   .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
-  .overview-item { display: flex; flex-direction: column; gap: 0.8rem; }
-  .overview-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
-  .overview-value { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+  .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
+  .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .overview-value { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
   .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
   .overview-value.income { color: var(--success); }
   .overview-value.expense { color: var(--accent-gold); }
@@ -592,7 +592,7 @@
 
   .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
   .card-person-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
-  .card-person-value { font-size: 1.05rem; font-weight: 800; color: var(--accent-teal); }
+  .card-person-value { font-size: 0.9rem; font-weight: 800; color: var(--accent-teal); }
 
   .card-groups { display: flex; flex-direction: column; gap: 0.5rem; }
   .card-group { min-width: 0; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; }
