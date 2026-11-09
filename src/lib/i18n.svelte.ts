@@ -248,7 +248,7 @@ const id: Dict = {
   "dashboard.afterFixedSplit": "setelah tetap, dibagi rata",
   "dashboard.budgetPeriods": "Periode Anggaran",
   "dashboard.active": "Aktif",
-  "dashboard.past": "Lalu",
+  "dashboard.past": "Sebelumnya",
   "dashboard.new": "Baru",
   "dashboard.noBudgetYetTap": "Belum ada anggaran — ketuk untuk membuat",
   "dashboard.viewMore": "Lihat {n} lagi",
