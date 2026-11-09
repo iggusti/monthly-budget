@@ -13,28 +13,27 @@
   let { query, onQueryChange, onClear, placeholderKey = "month.searchPlaceholder" } = $props();
 
   // Local draft of what the user is typing. Search is only committed on Enter,
-  // so editing this does not trigger live filtering.
-  let draft = $state(query);
+  // so editing this does not trigger live filtering. The initial value is read
+  // untracked so the local `$state` doesn't capture `query` reactively.
+  let draft = $state(untrack(() => query));
 
   // Keep the draft in sync when the parent resets the query externally.
   // Only track `query` here so typing in the input is not overwritten.
   $effect(() => {
-    const q = query;
+    const nextQuery = query;
     untrack(() => {
-      if (q !== draft) draft = q;
+      if (nextQuery !== draft) draft = nextQuery;
     });
   });
-
-  let escaped = $derived(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); // for aria-activedescendant
 
   // Commit the current draft as the search query.
   function commitSearch() {
     if (draft !== query) onQueryChange(draft);
   }
 
-  function handleKeydown(e: KeyboardEvent) {
-    if (e.key === "Enter") {
-      e.preventDefault();
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Enter") {
+      event.preventDefault();
       commitSearch();
     }
   }
@@ -64,8 +63,7 @@
     onkeydown={handleKeydown}
     placeholder={t(placeholderKey)}
     class="search-bar-input"
-    aria-label={t("month.searchPlaceholder")}
-    aria-activedescendant={escaped ? `search-${escaped.replace(/\s+/g, "-").toLowerCase()}` : ""}
+    aria-label={t(placeholderKey)}
     autocomplete="off"
   />
   {#if draft}

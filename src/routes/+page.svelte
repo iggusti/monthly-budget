@@ -88,24 +88,24 @@
   }
 
   /** Collect every item in a budget that matches `query`, with section labels. */
-  function matchingItems(budget: MonthBudget, query: string): ItemMatch[] {
-    const out: ItemMatch[] = [];
+  function findMatchingItems(budget: MonthBudget, query: string): ItemMatch[] {
+    const matches: ItemMatch[] = [];
     if (matchesSearch(t("month.husbandIncome"), undefined, query)) {
-      out.push({ id: "husband-income", name: t("month.husbandIncome"), section: t("month.section1") });
+      matches.push({ id: "husband-income", name: t("month.husbandIncome"), section: t("month.section1") });
     }
     if (matchesSearch(t("month.wifeIncome"), undefined, query)) {
-      out.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
+      matches.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
     }
     SECTION_KEYS.forEach((key, i) => {
       if (key === "husbandIncome" || key === "wifeIncome") return;
       const items = (budget[key] ?? []) as { id: string; name: string; method?: string }[];
       for (const item of items) {
         if (matchesSearch(item.name, item.method, query)) {
-          out.push({ id: item.id, name: item.name, section: t(`month.section${i + 1}`) });
+          matches.push({ id: item.id, name: item.name, section: t(`month.section${i + 1}`) });
         }
       }
     });
-    return out;
+    return matches;
   }
 
   /**
@@ -118,15 +118,15 @@
     orderedMonths
       .map((id) => {
         const budget = monthBudget(id);
-        const items = budget ? matchingItems(budget, searchQuery) : [];
+        const items = budget ? findMatchingItems(budget, searchQuery) : [];
         return { id, items };
       })
-      .filter((r) => r.items.length > 0)
+      .filter((result) => result.items.length > 0)
   );
 
   /** Month ids currently rendered in the grid (search results or the normal list). */
-  const visibleIds = $derived(
-    searchActive ? searchResults.map((r) => r.id) : visibleMonths
+  const visibleMonthIds = $derived(
+    searchActive ? searchResults.map((result) => result.id) : visibleMonths
   );
 
   // Scroll to the first matching month when a search is committed.
@@ -379,12 +379,12 @@
     </div>
   {:else}
     <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
-      {#each visibleIds as id}
+      {#each visibleMonthIds as id}
         {@const exists = usedIds.has(id)}
         {@const budget = monthBudget(id)}
         {@const totals = budget ? computeTotals(budget) : null}
         {@const isCurrent = id === currentMonthId}
-        {@const matches = searchActive ? searchResults.find((r) => r.id === id)?.items ?? [] : []}
+        {@const matches = searchActive ? searchResults.find((result) => result.id === id)?.items ?? [] : []}
         <div
           class="month-card"
           id="month-{id}"
@@ -420,10 +420,10 @@
 
             {#if searchActive}
               <ul class="card-matches">
-                {#each matches as m}
+                {#each matches as match}
                   <li class="card-match">
-                    <span class="card-match-section">{m.section}</span>
-                    <span class="card-match-name">{@html highlightText(m.name, searchQuery)}</span>
+                    <span class="card-match-section">{match.section}</span>
+                    <span class="card-match-name">{@html highlightText(match.name, searchQuery)}</span>
                   </li>
                 {/each}
               </ul>

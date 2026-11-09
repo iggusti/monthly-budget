@@ -760,8 +760,8 @@
     border-radius: var(--radius-lg);
   }
 
-  /* Search highlight for matched item names */
-  mark {
+  /* Search highlight for matched item names (rendered via {@html}). */
+  :global(mark) {
     background: var(--accent-gold);
     color: #fff;
     padding: 0 0.15rem;

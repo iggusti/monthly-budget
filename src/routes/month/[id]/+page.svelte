@@ -50,32 +50,32 @@ import Seo from "#lib/components/Seo.svelte";
 
   // Derived visible items per section after search filtering.
   const visibleItemsPerSection = $derived(
-    SECTION_KEYS.map((sk, i) => {
+    SECTION_KEYS.map((sectionKey, index) => {
       let items: ExpenseItem[] = [];
-      if (sk === "husbandIncome") {
+      if (sectionKey === "husbandIncome") {
         items = [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome, method: undefined }];
-      } else if (sk === "wifeIncome") {
+      } else if (sectionKey === "wifeIncome") {
         items = [{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome, method: undefined }];
       } else {
-        // Use type assertion since sk is a union narrowed by the if/else above.
-        items = (budget[sk as keyof MonthBudget] ?? []) as ExpenseItem[];
+        // Use a type assertion since `sectionKey` is a union narrowed by the if/else above.
+        items = (budget[sectionKey as keyof MonthBudget] ?? []) as ExpenseItem[];
       }
       return {
-        index: i, // 0=section 1, 1=section 2, …, 7=section 8
-        key: sk,
-        title: t(`month.section${i + 1}`),
-        items: items.filter((it) => matchesSearch(it, searchQuery)),
+        index, // 0 = section 1, 1 = section 2, …, 7 = section 8
+        key: sectionKey,
+        title: t(`month.section${index + 1}`),
+        items: items.filter((item) => matchesSearch(item, searchQuery)),
       };
     })
   );
 
-  // Section mana yang punya match dan section pertama untuk fokus otomatis
+  // Which sections have a match, and the first one for auto-focus.
   const matchedSections = $derived(
-    visibleItemsPerSection.map((s) => s.items.length > 0)
+    visibleItemsPerSection.map((section) => section.items.length > 0)
   );
   const firstMatchedIndex = $derived(matchedSections.indexOf(true));
 
-  // Auto-scroll ke section pertama yang memiliki hasil pencarian
+  // Auto-scroll to the first section that has a search result.
   $effect(() => {
     if (searchQuery.trim() && firstMatchedIndex !== -1) {
       const target = document.getElementById(`section-${firstMatchedIndex + 1}`);
