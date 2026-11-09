@@ -146,6 +146,8 @@ const en: Dict = {
   "month.remainingMoney": "Remaining money",
   "month.transferReceived": "Transfer from wife received",
   "month.waitingTransfer": "Waiting for {amount}",
+  "month.sectionMenu": "Jump to section",
+  "month.sectionMenuClose": "Close section menu",
   "month.pageTitle": "{title} — Monthly Budget Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────
@@ -298,6 +300,8 @@ const id: Dict = {
   "month.remainingMoney": "Sisa uang",
   "month.transferReceived": "Transfer dari istri diterima",
   "month.waitingTransfer": "Menunggu {amount}",
+  "month.sectionMenu": "Lompat ke bagian",
+  "month.sectionMenuClose": "Tutup menu bagian",
   "month.pageTitle": "{title} — Anggaran Bulanan Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────

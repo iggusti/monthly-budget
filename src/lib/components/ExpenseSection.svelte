@@ -187,6 +187,8 @@
   interface Props {
     /** Section title, e.g. "Husband Fixed Expenses". */
     title: string;
+    /** Optional DOM id used as an in-page navigation anchor. */
+    sectionId?: string;
     /** Short badge glyph shown in the section header. */
     badge?: string;
     /** Optional SVG icon name for the badge (income | fixed | wallet | savings). */
@@ -234,6 +236,7 @@
 
   let {
     title,
+    sectionId,
     badge = "•",
     icon,
     tone = "gold",
@@ -365,7 +368,7 @@
   }
 </script>
 
-<div class="section {tone}" bind:this={rootEl} data-section-key={sectionKey || ""}>
+<div id={sectionId} class="section {tone}" tabindex="-1" bind:this={rootEl} data-section-key={sectionKey || ""}>
   <div class="section-head">
     <span class="badge">
       {#if icon}
@@ -558,7 +561,7 @@
 </div>
 
 <style>
-  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); scroll-margin-top: 4.5rem; }
 
   .section-head { display: flex; align-items: center; gap: 0.65rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .section-title { flex: 1; font-size: 0.88rem; font-weight: 700; }

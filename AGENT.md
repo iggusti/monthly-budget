@@ -72,7 +72,9 @@ Derived values (never stored):
   wife is paid on the 1st. When `equalSplitTransfer` is Wife → Husband (negative), the
   husband must hold back that transfer amount from his "Max planned budget" (section 5) until
   it lands. Section 5 carries a `transferReceived` toggle for this; while it is unchecked the
-  husband's plan and "Remaining money" use `equalSplitAmount − |transfer|`
+  husband's plan and "Remaining money" use `equalSplitAmount − |transfer|`. When the transfer
+  is Husband → Wife (positive), the toggle is hidden and the max planned budget is not
+  reduced any further.
 
 ### Title Rules
 - A budget period's **title reflects its ending month** (e.g. id `2026-10` → "November 2026",
@@ -146,3 +148,5 @@ Derived values (never stored):
 - The current budget period must stand out from past periods, but subtly
 - Chart values must be readable (place numbers outside bars, colored per category)
 - Use smooth transitions on all interactive elements
+- The month page has a mobile-only floating section-navigation button (bottom-right) that
+  jumps directly to sections 1–8, so mobile users avoid long scrolling

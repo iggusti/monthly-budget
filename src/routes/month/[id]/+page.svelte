@@ -23,6 +23,28 @@
   let saving = $state(false);
   let savedAt = $state<string>("");
   let showHeaderEditor = $state(false);
+  let showSectionNav = $state(false);
+
+  // Section titles for the mobile quick-jump menu, in page order.
+  const SECTION_NAV_KEYS = [
+    "month.section1",
+    "month.section2",
+    "month.section3",
+    "month.section4",
+    "month.section5",
+    "month.section6",
+    "month.section7",
+    "month.section8"
+  ] as const;
+
+  /** Close the menu and smooth-scroll to the requested section. */
+  function goToSection(index: number) {
+    showSectionNav = false;
+    const target = document.getElementById(`section-${index}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.focus({ preventScroll: true });
+  }
 
   let headerDraft = $state({ title: "", period: "" });
 
@@ -33,9 +55,16 @@
   // until the 1st. So when the equal-split transfer flows Wife → Husband, the
   // husband must hold back that amount from his daily-from-salary plan until it
   // actually lands. The section 5 toggle records when it has arrived.
-  const pendingWifeTransfer = $derived(totals.equalSplitTransfer < 0 ? -totals.equalSplitTransfer : 0);
+  //
+  // The reverse direction (Husband → Wife) needs neither the toggle nor any
+  // hold-back: `equalSplitAmount` already reflects the transfer the husband
+  // sends, so his max planned budget must not be reduced any further.
+  const pendingWifeToHusbandTransfer = $derived(
+    totals.equalSplitTransfer < 0 ? -totals.equalSplitTransfer : 0
+  );
+  const showTransferReceived = $derived(pendingWifeToHusbandTransfer > 0);
   const husbandPlanReduction = $derived(
-    pendingWifeTransfer > 0 && !budget.transferReceived ? pendingWifeTransfer : 0
+    showTransferReceived && !budget.transferReceived ? pendingWifeToHusbandTransfer : 0
   );
   const husbandSalaryPlan = $derived(totals.equalSplitAmount - husbandPlanReduction);
   const husbandSalaryRemaining = $derived(husbandSalaryPlan - totals.husbandDailyFromSalaryTotal);
@@ -123,6 +152,9 @@
 
   /** Record whether the wife-to-husband equal-split transfer has arrived. */
   function setTransferReceived(received: boolean) {
+    // Only meaningful for Wife → Husband; ignore any stale call when the
+    // transfer direction is Husband → Wife.
+    if (!showTransferReceived) return;
     persist({ ...budget, transferReceived: received });
   }
 
@@ -179,6 +211,15 @@
   title={t("month.pageTitle", { title: budget.title })}
   description={t("seo.monthDescription")}
   path={`/month/${monthId}`}
+/>
+
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === "Escape") showSectionNav = false;
+  }}
+  onresize={() => {
+    if (window.innerWidth > 768) showSectionNav = false;
+  }}
 />
 
 <div class="page">
@@ -404,6 +445,7 @@
 
   <div class="sections" in:fade={{ duration: 350, delay: 120 }}>
     <ExpenseSection
+      sectionId="section-1"
       title={t("month.section1")}
       badge="♂"
       icon="income"
@@ -414,6 +456,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-2"
       title={t("month.section2")}
       badge="♀"
       icon="income"
@@ -424,6 +467,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-3"
       title={t("month.section3")}
       badge="♂"
       icon="fixed"
@@ -438,6 +482,7 @@
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandFixed")}
     />
     <ExpenseSection
+      sectionId="section-4"
       title={t("month.section4")}
       badge="♀"
       icon="fixed"
@@ -453,6 +498,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-5"
       title={t("month.section5")}
       badge="○"
       icon="wallet"
@@ -471,13 +517,13 @@
         label: t("month.maxPlanned"),
         value: husbandSalaryPlan,
         toggle:
-          pendingWifeTransfer > 0
+          showTransferReceived
             ? {
                 checked: budget.transferReceived ?? false,
                 label: t("month.transferReceived"),
                 hint: budget.transferReceived
                   ? undefined
-                  : t("month.waitingTransfer", { amount: formatCurrency(pendingWifeTransfer) }),
+                  : t("month.waitingTransfer", { amount: formatCurrency(pendingWifeToHusbandTransfer) }),
                 onChange: setTransferReceived
               }
             : undefined
@@ -492,6 +538,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-6"
       title={t("month.section6")}
       badge="↓"
       icon="savings"
@@ -512,6 +559,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-7"
       title={t("month.section7")}
       badge="○"
       icon="wallet"
@@ -540,6 +588,7 @@
     />
 
     <ExpenseSection
+      sectionId="section-8"
       title={t("month.section8")}
       badge="↓"
       icon="savings"
@@ -558,6 +607,82 @@
       dragGroup="wife"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSavings")}
     />
+  </div>
+
+  <!-- Mobile-only floating navigation to jump between the eight sections. -->
+  <div class="section-nav">
+    {#if showSectionNav}
+      <button
+        class="section-nav-backdrop"
+        type="button"
+        tabindex="-1"
+        aria-label={t("month.sectionMenuClose")}
+        onclick={() => (showSectionNav = false)}
+      ></button>
+      <nav
+        id="section-nav-menu"
+        class="section-nav-menu"
+        aria-label={t("month.sectionMenu")}
+        transition:fly={{ y: 10, duration: 180 }}
+      >
+        <span class="section-nav-title">{t("month.sectionMenu")}</span>
+        {#each SECTION_NAV_KEYS as key, i (key)}
+          <button class="section-nav-item" type="button" onclick={() => goToSection(i + 1)}>
+            <span>{t(key)}</span>
+            <svg
+              viewBox="0 0 24 24"
+              class="section-nav-chevron"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+        {/each}
+      </nav>
+    {/if}
+
+    <button
+      class="section-nav-fab"
+      type="button"
+      aria-expanded={showSectionNav}
+      aria-controls="section-nav-menu"
+      aria-label={showSectionNav ? t("month.sectionMenuClose") : t("month.sectionMenu")}
+      onclick={() => (showSectionNav = !showSectionNav)}
+    >
+      {#if showSectionNav}
+        <svg
+          viewBox="0 0 24 24"
+          class="section-nav-icon"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      {:else}
+        <svg
+          viewBox="0 0 24 24"
+          class="section-nav-icon"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="4.5" cy="6" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.5" cy="12" r="1.1" fill="currentColor" stroke="none" />
+          <circle cx="4.5" cy="18" r="1.1" fill="currentColor" stroke="none" />
+          <path d="M9 6h11M9 12h11M9 18h11" />
+        </svg>
+      {/if}
+    </button>
   </div>
   {/if}
 </div>
@@ -645,12 +770,108 @@
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
 
+  /* ── Mobile quick section navigation ──────────────────────────────────── */
+  .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 200; }
+
+  .section-nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: rgba(26, 23, 20, 0.22);
+    backdrop-filter: blur(2px);
+    border: none;
+    padding: 0;
+    cursor: default;
+    touch-action: none;
+  }
+
+  .section-nav-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.75rem);
+    z-index: 2;
+    width: min(19rem, calc(100vw - 2rem));
+    max-height: min(68vh, 32rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    transform-origin: bottom right;
+  }
+
+  .section-nav-title {
+    padding: 0.35rem 0.65rem 0.45rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .section-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.6rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: left;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .section-nav-item:hover,
+  .section-nav-item:active {
+    background: var(--accent-gold-light);
+    color: var(--text-primary);
+  }
+  .section-nav-chevron {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-tertiary);
+  }
+  .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold); }
+
+  .section-nav-fab {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
+    box-shadow: 0 10px 26px rgba(200, 149, 108, 0.42), 0 4px 10px rgba(26, 23, 20, 0.18);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .section-nav-fab:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 14px 32px rgba(200, 149, 108, 0.5), 0 6px 14px rgba(26, 23, 20, 0.2);
+  }
+  .section-nav-fab:active { transform: scale(0.96); }
+  .section-nav-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+  .section-nav-icon { width: 1.35rem; height: 1.35rem; }
+
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
     .sections { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {
+    .page { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
+    .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
     .chart-body { flex-direction: column; gap: 1.25rem; }
