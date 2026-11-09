@@ -81,10 +81,10 @@
   .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); }
   .logo-mark {
     width: 32px; height: 32px;
-    background: var(--bg);
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 15px; color: var(--text-primary); font-weight: 700;
+    font-size: 15px; color: white; font-weight: 700;
   }
   .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
