@@ -12,6 +12,9 @@
     type ExpenseItem
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
+  import { t } from "#lib/i18n.svelte";
+  import Seo from "#lib/components/Seo.svelte";
+  import Skeleton from "#lib/components/Skeleton.svelte";
 
   const monthId = $derived(page.params.id ?? "");
 
@@ -53,9 +56,9 @@
     const remaining = Math.max(income - fixed - salary, 0);
     const total = income;
     return [
-      { key: "fixed", label: "Fixed expenses", value: fixed, frac: fixed / total, color: "var(--accent-gold)" },
-      { key: "salary", label: "Daily from salary", value: salary, frac: salary / total, color: "var(--accent-rose)" },
-      { key: "remaining", label: "Remaining", value: remaining, frac: remaining / total, color: "var(--accent-teal)" }
+      { key: "fixed", label: t("month.chartFixed"), value: fixed, frac: fixed / total, color: "var(--accent-gold)" },
+      { key: "salary", label: t("month.chartSalary"), value: salary, frac: salary / total, color: "var(--accent-rose)" },
+      { key: "remaining", label: t("month.chartRemaining"), value: remaining, frac: remaining / total, color: "var(--accent-teal)" }
     ];
   });
   // Donut geometry constants.
@@ -172,92 +175,147 @@
   }
 </script>
 
-<svelte:head>
-  <title>{budget.title} — Monthly Budget Nia Ilham</title>
-</svelte:head>
+<Seo
+  title={t("month.pageTitle", { title: budget.title })}
+  description={t("seo.monthDescription")}
+  path={`/month/${monthId}`}
+/>
 
 <div class="page">
   <div class="page-header" in:fade={{ duration: 350 }}>
     <div class="header-top">
-      <a href="/" class="back-btn" aria-label="All months">← <span class="back-text">All months</span></a>
+      <a href="/" class="back-btn" aria-label={t("month.allMonths")}>← <span class="back-text">{t("month.allMonths")}</span></a>
       <div class="header-side">
         <span class="save-state" class:saving>
-          {#if loading}Loading…{:else if saving}Saving…{:else if savedAt}Saved {savedAt}{:else}Editable{/if}
+          {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{:else}{t("month.editable")}{/if}
         </span>
         <button class="edit-btn" onclick={openHeaderEditor}>
           <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
-          Edit header
+          {t("month.editHeader")}
         </button>
       </div>
     </div>
     <div class="header-meta">
-      <h1 class="page-title">{budget.title}</h1>
-      <p class="page-subtitle">{budget.period}</p>
+      {#if loading}
+        <Skeleton width="220px" height="1.7rem" />
+        <Skeleton width="160px" height="0.85rem" />
+      {:else}
+        <h1 class="page-title">{budget.title}</h1>
+        <p class="page-subtitle">{budget.period}</p>
+      {/if}
     </div>
   </div>
 
+  {#if loading}
+    <!-- Summary skeleton -->
+    <div class="summary-row" aria-hidden="true">
+      {#each Array(4) as _}
+        <div class="stat-card">
+          <Skeleton width="65%" height="0.72rem" />
+          <Skeleton width="85%" height="1.5rem" />
+          <Skeleton width="75%" height="0.78rem" />
+        </div>
+      {/each}
+    </div>
+
+    <!-- Chart skeleton -->
+    <div class="chart-section" aria-hidden="true">
+      <Skeleton width="200px" height="0.9rem" />
+      <div class="chart-body" style="margin-top:1.1rem">
+        <Skeleton circle size={190} />
+        <div class="chart-legend">
+          {#each Array(3) as _}
+            <div class="legend-row">
+              <Skeleton width="14px" height="14px" radius="4px" />
+              <Skeleton width="120px" height="0.82rem" />
+              <Skeleton width="90px" height="0.85rem" />
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sections skeleton -->
+    <div class="sections" aria-hidden="true">
+      {#each Array(8) as _}
+        <div class="section-skeleton">
+          <div class="section-skeleton-head">
+            <Skeleton circle size={28} />
+            <Skeleton width="60%" height="0.88rem" />
+            <Skeleton width="80px" height="0.9rem" />
+          </div>
+          {#each Array(3) as _}
+            <div class="section-skeleton-row">
+              <Skeleton width="55%" height="0.86rem" />
+              <Skeleton width="70px" height="0.86rem" />
+            </div>
+          {/each}
+        </div>
+      {/each}
+    </div>
+  {:else}
   {#if showHeaderEditor}
     <div class="income-panel" in:slide={{ duration: 220 }}>
       <div class="income-fields">
         <label class="field">
-          <span>Title</span>
+          <span>{t("month.fieldTitle")}</span>
           <input type="text" bind:value={headerDraft.title} />
         </label>
         <label class="field">
-          <span>Budget period</span>
+          <span>{t("month.fieldPeriod")}</span>
           <input type="text" bind:value={headerDraft.period} />
         </label>
       </div>
       <div class="income-actions">
-        <button class="btn-save" onclick={saveHeader}>Save changes</button>
-        <button class="btn-cancel" onclick={() => (showHeaderEditor = false)}>Cancel</button>
+        <button class="btn-save" onclick={saveHeader}>{t("common.saveChanges")}</button>
+        <button class="btn-cancel" onclick={() => (showHeaderEditor = false)}>{t("common.cancel")}</button>
       </div>
     </div>
   {/if}
 
   <div class="summary-row" in:fly={{ y: 14, duration: 420, delay: 60 }}>
     <div class="stat-card income">
-      <span class="stat-label">Total Income</span>
+      <span class="stat-label">{t("month.totalIncome")}</span>
       <span class="stat-value">{formatCurrency(totals.totalIncome)}</span>
       <span class="stat-sub">
-        Husband {formatCurrency(budget.husbandIncome)} · Wife {formatCurrency(budget.wifeIncome)}
+        {t("common.husband")} {formatCurrency(budget.husbandIncome)} · {t("common.wife")} {formatCurrency(budget.wifeIncome)}
       </span>
     </div>
     <div class="stat-card expense">
-      <span class="stat-label">Total Fixed Expenses</span>
+      <span class="stat-label">{t("month.totalFixed")}</span>
       <span class="stat-value">{formatCurrency(totals.totalFixedExpenses)}</span>
       <span class="stat-sub">
-        Husband {formatCurrency(totals.husbandFixedTotal)} · Wife {formatCurrency(totals.wifeFixedTotal)}
+        {t("common.husband")} {formatCurrency(totals.husbandFixedTotal)} · {t("common.wife")} {formatCurrency(totals.wifeFixedTotal)}
       </span>
     </div>
     <div class="stat-card balance" class:negative={totals.balanceAfterFixed < 0}>
-      <span class="stat-label">Balance after Fixed Expenses</span>
+      <span class="stat-label">{t("month.balanceAfterFixed")}</span>
       <span class="stat-value">{formatCurrency(totals.balanceAfterFixed)}</span>
       <span class="stat-sub">
-        Fixed used {totals.usedPercentFixed}% of income
+        {t("month.fixedUsed", { percent: totals.usedPercentFixed })}
       </span>
     </div>
     <div class="stat-card split" class:negative={totals.equalSplitTransfer < 0}>
-      <span class="stat-label">Equal Split Transfer</span>
+      <span class="stat-label">{t("month.equalSplitTransfer")}</span>
       <span class="stat-value">{formatCurrency(Math.abs(totals.equalSplitTransfer))}</span>
       <span class="stat-sub">
-        {#if totals.equalSplitTransfer >= 0}Husband → Wife{:else}Wife → Husband{/if}
-        · each holds {formatCurrency(totals.equalSplitAmount)} after fixed
+        {#if totals.equalSplitTransfer >= 0}{t("common.husband")} → {t("common.wife")}{:else}{t("common.wife")} → {t("common.husband")}{/if}
+        · {t("month.eachHolds", { amount: formatCurrency(totals.equalSplitAmount) })}
       </span>
     </div>
   </div>
 
   <div class="chart-section" in:fly={{ y: 12, duration: 420, delay: 100 }}>
     <div class="chart-header">
-      <span class="chart-title">How this month's money flows</span>
+      <span class="chart-title">{t("month.chartTitle")}</span>
     </div>
 
     <div class="chart-body">
       <!-- Donut ring -->
       <div class="chart-donut">
-        <svg viewBox="0 0 120 120" width="190" height="190" role="img" aria-label="Income allocation donut">
+        <svg viewBox="0 0 120 120" width="190" height="190" role="img" aria-label={t("month.chartDonutAria")}>
           {#each chartCumulative() as seg, i}
             {@const dash = seg.frac * DONUT_C}
             {@const offset = -seg.start * DONUT_C}
@@ -275,7 +333,7 @@
             />
           {/each}
           <text x="60" y="56" text-anchor="middle" class="donut-value">{formatCurrency(totals.totalIncome)}</text>
-          <text x="60" y="72" text-anchor="middle" class="donut-label">total income</text>
+          <text x="60" y="72" text-anchor="middle" class="donut-label">{t("month.totalIncomeLabel")}</text>
         </svg>
       </div>
 
@@ -289,19 +347,19 @@
           </div>
           {#if seg.key === "fixed"}
             <div class="legend-split">
-              <span class="legend-split-label">Husband</span>
+              <span class="legend-split-label">{t("common.husband")}</span>
               <span class="legend-split-value blue">{formatCurrency(totals.husbandFixedTotal)}</span>
               <span class="legend-split-sep">·</span>
-              <span class="legend-split-label">Wife</span>
+              <span class="legend-split-label">{t("common.wife")}</span>
               <span class="legend-split-value rose">{formatCurrency(totals.wifeFixedTotal)}</span>
             </div>
           {/if}
           {#if seg.key === "salary"}
             <div class="legend-split">
-              <span class="legend-split-label">Husband</span>
+              <span class="legend-split-label">{t("common.husband")}</span>
               <span class="legend-split-value blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</span>
               <span class="legend-split-sep">·</span>
-              <span class="legend-split-label">Wife</span>
+              <span class="legend-split-label">{t("common.wife")}</span>
               <span class="legend-split-value rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</span>
             </div>
           {/if}
@@ -313,7 +371,7 @@
     <div class="chart-savings">
       <div class="savings-head">
         <span class="savings-icon">🏦</span>
-        <span class="savings-title">Daily from savings</span>
+        <span class="savings-title">{t("month.dailyFromSavings")}</span>
         <span class="savings-value">{formatCurrency(dailyFromSavingsTotal)}</span>
       </div>
       <div class="savings-bar">
@@ -321,53 +379,52 @@
       </div>
       <div class="savings-split">
         <div class="split-person">
-          <span class="split-person-label">Husband</span>
+          <span class="split-person-label">{t("common.husband")}</span>
           <span class="split-person-value blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</span>
         </div>
         <div class="split-person">
-          <span class="split-person-label">Wife</span>
+          <span class="split-person-label">{t("common.wife")}</span>
           <span class="split-person-value rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</span>
         </div>
       </div>
       <p class="savings-note">
-        Taken from savings — separate from this month's income.
+        {t("month.savingsNote")}
       </p>
     </div>
 
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
       <span>
-        Total income {formatCurrency(totals.totalIncome)} is split into fixed expenses,
-        daily spending from salary, and the remainder. After fixed is paid and split
-        evenly, each person holds
-        <strong>{formatCurrency(totals.equalSplitAmount)}</strong>.
+        {t("month.chartNoteStart", { income: formatCurrency(totals.totalIncome) })}
+        <strong>{t("month.chartNoteAmount", { perPerson: formatCurrency(totals.equalSplitAmount) })}</strong>
+        {t("month.chartNoteEnd")}
       </span>
     </div>
   </div>
 
   <div class="sections" in:fade={{ duration: 350, delay: 120 }}>
     <ExpenseSection
-      title="1. Husband Income"
+      title={t("month.section1")}
       badge="♂"
       icon="income"
       tone="blue"
-      nameLabel="Source"
-      items={[{ id: "husband-income", name: "Husband monthly income", amount: budget.husbandIncome }]}
+      nameLabel={t("month.sourceLabel")}
+      items={[{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome }]}
       onChange={(items: ExpenseItem[]) => update("husbandIncome", items[0]?.amount ?? 0)}
     />
 
     <ExpenseSection
-      title="2. Wife Income"
+      title={t("month.section2")}
       badge="♀"
       icon="income"
       tone="rose"
-      nameLabel="Source"
-      items={[{ id: "wife-income", name: "Wife monthly income", amount: budget.wifeIncome }]}
+      nameLabel={t("month.sourceLabel")}
+      items={[{ id: "wife-income", name: t("month.wifeIncome"), amount: budget.wifeIncome }]}
       onChange={(items: ExpenseItem[]) => update("wifeIncome", items[0]?.amount ?? 0)}
     />
 
     <ExpenseSection
-      title="3. Husband Fixed Expenses"
+      title={t("month.section3")}
       badge="♂"
       icon="fixed"
       tone="blue"
@@ -375,13 +432,13 @@
       collapsible
       items={budget.husbandFixed}
       onChange={(items: ExpenseItem[]) => update("husbandFixed", items)}
-      footerLabel="Husband fixed — remaining"
+      footerLabel={t("month.husbandFixedRemaining")}
       sectionKey="hf"
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "husbandFixed")}
     />
     <ExpenseSection
-      title="4. Wife Fixed Expenses"
+      title={t("month.section4")}
       badge="♀"
       icon="fixed"
       tone="rose"
@@ -389,14 +446,14 @@
       collapsible
       items={budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}
-      footerLabel="Wife fixed — remaining"
+      footerLabel={t("month.wifeFixedRemaining")}
       sectionKey="wf"
       dragGroup="fixed"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeFixed")}
     />
 
     <ExpenseSection
-      title="5. Husband Daily Expenses (from salary)"
+      title={t("month.section5")}
       badge="○"
       icon="wallet"
       tone="blue"
@@ -408,25 +465,25 @@
           "husbandDailyFromSalary",
           items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
         )}
-      footerLabel="Subtotal from salary"
+      footerLabel={t("month.subtotalSalary")}
       footerValue={totals.husbandDailyFromSalaryTotal}
       footerPlan={{
-        label: "Max planned budget",
+        label: t("month.maxPlanned"),
         value: husbandSalaryPlan,
         toggle:
           pendingWifeTransfer > 0
             ? {
                 checked: budget.transferReceived ?? false,
-                label: "Transfer from wife received",
+                label: t("month.transferReceived"),
                 hint: budget.transferReceived
                   ? undefined
-                  : `Waiting for ${formatCurrency(pendingWifeTransfer)}`,
+                  : t("month.waitingTransfer", { amount: formatCurrency(pendingWifeTransfer) }),
                 onChange: setTransferReceived
               }
             : undefined
       }}
       footerNote={{
-        label: "Remaining money",
+        label: t("month.remainingMoney"),
         value: husbandSalaryRemaining
       }}
       sectionKey="hs"
@@ -435,7 +492,7 @@
     />
 
     <ExpenseSection
-      title="6. Husband Daily Expenses (from savings)"
+      title={t("month.section6")}
       badge="↓"
       icon="savings"
       tone="blue"
@@ -447,7 +504,7 @@
           "husbandDailyFromSavings",
           items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
         )}
-      footerLabel="Subtotal from savings"
+      footerLabel={t("month.subtotalSavings")}
       footerValue={totals.husbandDailyFromSavingsTotal}
       sectionKey="hsv"
       dragGroup="husband"
@@ -455,7 +512,7 @@
     />
 
     <ExpenseSection
-      title="7. Wife Daily Expenses (from salary)"
+      title={t("month.section7")}
       badge="○"
       icon="wallet"
       tone="rose"
@@ -467,14 +524,14 @@
           "wifeDailyFromSalary",
           items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
         )}
-      footerLabel="Subtotal from salary"
+      footerLabel={t("month.subtotalSalary")}
       footerValue={totals.wifeDailyFromSalaryTotal}
       footerPlan={{
-        label: "Max planned budget",
+        label: t("month.maxPlanned"),
         value: totals.equalSplitAmount
       }}
       footerNote={{
-        label: "Remaining money",
+        label: t("month.remainingMoney"),
         value: totals.equalSplitAmount - totals.wifeDailyFromSalaryTotal
       }}
       sectionKey="ws"
@@ -483,7 +540,7 @@
     />
 
     <ExpenseSection
-      title="8. Wife Daily Expenses (from savings)"
+      title={t("month.section8")}
       badge="↓"
       icon="savings"
       tone="rose"
@@ -495,13 +552,14 @@
           "wifeDailyFromSavings",
           items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
         )}
-      footerLabel="Subtotal from savings"
+      footerLabel={t("month.subtotalSavings")}
       footerValue={totals.wifeDailyFromSavingsTotal}
       sectionKey="wsv"
       dragGroup="wife"
       onExternalDrop={(item, fromKey) => moveItem(item, fromKey, "wifeDailyFromSavings")}
     />
   </div>
+  {/if}
 </div>
 
 <style>
@@ -527,8 +585,8 @@
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
-  .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: white; font-size: 0.825rem; font-weight: 600; }
-  .btn-save:hover { background: #2d2a27; }
+  .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
+  .btn-save:hover { opacity: 0.88; }
   .btn-cancel { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); font-size: 0.825rem; font-weight: 600; }
   .btn-cancel:hover { background: var(--bg-muted); }
 
@@ -540,7 +598,7 @@
   .stat-card.income .stat-value { color: var(--success); }
   .stat-card.expense .stat-value { color: var(--accent-gold); }
   .stat-card.balance.negative .stat-value { color: var(--danger); }
-  .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), #ffffff); border-color: rgba(91, 138, 138, 0.35); }
+  .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-color: rgba(91, 138, 138, 0.35); }
   .stat-card.split .stat-value { color: var(--accent-teal); }
   .stat-card.split.negative .stat-value { color: var(--danger); }
 
@@ -575,7 +633,7 @@
   .savings-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-blue), #5a7090); border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
   .savings-note { font-size: 0.74rem; color: var(--text-tertiary); margin-top: 0.5rem; }
   .savings-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
-  .split-person { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; background: #fff; border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
+  .split-person { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; background: var(--surface); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
   .split-person-label { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
   .split-person-value { font-size: 0.9rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .split-person-value.blue { color: var(--accent-blue); }

@@ -17,6 +17,9 @@
     type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
+  import { t, lang } from "#lib/i18n.svelte";
+  import Seo from "#lib/components/Seo.svelte";
+  import Skeleton from "#lib/components/Skeleton.svelte";
 
   let budgets = $state<MonthBudget[]>([]);
   let loading = $state(true);
@@ -77,7 +80,8 @@
     // Reflect the END month of the period (e.g. 2026-10 -> "November 2026").
     const [year, month] = id.split("-").map(Number);
     const end = new Date(year, month || 1, 24);
-    return `${end.toLocaleString("en-US", { month: "long" })} ${end.getFullYear()}`;
+    const locale = lang.value === "id" ? "id-ID" : "en-US";
+    return `${end.toLocaleString(locale, { month: "long" })} ${end.getFullYear()}`;
   }
 
   function monthBudget(id: string): MonthBudget | undefined {
@@ -162,158 +166,205 @@
   }
 
   async function removeMonth(id: string) {
-    if (!confirm(`Delete ${monthLabel(id)}? This cannot be undone.`)) return;
+    if (!confirm(t("dashboard.confirmDelete", { month: monthLabel(id) }))) return;
     await deleteBudget(id);
     budgets = budgets.filter((b) => b.id !== id);
   }
 </script>
 
-<svelte:head>
-  <title>Monthly Budget Nia Ilham</title>
-</svelte:head>
+<Seo title={t("dashboard.pageTitle")} description={t("seo.dashboardDescription")} path="/" />
 
 <div class="page">
   <div in:fade={{ duration: 500 }} class="hero">
-    <p class="hero-eyebrow">Family Finance Tracker</p>
-    <h1 class="hero-title">Plan together.<br />Save beautifully.</h1>
+    <p class="hero-eyebrow">{t("dashboard.heroEyebrow")}</p>
+    <h1 class="hero-title">{t("dashboard.heroTitleLine1")}<br />{t("dashboard.heroTitleLine2")}</h1>
     <p class="hero-sub">
-      Track husband and wife income, fixed expenses, daily spending and savings
-      withdrawals — one budget period at a time.
+      {t("dashboard.heroSub")}
     </p>
   </div>
 
-  {#if !loading && budgets.length}
+  {#if loading}
+    <!-- Overview skeleton (mirrors the real summary layout) -->
+    <div class="overview" aria-hidden="true">
+      <div class="overview-head">
+        <Skeleton width="90px" height="0.9rem" />
+        <Skeleton width="120px" height="0.78rem" />
+      </div>
+      {#each Array(6) as _}
+        <div class="overview-item">
+          <Skeleton width="60%" height="0.68rem" />
+          <Skeleton width="80%" height="1.35rem" />
+          <Skeleton width="70%" height="0.7rem" />
+        </div>
+      {/each}
+    </div>
+  {:else if budgets.length}
     <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
       <div class="overview-head">
-        <span class="overview-head-title">This month</span>
+        <span class="overview-head-title">{t("dashboard.thisMonth")}</span>
         <span class="overview-head-sub">{monthLabel(currentMonthId)}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Total Income</span>
+        <span class="overview-label">{t("dashboard.totalIncome")}</span>
         <span class="overview-value income">{formatCurrency(currentIncome)}</span>
-        <span class="overview-sub">husband + wife</span>
+        <span class="overview-sub">{t("dashboard.husbandWife")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Total Fixed Expenses</span>
+        <span class="overview-label">{t("dashboard.totalFixed")}</span>
         <span class="overview-value expense">{formatCurrency(currentFixedExpense)}</span>
-        <span class="overview-sub">husband + wife fixed</span>
+        <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Balance after Fixed Expenses</span>
+        <span class="overview-label">{t("dashboard.balanceAfterFixed")}</span>
         <span class="overview-value" class:negative={currentBalance < 0}>{formatCurrency(currentBalance)}</span>
-        <span class="overview-sub">income − fixed</span>
+        <span class="overview-sub">{t("dashboard.incomeMinusFixed")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Per person</span>
+        <span class="overview-label">{t("dashboard.perPerson")}</span>
         <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
-        <span class="overview-sub">after fixed, split evenly</span>
+        <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Daily from salary</span>
+        <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
         <span class="overview-value rose">{formatCurrency(currentSalary)}</span>
-        <span class="overview-sub">husband {formatCurrency(currentSalaryHusband)} · wife {formatCurrency(currentSalaryWife)}</span>
+        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSalaryHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSalaryWife)}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">Daily from savings</span>
+        <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
         <span class="overview-value blue">{formatCurrency(currentSavings)}</span>
-        <span class="overview-sub">husband {formatCurrency(currentSavingsHusband)} · wife {formatCurrency(currentSavingsWife)}</span>
+        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSavingsHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSavingsWife)}</span>
       </div>
     </div>
   {/if}
 
   <div class="section-label" in:fly={{ y: 14, duration: 450, delay: 120 }}>
-    <span>Budget Periods</span>
+    <span>{t("dashboard.budgetPeriods")}</span>
   </div>
 
-  <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
-    {#each visibleMonths as id}
-      {@const exists = usedIds.has(id)}
-      {@const budget = monthBudget(id)}
-      {@const totals = budget ? computeTotals(budget) : null}
-      {@const isCurrent = id === currentMonthId}
-      <div
-        class="month-card"
-        class:current={isCurrent}
-        class:exists={exists}
-        class:past={exists && !isCurrent}
-      >
-        <a
-          href="/month/{id}"
-          class="card-link"
-          onclick={(e) => {
-            if (!exists) {
-              e.preventDefault();
-              createMonth(id);
-            }
-          }}
-        >
-          <div class="card-top">
-            <div class="card-titleblock">
-              <span class="card-month">{monthLabel(id)}</span>
-              <span class="card-period">{monthPeriod(id)}</span>
+  {#if loading}
+    <!-- Month card skeletons -->
+    <div class="months-grid" aria-hidden="true">
+      {#each Array(6) as _}
+        <div class="month-card">
+          <div class="card-link">
+            <div class="card-top">
+              <div class="card-titleblock">
+                <Skeleton width="110px" height="1.05rem" />
+                <Skeleton width="90px" height="0.72rem" />
+              </div>
+              <Skeleton width="48px" height="18px" radius="999px" />
             </div>
-            {#if isCurrent && exists}
-              <span class="card-badge current">Active</span>
-            {:else if exists}
-              <span class="card-badge past">Past</span>
-            {:else}
-              <span class="card-badge new">New</span>
-            {/if}
-          </div>
-
-          {#if exists && totals}
             <div class="card-person">
-              <span class="card-person-label">Per person</span>
-              <span class="card-person-value">{formatCurrency(totals.equalSplitAmount)}</span>
+              <Skeleton width="60px" height="0.72rem" />
+              <Skeleton width="80px" height="1rem" />
             </div>
             <div class="card-groups">
               <div class="card-group">
-                <span class="card-group-title">Husband</span>
-                <div class="card-group-row"><span>salary</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
-                <div class="card-group-row"><span>savings</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
+                <Skeleton width="50px" height="0.66rem" />
+                <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
+                <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
               </div>
               <div class="card-group">
-                <span class="card-group-title">Wife</span>
-                <div class="card-group-row"><span>salary</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
-                <div class="card-group-row"><span>savings</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+                <Skeleton width="40px" height="0.66rem" />
+                <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
+                <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
               </div>
             </div>
-          {:else}
-            <div class="card-empty">
-              <span class="card-empty-icon">+</span>
-              <span>No budget yet — tap to create</span>
+          </div>
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
+      {#each visibleMonths as id}
+        {@const exists = usedIds.has(id)}
+        {@const budget = monthBudget(id)}
+        {@const totals = budget ? computeTotals(budget) : null}
+        {@const isCurrent = id === currentMonthId}
+        <div
+          class="month-card"
+          class:current={isCurrent}
+          class:exists={exists}
+          class:past={exists && !isCurrent}
+        >
+          <a
+            href="/month/{id}"
+            class="card-link"
+            onclick={(e) => {
+              if (!exists) {
+                e.preventDefault();
+                createMonth(id);
+              }
+            }}
+          >
+            <div class="card-top">
+              <div class="card-titleblock">
+                <span class="card-month">{monthLabel(id)}</span>
+                <span class="card-period">{monthPeriod(id)}</span>
+              </div>
+              {#if isCurrent && exists}
+                <span class="card-badge current">{t("dashboard.active")}</span>
+              {:else if exists}
+                <span class="card-badge past">{t("dashboard.past")}</span>
+              {:else}
+                <span class="card-badge new">{t("dashboard.new")}</span>
+              {/if}
             </div>
-          {/if}
-        </a>
-      </div>
-    {/each}
-  </div>
 
-  {#if hasMoreMonths}
+            {#if exists && totals}
+              <div class="card-person">
+                <span class="card-person-label">{t("dashboard.perPerson")}</span>
+                <span class="card-person-value">{formatCurrency(totals.equalSplitAmount)}</span>
+              </div>
+              <div class="card-groups">
+                <div class="card-group">
+                  <span class="card-group-title">{t("common.husband")}</span>
+                  <div class="card-group-row"><span>{t("common.salary")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
+                  <div class="card-group-row"><span>{t("common.savings")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
+                </div>
+                <div class="card-group">
+                  <span class="card-group-title">{t("common.wife")}</span>
+                  <div class="card-group-row"><span>{t("common.salary")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
+                  <div class="card-group-row"><span>{t("common.savings")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+                </div>
+              </div>
+            {:else}
+              <div class="card-empty">
+                <span class="card-empty-icon">+</span>
+                <span>{t("dashboard.noBudgetYetTap")}</span>
+              </div>
+            {/if}
+          </a>
+        </div>
+      {/each}
+    </div>
+  {/if}
+
+  {#if !loading && hasMoreMonths}
     <div class="months-toggle">
       <button class="toggle-btn" onclick={() => (showAllMonths = !showAllMonths)}>
-        {showAllMonths ? "View less" : `View more (${orderedMonths.length - 8} more)`}
+        {showAllMonths ? t("common.viewLess") : t("dashboard.viewMore", { n: orderedMonths.length - 8 })}
         <span class="toggle-arrow">{showAllMonths ? "↑" : "↓"}</span>
       </button>
     </div>
   {/if}
 
-  {#if loading}
-    <div class="empty-state"><span class="empty-icon">◌</span><p>Loading your budgets…</p></div>
-  {:else if budgets.length === 0}
+  {#if !loading && budgets.length === 0}
     <div class="empty-state" in:fade={{ duration: 400 }}>
       <span class="empty-icon">◻</span>
-      <h3>No budget yet</h3>
-      <p>Create your first budget period from the month buttons above.</p>
+      <h3>{t("dashboard.noBudgetTitle")}</h3>
+      <p>{t("dashboard.noBudgetText")}</p>
     </div>
   {/if}
 
-  <div in:fade={{ duration: 500, delay: 400 }} class="info-strip">
-    <div class="info-item"><span class="info-dot blue"></span><span><b>Income & fixed</b> — husband and wife</span></div>
-    <div class="info-item"><span class="info-dot rose"></span><span><b>Daily from salary</b> — husband and wife</span></div>
-    <div class="info-item"><span class="info-dot teal"></span><span><b>Daily from savings</b> — husband and wife</span></div>
-    <div class="info-item"><span class="info-dot gold"></span><span><b>Per person</b> — after fixed, split evenly</span></div>
-  </div>
+  {#if !loading}
+    <div in:fade={{ duration: 500, delay: 400 }} class="info-strip">
+      <div class="info-item"><span class="info-dot blue"></span><span><b>{t("dashboard.infoIncomeFixed")}</b> — {t("dashboard.infoIncomeFixedSub")}</span></div>
+      <div class="info-item"><span class="info-dot rose"></span><span><b>{t("dashboard.infoSalary")}</b> — {t("dashboard.infoSalarySub")}</span></div>
+      <div class="info-item"><span class="info-dot teal"></span><span><b>{t("dashboard.infoSavings")}</b> — {t("dashboard.infoSavingsSub")}</span></div>
+      <div class="info-item"><span class="info-dot gold"></span><span><b>{t("dashboard.infoPerPerson")}</b> — {t("dashboard.infoPerPersonSub")}</span></div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -382,7 +433,7 @@
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
   .card-badge.current { background: var(--success-light); color: var(--success); }
 
-  .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), #fff); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
+  .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
   .card-person-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
   .card-person-value { font-size: 1.05rem; font-weight: 800; color: var(--accent-teal); }
 

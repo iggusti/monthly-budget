@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="'Inter', 'Nunito', system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17150f"/>
+      <stop offset="0.5" stop-color="#221b16"/>
+      <stop offset="1" stop-color="#16201f"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c8956c"/>
+      <stop offset="0.55" stop-color="#c47070"/>
+      <stop offset="1" stop-color="#5b8a8a"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c8956c"/>
+      <stop offset="1" stop-color="#a07050"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Decorative glow blobs -->
+  <circle cx="120" cy="90" r="220" fill="#c8956c" opacity="0.18"/>
+  <circle cx="1120" cy="560" r="240" fill="#c47070" opacity="0.16"/>
+  <circle cx="1020" cy="120" r="160" fill="#5b8a8a" opacity="0.14"/>
+
+  <!-- Logo mark -->
+  <g transform="translate(110, 150)">
+    <rect x="0" y="0" width="150" height="150" rx="38" fill="#1a1714" stroke="#3a352c" stroke-width="2"/>
+    <rect x="35" y="70" width="80" height="58" rx="8" fill="url(#gold)"/>
+    <path d="M22 72 L75 26 L128 72 Z" fill="url(#roof)"/>
+    <rect x="63" y="90" width="24" height="38" rx="5" fill="#faf9f7"/>
+    <path d="M75 96c-2.4-3.6-8.2-3.4-10.1 0.5-1.9 3.8 1.4 6.7 10.1 11.5 8.7-4.8 12-7.7 10.1-11.5-1.9-3.9-7.7-4.1-10.1-0.5z" fill="#c47070"/>
+  </g>
+
+  <!-- Title -->
+  <text x="110" y="405" fill="#f2ede6" font-size="72" font-weight="800" letter-spacing="-1.5">
+    Monthly Budget
+  </text>
+  <text x="110" y="490" fill="url(#gold)" font-size="72" font-weight="800" letter-spacing="-1.5">
+    Nia &amp; Ilham
+  </text>
+
+  <!-- Tagline -->
+  <text x="112" y="545" fill="#b3aca2" font-size="30" font-weight="500">
+    Plan together. Save beautifully.
+  </text>
+
+  <!-- Accent rule -->
+  <rect x="110" y="580" width="220" height="5" rx="2.5" fill="url(#gold)"/>
+</svg>

@@ -1,3 +1,11 @@
-# allow crawling everything by default
+# Monthly Budget Nia Ilham — private family application.
+# Not intended for search engine indexing.
 User-agent: *
-Disallow:
+Disallow: /
+
+# Explicitly block major crawlers.
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /

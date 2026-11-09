@@ -2,12 +2,21 @@
   import "../app.css";
   import { page } from "$app/state";
   import { logout, isAuthenticated } from "#lib/auth";
+  import { t } from "#lib/i18n.svelte";
+  import { syncTheme } from "#lib/theme.svelte";
+  import LanguageToggle from "#lib/components/LanguageToggle.svelte";
+  import ThemeToggle from "#lib/components/ThemeToggle.svelte";
 
   let { children } = $props();
 
   let authed = $state(false);
   $effect(() => {
     authed = isAuthenticated();
+  });
+
+  // Keep the document theme in sync with the store on mount.
+  $effect(() => {
+    syncTheme();
   });
 
   // The login screen is a standalone, full-screen page: no topbar/footer.
@@ -31,10 +40,14 @@
         </a>
         <nav class="topbar-nav">
           {#if authed}
-            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/" class="nav-link">{t("nav.dashboard")}</a>
             <span class="nav-sep">·</span>
-            <span class="nav-user">Family Plan</span>
-            <button class="nav-logout" onclick={handleLogout} title="Sign out">Sign out</button>
+            <span class="nav-user">{t("nav.familyPlan")}</span>
+          {/if}
+          <LanguageToggle />
+          <ThemeToggle />
+          {#if authed}
+            <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
           {/if}
         </nav>
       </div>
@@ -45,7 +58,7 @@
     </main>
 
     <footer class="footer">
-      <p>Monthly Budget Nia Ilham · Stay balanced, save together</p>
+      <p>{t("footer.tagline")}</p>
     </footer>
   </div>
 {/if}
@@ -55,7 +68,7 @@
 
   .topbar {
     position: sticky; top: 0; z-index: 100;
-    background: rgba(250, 249, 247, 0.88);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--surface-border);
     padding: 0 2rem; height: 60px;

@@ -11,7 +11,19 @@ This document contains all rules and guidelines that must always be followed whe
 ### Language Rules
 - Always use English in all code, comments, variable names, function names, file names, documentation, README files, and AGENT.md
 - Never use Indonesian or any other language in code or markdown files
-- Exception: user-entered **data** (item names, payment methods, etc.) is kept as the user typed it — never translate or modify it
+- Exception 1: the app UI is bilingual (English + Indonesian) via `src/lib/i18n.svelte.ts` —
+  keys live in code, translations are data
+- Exception 2: user-entered **data** (item names, payment methods, etc.) is kept as the user typed it — never translate or modify it
+
+### Internationalisation (i18n) Rules
+- The UI supports English (`en`, default) and Indonesian (`id`), toggled with
+  `src/lib/components/LanguageToggle.svelte`
+- The active language lives in `src/lib/i18n.svelte.ts` (`lang` rune store); use
+  `t("key", { param })` for all UI strings and `setLang` / `toggleLang` to switch
+- The choice is persisted in `localStorage` under `fhb-lang`
+- Every user-facing string must go through `t()`; never hardcode UI text in components
+- The language toggle appears in the topbar (all authed pages) and on the login screen
+- Month labels on the dashboard are locale-aware (EN "November 2026" / ID "November 2026")
 
 ### Design Rules
 - UI must reflect family values with warm, loving design
@@ -109,6 +121,7 @@ Derived values (never stored):
 - Put shared code in src/lib/
 - Components in src/lib/components/
 - Utilities in src/lib/utils/
+- i18n (EN/ID dictionaries + `t()`) in src/lib/i18n.svelte.ts
 - One-off data scripts in scripts/
 - Routes in src/routes/
 

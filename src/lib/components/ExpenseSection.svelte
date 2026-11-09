@@ -181,6 +181,7 @@
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { formatCurrency, makeId, type ExpenseItem } from "#lib/types";
+  import { t } from "#lib/i18n.svelte";
   import BadgeIcon from "./BadgeIcon.svelte";
 
   interface Props {
@@ -236,10 +237,10 @@
     badge = "•",
     icon,
     tone = "gold",
-    nameLabel = "Name",
-    amountLabel = "Amount (IDR)",
+    nameLabel,
+    amountLabel,
     withMethod = false,
-    methodPlaceholder = "e.g. Cash, BNI, QRIS",
+    methodPlaceholder,
     checkboxable = false,
     collapsible = false,
     collapseLimit = 8,
@@ -253,6 +254,11 @@
     dragGroup,
     onExternalDrop
   }: Props = $props();
+
+  /** Reactive labels so they follow the active language unless overridden. */
+  const nameText = $derived(nameLabel ?? t("expense.nameLabel"));
+  const amountText = $derived(amountLabel ?? t("expense.amountLabel"));
+  const methodText = $derived(methodPlaceholder ?? t("expense.methodPlaceholder"));
 
   let adding = $state(false);
   let editingId = $state<string | null>(null);
@@ -370,23 +376,23 @@
     </span>
     <span class="section-title">{title}</span>
     <span class="section-total">{formatCurrency(total)}</span>
-    <button class="add-btn" onclick={startAdd} aria-label="Add item">+</button>
+    <button class="add-btn" onclick={startAdd} aria-label={t("expense.addItem")}>+</button>
   </div>
 
   {#if adding}
     <div class="editor" in:slide={{ duration: 200 }}>
       <div class="editor-fields">
         <label class="field">
-          <span>{nameLabel}</span>
+          <span>{nameText}</span>
           <input
             type="text"
             bind:value={draft.name}
-            placeholder="e.g. Electricity bill"
+            placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
         </label>
         <label class="field">
-          <span>{amountLabel}</span>
+          <span>{amountText}</span>
           <input
             type="number"
             min="0"
@@ -397,14 +403,14 @@
         </label>
         {#if withMethod}
           <label class="field">
-            <span>Payment method</span>
-            <input type="text" bind:value={draft.method} placeholder={methodPlaceholder} />
+            <span>{t("expense.method")}</span>
+            <input type="text" bind:value={draft.method} placeholder={methodText} />
           </label>
         {/if}
       </div>
       <div class="editor-actions">
-        <button class="btn-save" onclick={commit}>Add</button>
-        <button class="btn-cancel" onclick={cancel}>Cancel</button>
+        <button class="btn-save" onclick={commit}>{t("expense.add")}</button>
+        <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
       </div>
     </div>
   {/if}
@@ -421,10 +427,10 @@
         >
           <span class="item-left">
             {#if sectionKey && dragGroup}
-              <span class="drag-handle" aria-hidden="true" title="Drag to move">⠿</span>
+              <span class="drag-handle" aria-hidden="true" title={t("expense.dragToMove")}>⠿</span>
             {/if}
             {#if checkboxable}
-              <label class="check" title={item.checked ? "Mark unpaid" : "Mark paid"}>
+              <label class="check" title={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
                 <input type="checkbox" checked={item.checked} onchange={() => toggleCheck(item.id)} />
                 <span class="checkmark"></span>
               </label>
@@ -436,12 +442,12 @@
           </span>
           <span class="item-right">
             <span class="item-amount">{formatCurrency(item.amount)}</span>
-            <button class="icon-btn" title="Edit" aria-label="Edit item" onclick={() => startEdit(item)}>
+            <button class="icon-btn" title={t("expense.edit")} aria-label={t("expense.edit")} onclick={() => startEdit(item)}>
               <svg viewBox="0 0 24 24" class="icon-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
               </svg>
             </button>
-            <button class="icon-btn danger" title="Delete" onclick={() => askRemove(item.id)}>✕</button>
+            <button class="icon-btn danger" title={t("expense.delete")} onclick={() => askRemove(item.id)}>✕</button>
           </span>
         </li>
 
@@ -450,23 +456,23 @@
             <div class="editor">
               <div class="editor-fields">
                 <label class="field">
-                  <span>{nameLabel}</span>
-                  <input type="text" bind:value={draft.name} placeholder="e.g. Electricity bill" onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <span>{nameText}</span>
+                  <input type="text" bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
                 </label>
                 <label class="field">
-                  <span>{amountLabel}</span>
+                  <span>{amountText}</span>
                   <input type="number" min="0" bind:value={draft.amount} placeholder="0" onkeydown={(e) => e.key === "Enter" && commit()} />
                 </label>
                 {#if withMethod}
                   <label class="field">
-                    <span>Payment method</span>
-                    <input type="text" bind:value={draft.method} placeholder={methodPlaceholder} />
+                    <span>{t("expense.method")}</span>
+                    <input type="text" bind:value={draft.method} placeholder={methodText} />
                   </label>
                 {/if}
               </div>
               <div class="editor-actions">
-                <button class="btn-save" onclick={commit}>Save changes</button>
-                <button class="btn-cancel" onclick={cancel}>Cancel</button>
+                <button class="btn-save" onclick={commit}>{t("expense.saveChanges")}</button>
+                <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
               </div>
             </div>
           </li>
@@ -476,14 +482,14 @@
 
     {#if hasMore}
       <button class="more-btn" onclick={() => (showAll = !showAll)}>
-        {showAll ? "View less" : `View ${hiddenCount} more`}
+        {showAll ? t("expense.viewLess") : t("expense.viewMore", { n: hiddenCount })}
         <span class="more-arrow">{showAll ? "↑" : "↓"}</span>
       </button>
     {/if}
   {/if}
 
   {#if !items.length && !adding}
-    <p class="empty">No entries yet — tap “+” to add one.</p>
+    <p class="empty">{t("expense.empty")}</p>
   {/if}
 
   {#if footerLabel !== undefined}
@@ -492,7 +498,7 @@
       {#if checkboxable}
         <span class="footer-check-stats">
           <span class="footer-remaining" class:negative={remaining < 0}>{formatCurrency(remaining)}</span>
-          <span class="footer-sub">remaining · {formatCurrency(checkedTotal)} paid</span>
+          <span class="footer-sub">{t("expense.remaining")} · {formatCurrency(checkedTotal)} {t("expense.paid")}</span>
         </span>
       {:else}
         <span class:negative={(footerValue ?? total) < 0}>{formatCurrency(footerValue ?? total)}</span>
@@ -507,7 +513,7 @@
     </div>
     {#if footerPlan.toggle}
       <div class="section-note plan-toggle">
-        <label class="switch" title={footerPlan.toggle.checked ? "Mark as not yet transferred" : "Mark transfer as received"}>
+        <label class="switch" title={footerPlan.toggle.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
           <input
             type="checkbox"
             checked={footerPlan.toggle.checked}
@@ -535,13 +541,16 @@
     <div class="modal-overlay" role="presentation">
       <div class="modal" role="dialog" aria-modal="true" tabindex="-1">
         <span class="modal-icon">🗑️</span>
-        <h4 class="modal-title">Delete this item?</h4>
+        <h4 class="modal-title">{t("expense.deleteTitle")}</h4>
         <p class="modal-text">
-          {target ? target.name : "This item"} ({formatCurrency(target ? target.amount : 0)}) will be removed permanently.
+          {t("expense.deleteText", {
+            name: target ? target.name : t("expense.thisItem"),
+            amount: formatCurrency(target ? target.amount : 0)
+          })}
         </p>
         <div class="modal-actions">
-          <button class="btn-cancel" onclick={cancelDelete}>Cancel</button>
-          <button class="btn-danger" onclick={() => { if (confirmDeleteId) remove(confirmDeleteId); }}>Delete</button>
+          <button class="btn-cancel" onclick={cancelDelete}>{t("expense.cancel")}</button>
+          <button class="btn-danger" onclick={() => { if (confirmDeleteId) remove(confirmDeleteId); }}>{t("expense.delete")}</button>
         </div>
       </div>
     </div>
@@ -577,8 +586,8 @@
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.85rem; }
-  .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: white; font-size: 0.8rem; font-weight: 600; }
-  .btn-save:hover { background: #2d2a27; }
+  .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.8rem; font-weight: 600; }
+  .btn-save:hover { opacity: 0.88; }
   .btn-cancel { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; }
   .btn-cancel:hover { background: var(--bg-muted); }
 

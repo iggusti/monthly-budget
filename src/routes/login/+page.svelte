@@ -1,10 +1,15 @@
 <script lang="ts">
   import { fade, scale } from "svelte/transition";
   import { login, isAuthenticated } from "#lib/auth";
+  import { t } from "#lib/i18n.svelte";
+  import { syncTheme } from "#lib/theme.svelte";
+  import LanguageToggle from "#lib/components/LanguageToggle.svelte";
+  import ThemeToggle from "#lib/components/ThemeToggle.svelte";
+  import Seo from "#lib/components/Seo.svelte";
   import { onMount } from "svelte";
 
   let keyword = $state("");
-  let error = $state("");
+  let hasError = $state(false);
   let shake = $state(false);
   let focus = $state(false);
   let show = $state(false);
@@ -12,6 +17,7 @@
   let showPassword = $state(false);
 
   onMount(() => {
+    syncTheme();
     if (isAuthenticated()) {
       location.href = "/";
       return;
@@ -22,27 +28,30 @@
   async function submit() {
     if (loading || !keyword.trim()) return;
     loading = true;
-    error = "";
+    hasError = false;
     const ok = await login(keyword);
     loading = false;
     if (ok) {
       location.href = "/";
     } else {
-      error = "Incorrect keyword. Please try again.";
+      hasError = true;
       shake = true;
       setTimeout(() => (shake = false), 500);
     }
   }
 </script>
 
-<svelte:head>
-  <title>Sign in — Monthly Budget Nia Ilham</title>
-</svelte:head>
+<Seo title={t("login.pageTitle")} description={t("seo.loginDescription")} path="/login" />
 
 <div class="login-page">
   <div class="blob blob1"></div>
   <div class="blob blob2"></div>
   <div class="blob blob3"></div>
+
+  <div class="lang-corner">
+    <LanguageToggle variant="inline" />
+    <ThemeToggle variant="inline" />
+  </div>
 
   <div class="card" class:show={show} class:shake={shake}>
     <div class="card-glow"></div>
@@ -64,20 +73,20 @@
       </svg>
     </div>
 
-    <h1 class="title">Monthly Budget Nia Ilham</h1>
-    <p class="subtitle">Plan together, save beautifully.</p>
+    <h1 class="title">{t("login.title")}</h1>
+    <p class="subtitle">{t("login.subtitle")}</p>
 
     <div class="divider"><span></span></div>
 
     <form onsubmit={(e) => { e.preventDefault(); submit(); }} class="form">
-      <label class="field-label" for="keyword">Family keyword</label>
+      <label class="field-label" for="keyword">{t("login.fieldLabel")}</label>
       <div class="input-wrap" class:focused={focus}>
         <span class="input-icon">🔑</span>
         <input
           id="keyword"
           type={showPassword ? "text" : "password"}
           bind:value={keyword}
-          placeholder="type the keyword…"
+          placeholder={t("login.placeholder")}
           autocomplete="off"
           onfocus={() => (focus = true)}
           onblur={() => (focus = false)}
@@ -88,24 +97,24 @@
           class="toggle-pass"
           onmousedown={(e) => e.preventDefault()}
           onclick={() => (showPassword = !showPassword)}
-          title={showPassword ? "Hide keyword" : "Show keyword"}
-          aria-label={showPassword ? "Hide keyword" : "Show keyword"}
+          title={showPassword ? t("login.hide") : t("login.show")}
+          aria-label={showPassword ? t("login.hide") : t("login.show")}
         >
           {showPassword ? "🙈" : "👁️"}
         </button>
       </div>
 
-      {#if error}
-        <p class="error" in:fade={{ duration: 200 }}>{error}</p>
+      {#if hasError}
+        <p class="error" in:fade={{ duration: 200 }}>{t("login.error")}</p>
       {/if}
 
       <button class="submit" type="submit" disabled={loading || !keyword.trim()}>
-        <span>{loading ? "Signing in…" : "Sign in"}</span>
+        <span>{loading ? t("login.signingIn") : t("login.signIn")}</span>
         <span class="arrow">{loading ? "" : "→"}</span>
       </button>
     </form>
 
-    <p class="hint">Only family members know the keyword.</p>
+    <p class="hint">{t("login.hint")}</p>
   </div>
 </div>
 
@@ -118,11 +127,16 @@
     overflow: hidden;
     max-width: 100%;
   }
+  :root[data-theme="dark"] .login-page {
+    background: linear-gradient(160deg, #17150f 0%, #221b16 45%, #16201f 100%);
+  }
 
   .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5; }
   .blob1 { width: 320px; height: 320px; background: #c8956c; top: -80px; left: -80px; }
   .blob2 { width: 280px; height: 280px; background: #c47070; bottom: -70px; right: -60px; }
   .blob3 { width: 220px; height: 220px; background: #5b8a8a; bottom: 20%; left: -60px; opacity: 0.35; }
+
+  .lang-corner { position: absolute; top: 1.25rem; right: 1.25rem; z-index: 2; display: flex; align-items: center; gap: 0.5rem; }
 
   /* Keep the decorative blobs from creating horizontal overflow on small screens. */
   @media (max-width: 640px) {
@@ -142,6 +156,11 @@
     box-shadow: 0 24px 60px rgba(26, 23, 20, 0.18);
     opacity: 0; transform: translateY(16px) scale(0.98);
     transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  :root[data-theme="dark"] .card {
+    background: rgba(33, 30, 24, 0.85);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   }
   .card.show { opacity: 1; transform: translateY(0) scale(1); }
   .card.shake { animation: shake 0.5s; }
@@ -166,6 +185,7 @@
     border-radius: 20px;
     box-shadow: 0 8px 24px rgba(26, 23, 20, 0.12);
   }
+  :root[data-theme="dark"] .logo { background: linear-gradient(135deg, #2c2620, #22302f); }
 
   .title { text-align: center; font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
   .subtitle { text-align: center; color: var(--text-tertiary); font-size: 0.9rem; margin-top: 0.3rem; }
@@ -179,7 +199,7 @@
   .input-wrap {
     display: flex; align-items: center; gap: 0.6rem;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
-    background: #fff; border: 1.5px solid var(--surface-border);
+    background: var(--surface); border: 1.5px solid var(--surface-border);
     border-radius: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
   }

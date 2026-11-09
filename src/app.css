@@ -30,6 +30,37 @@
   --radius-xl: 20px;
 }
 
+/* ── Dark theme ─────────────────────────────────────────────────────────────
+ * Warm, low-contrast dark palette that keeps the family colour accents but
+ * swaps the paper-white surfaces for soft charcoal tones.
+ */
+:root[data-theme="dark"] {
+  --bg: #17150f;
+  --bg-elevated: #201d18;
+  --bg-muted: #262219;
+  --surface: #211e18;
+  --surface-border: #34302a;
+  --text-primary: #f2ede6;
+  --text-secondary: #b3aca2;
+  --text-tertiary: #837c72;
+  --accent-gold: #d8a878;
+  --accent-gold-light: #33291f;
+  --accent-rose: #d98a8a;
+  --accent-rose-light: #332321;
+  --accent-teal: #79acac;
+  --accent-teal-light: #1e2c2c;
+  --accent-blue: #8ea3c6;
+  --accent-blue-light: #212733;
+  --success: #86b892;
+  --success-light: #1f2a22;
+  --danger: #d98a8a;
+  --danger-light: #332321;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35);
+  color-scheme: dark;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html { scroll-behavior: smooth; }
