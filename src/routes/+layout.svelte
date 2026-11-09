@@ -39,10 +39,12 @@
           <span class="logo-text">Nia & Ilham</span>
         </a>
         <nav class="topbar-nav">
+          <LanguageToggle />
+          <ThemeToggle />
+          {#if authed}
+            <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
+          {/if}
         </nav>
-        <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
-        <LanguageToggle />
-        <ThemeToggle />
       </div>
     </header>
 
