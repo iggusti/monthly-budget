@@ -44,9 +44,6 @@
           {/if}
           <LanguageToggle />
           <ThemeToggle />
-          {#if authed}
-            <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
-          {/if}
         </nav>
       </div>
     </header>
