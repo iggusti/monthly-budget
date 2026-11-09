@@ -40,9 +40,7 @@
         </a>
         <nav class="topbar-nav">
           {#if authed}
-            <a href="/" class="nav-link">{t("nav.dashboard")}</a>
-            <span class="nav-sep">·</span>
-            <span class="nav-user">{t("nav.familyPlan")}</span>
+            <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
           {/if}
           <LanguageToggle />
           <ThemeToggle />
