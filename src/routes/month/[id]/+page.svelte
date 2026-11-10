@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { page } from "$app/state";
+  import { goto } from "$app/navigation";
   import { fade, fly, slide } from "svelte/transition";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
-  import { subscribeBudget, saveBudget } from "#lib/budget-store";
+  import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
   import {
     computeTotals,
     createEmptyBudget,
@@ -36,6 +37,17 @@ import Seo from "#lib/components/Seo.svelte";
 
   /** Month pages outside the active period require confirmation before edits. */
   const isActiveMonth = $derived(monthId === currentPeriodId());
+
+  /** All stored month ids, sorted chronologically (oldest first). */
+  let allMonthIds = $state<string[]>([]);
+
+  const currentIndex = $derived(allMonthIds.indexOf(monthId));
+  const prevMonthId = $derived(currentIndex > 0 ? allMonthIds[currentIndex - 1] : null);
+  const nextMonthId = $derived(currentIndex >= 0 && currentIndex < allMonthIds.length - 1 ? allMonthIds[currentIndex + 1] : null);
+  /** Right arrow goes to the previous month; stop at the earliest month in DB. */
+  const canGoPrevious = $derived(prevMonthId != null);
+  /** Left arrow goes to the next month; stop when on the active month. */
+  const canGoNext = $derived(nextMonthId != null && !isActiveMonth);
 
   let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
   let loading = $state(true);
@@ -201,6 +213,11 @@ import Seo from "#lib/components/Seo.svelte";
       return;
     }
     if (!monthId) return;
+
+    // Know which months exist in DB so navigation can stop at the edges.
+    fetchAllBudgets().then((bs) => {
+      allMonthIds = bs.map((b) => b.id).sort();
+    });
 
     // If navigating directly to a month other than the default, start from a
     // correctly-titled empty budget until the live data arrives.
@@ -824,6 +841,29 @@ import Seo from "#lib/components/Seo.svelte";
       {/if}
     </button>
   </div>
+
+  <!-- Month-to-month navigation: left → next month, right → previous month. -->
+  <nav class="month-nav" aria-label="Month navigation">
+    <button
+      class="month-nav-btn"
+      type="button"
+      aria-label="Next month"
+      disabled={!canGoNext}
+      onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
+    >
+      ←
+    </button>
+    <span class="month-nav-sep">{monthId}</span>
+    <button
+      class="month-nav-btn"
+      type="button"
+      aria-label="Previous month"
+      disabled={!canGoPrevious}
+      onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
+    >
+      →
+    </button>
+  </nav>
   {/if}
 </div>
 
@@ -1012,6 +1052,46 @@ import Seo from "#lib/components/Seo.svelte";
   .section-nav-fab:active { transform: scale(0.96); }
   .section-nav-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
   .section-nav-icon { width: 1.35rem; height: 1.35rem; }
+
+  /* Month-to-month navigation bar at the bottom of the month page. */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 2rem 0;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--surface-border);
+  }
+  .month-nav-btn {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    border: 1px solid var(--surface-border);
+    background: var(--bg);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .month-nav-btn:hover:not(:disabled) {
+    background: var(--bg-muted);
+    color: var(--accent-gold);
+  }
+  .month-nav-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: var(--text-tertiary);
+  }
+  .month-nav-sep {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+  }
 
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
