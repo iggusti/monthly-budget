@@ -1,5 +1,6 @@
 import {
   db,
+  auth,
   BUDGET_COLLECTION,
   collection,
   doc,
@@ -79,16 +80,40 @@ export function subscribeAllBudgets(
   );
 }
 
-/** Persist a budget, stamping the update time. */
+/**
+ * Persist a budget, stamping the update time and the editor's uid.
+ *
+ * `lastEditBy` is what lets the push notification function avoid notifying the
+ * device that made the change.
+ */
 export async function saveBudget(budget: MonthBudget): Promise<void> {
   const payload: MonthBudget = {
     ...budget,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    lastEditBy: auth.currentUser?.uid ?? null
   };
   await setDoc(doc(db, BUDGET_COLLECTION, budget.id), payload, { merge: true });
 }
 
 /** Permanently delete a budget. */
 export async function deleteBudget(id: string): Promise<void> {
-  await deleteDoc(doc(db, BUDGET_COLLECTION, id));
+  const ref = doc(db, BUDGET_COLLECTION, id);
+  const uid = auth.currentUser?.uid;
+
+  // Stamp the deleter first: the delete trigger only sees the document as it
+  // was just before removal, so without this the sender could not tell who
+  // removed the month (and would notify the deleter's own phone).
+  if (uid) {
+    try {
+      await setDoc(
+        ref,
+        { lastEditBy: uid, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Failed to stamp budget deletion:", error);
+    }
+  }
+
+  await deleteDoc(ref);
 }

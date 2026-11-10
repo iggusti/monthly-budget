@@ -2,9 +2,11 @@
   import "../app.css";
   import { page } from "$app/state";
   import { logout, isAuthenticated } from "#lib/auth";
-  import { t } from "#lib/i18n.svelte";
+  import { t, lang } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
+  import { initNotifications } from "#lib/notifications.svelte";
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";
+  import NotificationToggle from "#lib/components/NotificationToggle.svelte";
   import ThemeToggle from "#lib/components/ThemeToggle.svelte";
 
   let { children } = $props();
@@ -21,6 +23,13 @@
 
   // The login screen is a standalone, full-screen page: no topbar/footer.
   const isLogin = $derived(page.url.pathname === "/login");
+
+  // Refresh the push registration (and its stored language) once signed in.
+  $effect(() => {
+    const currentLang = lang.value;
+    if (isLogin || !isAuthenticated()) return;
+    void initNotifications(currentLang);
+  });
 
   async function handleLogout() {
     await logout();
@@ -40,6 +49,7 @@
         </a>
         <nav class="topbar-nav">
           <LanguageToggle />
+          <NotificationToggle />
           <ThemeToggle />
           {#if authed}
             <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>

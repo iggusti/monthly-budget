@@ -42,6 +42,13 @@ const en: Dict = {
   "nav.theme": "Theme",
   "nav.themeLight": "Switch to light mode",
   "nav.themeDark": "Switch to dark mode",
+  "nav.notificationsOn": "Notifications on · tap to turn off",
+  "nav.notificationsOff": "Turn on notifications",
+  "notify.unsupported": "This browser does not support push notifications.",
+  "notify.unconfigured": "Push notifications are not configured yet.",
+  "notify.denied": "Notifications are blocked. Allow them in your browser settings.",
+  "notify.error": "Could not enable notifications. Please try again.",
+  "notify.disabled": "Notifications turned off for this device.",
   "footer.tagline": "Monthly Budget Nia Ilham · Stay balanced, save together",
 
   // ── Login ─────────────────────────────────────────────────────────────────
@@ -217,6 +224,13 @@ const id: Dict = {
   "nav.familyPlan": "Rencana Keluarga",
   "nav.signOut": "Keluar",
   "nav.language": "Bahasa",
+  "nav.notificationsOn": "Notifikasi aktif · ketuk untuk mematikan",
+  "nav.notificationsOff": "Aktifkan notifikasi",
+  "notify.unsupported": "Browser ini tidak mendukung notifikasi push.",
+  "notify.unconfigured": "Notifikasi push belum dikonfigurasi.",
+  "notify.denied": "Notifikasi diblokir. Izinkan lewat pengaturan browser.",
+  "notify.error": "Gagal mengaktifkan notifikasi. Coba lagi.",
+  "notify.disabled": "Notifikasi dimatikan untuk perangkat ini.",
   "footer.tagline":
     "Anggaran Bulanan Nia Ilham · Tetap seimbang, menabung bersama",
 

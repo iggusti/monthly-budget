@@ -87,6 +87,12 @@ export interface MonthBudget {
   transferReceived?: boolean;
 
   updatedAt?: string;
+
+  /**
+   * Firebase anonymous uid of the device that wrote this document last.
+   * The push-notification function uses it to skip the editor's own devices.
+   */
+  lastEditBy?: string | null;
 }
 
 /** Aggregated numbers derived from a {@link MonthBudget}. */
