@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { fade, fly, slide } from "svelte/transition";
@@ -207,7 +206,7 @@ import Seo from "#lib/components/Seo.svelte";
     });
   });
 
-  onMount(() => {
+  $effect(() => {
     if (!isAuthenticated()) {
       location.href = "/login";
       return;
@@ -219,14 +218,15 @@ import Seo from "#lib/components/Seo.svelte";
       allMonthIds = bs.map((b) => b.id).sort();
     });
 
-    // If navigating directly to a month other than the default, start from a
-    // correctly-titled empty budget until the live data arrives.
+    // Start from a correctly-titled empty budget until the live data arrives.
     if (budget.id !== monthId) {
       budget = createEmptyBudget(monthId);
+      loading = true;
     }
 
     // Live-sync: when the other spouse (or this device) edits this budget in
-    // Firestore, update locally immediately — no reload needed.
+    // Firestore, update locally immediately — no reload needed. Re-subscribes
+    // whenever the opened month changes so navigation actually loads new data.
     const unsubscribe = subscribeBudget(monthId, (next) => {
       budget = next;
       // Don't clobber an in-progress header edit.
