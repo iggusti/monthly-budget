@@ -12,7 +12,7 @@
     type ExpenseItem
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { t } from "#lib/i18n.svelte";
+  import { t, lang } from "#lib/i18n.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
 import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
@@ -138,6 +138,28 @@ import Seo from "#lib/components/Seo.svelte";
   }
 
   let headerDraft = $state({ title: "", period: "" });
+
+  // On narrow screens the bar value labels have little room, so they switch to
+  // a compact currency form (e.g. "Rp 9,6 jt") to avoid overlapping each other.
+  let isNarrow = $state(false);
+  $effect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 768px)");
+    const update = () => (isNarrow = mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  });
+
+  /** Locale-aware compact rupiah, e.g. "Rp 9,6 jt" (id) / "Rp 9.6M" (en). */
+  function formatCompactIDR(value: number): string {
+    if (!value) return "Rp 0";
+    const compact = new Intl.NumberFormat(lang.value, {
+      notation: "compact",
+      maximumFractionDigits: 1
+    }).format(value);
+    return `Rp ${compact}`;
+  }
 
   const totals = $derived(computeTotals(budget));
 
@@ -516,7 +538,7 @@ import Seo from "#lib/components/Seo.svelte";
             <div class="bar-col" class:combined={bar.combined}>
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / incomeMax) * 100}%`}>
-                  <span class="bar-value">{formatCurrency(bar.total)}</span>
+                  <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
                   <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
                   <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
                 </div>
@@ -546,7 +568,7 @@ import Seo from "#lib/components/Seo.svelte";
             <div class="bar-col">
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / expenseMax) * 100}%`}>
-                  <span class="bar-value">{formatCurrency(bar.total)}</span>
+                  <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
                   <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
                   <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
                 </div>
@@ -1159,7 +1181,12 @@ import Seo from "#lib/components/Seo.svelte";
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
     .charts-grid { grid-template-columns: 1fr; gap: 1.25rem; }
-    .bar-chart-plot { height: 180px; }
+    .chart-section { padding: 1rem 0.85rem; }
+    .bar-chart-plot { height: 180px; gap: 0.4rem; padding-left: 0; padding-right: 0; }
+    .bar-chart-labels { gap: 0.4rem; padding-left: 0; padding-right: 0; }
+    .bar-col { max-width: none; }
+    .bar-label { max-width: none; font-size: 0.66rem; }
+    .bar-value { font-size: 0.56rem; }
     .back-text { display: none; }
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }
