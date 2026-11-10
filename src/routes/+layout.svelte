@@ -83,19 +83,6 @@
   }
   .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
-  .nav-link {
-    text-decoration: none; color: var(--text-secondary);
-    font-size: 0.85rem; font-weight: 500;
-    padding: 0.35rem 0.75rem; border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-  }
-  .nav-link:hover { color: var(--text-primary); background: var(--bg-muted); }
-  .nav-sep { color: var(--text-tertiary); font-size: 0.75rem; }
-  .nav-user {
-    font-size: 0.78rem; color: var(--text-tertiary);
-    padding: 0.3rem 0.75rem; background: var(--accent-gold-light);
-    border-radius: 20px; font-weight: 500;
-  }
   .nav-logout {
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
     padding: 0.3rem 0.75rem; border-radius: 20px;
@@ -110,8 +97,6 @@
     .topbar { padding: 0 1rem; }
     .topbar-nav { gap: 0.3rem; }
     .main-content { padding: 1.25rem 1rem 2rem; }
-    .nav-user { display: none; }
-    .nav-sep { display: none; }
     .nav-logout { padding: 0.25rem 0.6rem; font-size: 0.68rem; }
   }
 </style>
