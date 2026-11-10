@@ -118,20 +118,28 @@ const en: Dict = {
   "month.equalSplitTransfer": "Equal Split Transfer",
   "month.eachHolds": "each holds {amount} after fixed",
   "month.chartTitle": "How this month's money flows",
+  "month.chartIncomeTitle": "Income by source",
+  "month.chartExpenseTitle": "Expenses by source",
+  "month.chartIncomeAria": "Vertical bar chart of income by source",
+  "month.chartExpenseAria": "Vertical bar chart of expenses by category",
+  "month.chartFixedShort": "Fixed",
+  "month.chartSalaryShort": "Daily salary",
+  "month.chartSavingsShort": "Daily savings",
+  "month.chartCombined": "Husband + Wife",
+  "month.chartFixedSalaryShort": "Fixed + daily salary",
+  "month.chartFixedSalarySavingsShort": "Fixed + daily salary + daily savings",
   "month.chartFixed": "Total Fixed Expenses",
   "month.chartSalary": "Total Daily Expenses from Salary",
   "month.chartRemaining": "Remaining",
   "month.totalIncomeLabel": "total income",
   "month.chartDonutAria": "Income allocation donut",
   "month.dailyFromSavings": "Total Daily Expenses from Savings",
-  "month.savingsNote":
-    "Paid from daily expenses — separate from this month's income.",
-  "month.chartNote":
-    "Total income {income} is split into fixed expenses, daily expenses from salary, and the remainder. After fixed is paid and split evenly, each person holds {perPerson}.",
-  "month.chartNoteStart":
-    "Total income {income} is split into fixed expenses, daily expenses from salary, and the remainder. After fixed is paid and split evenly, each person holds ",
-  "month.chartNoteAmount": "{perPerson}",
-  "month.chartNoteEnd": ".",
+  "month.chartConclusionIncome":
+    "Income comes from {husband} (husband) + {wife} (wife) = {income}.",
+  "month.chartConclusionSplit":
+    "That income covers fixed expenses {fixed} and daily expenses from salary {salary}, leaving {remaining} unspent.",
+  "month.chartConclusionSavings":
+    "Total spending {total} also includes {savings} of daily expenses paid from savings — money outside this month's income.",
   "month.section1": "1. Husband Income",
   "month.section2": "2. Wife Income",
   "month.section3": "3. Husband Fixed Expenses",
@@ -286,20 +294,28 @@ const id: Dict = {
   "month.equalSplitTransfer": "Transfer Bagi Rata",
   "month.eachHolds": "masing-masing memegang {amount} setelah tetap",
   "month.chartTitle": "Alur uang bulan ini",
+  "month.chartIncomeTitle": "Penghasilan dari sumber",
+  "month.chartExpenseTitle": "Pengeluaran dari sumber",
+  "month.chartIncomeAria": "Diagram batang vertikal penghasilan per sumber",
+  "month.chartExpenseAria": "Diagram batang vertikal pengeluaran per kategori",
+  "month.chartFixedShort": "Tetap",
+  "month.chartSalaryShort": "Harian gaji",
+  "month.chartSavingsShort": "Harian tabungan",
+  "month.chartCombined": "Suami + Istri",
+  "month.chartFixedSalaryShort": "Tetap + harian gaji",
+  "month.chartFixedSalarySavingsShort": "Tetap + harian gaji + harian tabungan",
   "month.chartFixed": "Total Pengeluaran Tetap",
   "month.chartSalary": "Pengeluaran Harian dari Gaji",
   "month.chartRemaining": "Sisa",
   "month.totalIncomeLabel": "total penghasilan",
   "month.chartDonutAria": "Donat alokasi penghasilan",
   "month.dailyFromSavings": "Total Pengeluaran Harian dari Tabungan",
-  "month.savingsNote":
-    "Dibayar dari pengeluaran harian — terpisah dari penghasilan bulan ini.",
-  "month.chartNote":
-    "Total penghasilan {income} dibagi menjadi pengeluaran tetap, pengeluaran harian dari gaji, dan sisanya. Setelah pengeluaran tetap dibayar dan dibagi rata, setiap orang memegang {perPerson}.",
-  "month.chartNoteStart":
-    "Total penghasilan {income} dibagi menjadi pengeluaran tetap, pengeluaran harian dari gaji, dan sisanya. Setelah pengeluaran tetap dibayar dan dibagi rata, setiap orang memegang ",
-  "month.chartNoteAmount": "{perPerson}",
-  "month.chartNoteEnd": ".",
+  "month.chartConclusionIncome":
+    "Penghasilan berasal dari {husband} (suami) + {wife} (istri) = {income}.",
+  "month.chartConclusionSplit":
+    "Penghasilan itu menutup pengeluaran tetap {fixed} dan pengeluaran harian dari gaji {salary}, menyisakan {remaining} yang belum terpakai.",
+  "month.chartConclusionSavings":
+    "Total pengeluaran {total} juga mencakup {savings} pengeluaran harian yang dibayar dari tabungan — di luar penghasilan bulan ini.",
   "month.section1": "1. Penghasilan Suami",
   "month.section2": "2. Penghasilan Istri",
   "month.section3": "3. Pengeluaran Tetap Suami",

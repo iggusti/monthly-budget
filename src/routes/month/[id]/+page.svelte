@@ -179,32 +179,66 @@ import Seo from "#lib/components/Seo.svelte";
     totals.wifeFixedTotal + totals.wifeDailyFromSalaryTotal + totals.wifeDailyFromSavingsTotal
   );
 
-  // Donut segments as fractions of total income (clamped to sum to 100%).
-  const chartSegments = $derived(() => {
-    const income = totals.totalIncome || 1;
-    const fixed = Math.max(totals.totalFixedExpenses, 0);
-    const salary = Math.max(dailyFromSalaryTotal, 0);
-    const remaining = Math.max(income - fixed - salary, 0);
-    const total = income;
-    return [
-      { key: "fixed", label: t("month.chartFixed"), value: fixed, frac: fixed / total, color: "var(--accent-gold)" },
-      { key: "salary", label: t("month.chartSalary"), value: salary, frac: salary / total, color: "var(--accent-rose)" },
-      { key: "remaining", label: t("month.chartRemaining"), value: remaining, frac: remaining / total, color: "var(--accent-teal)" }
-    ];
-  });
-  // Donut geometry constants.
-  const DONUT_R = 48;
-  const DONUT_C = 2 * Math.PI * DONUT_R;
+  // ── Chart 1: income by source (vertical bars) ───────────────────────────
+  const husbandIncomeValue = $derived(Math.max(budget.husbandIncome, 0));
+  const wifeIncomeValue = $derived(Math.max(budget.wifeIncome, 0));
+  const incomeBars = $derived([
+    {
+      key: "combined",
+      label: t("month.chartCombined"),
+      husband: husbandIncomeValue,
+      wife: wifeIncomeValue,
+      total: husbandIncomeValue + wifeIncomeValue,
+      combined: true
+    },
+    { key: "husband", label: t("common.husband"), husband: husbandIncomeValue, wife: 0, total: husbandIncomeValue, combined: false },
+    { key: "wife", label: t("common.wife"), husband: 0, wife: wifeIncomeValue, total: wifeIncomeValue, combined: false }
+  ]);
+  const incomeMax = $derived(Math.max(totals.totalIncome, 1));
 
-  // Cumulative fractions for drawing the ring.
-  const chartCumulative = $derived(() => {
-    let acc = 0;
-    return chartSegments().map((seg) => {
-      const start = acc;
-      acc += seg.frac;
-      return { ...seg, start };
-    });
-  });
+  // ── Chart 2: expenses by source (vertical stacked bars) ─────────────────
+  // Each bar is a spending category, stacked husband (blue) + wife (rose).
+  const expenseBars = $derived([
+    {
+      key: "allTotal",
+      label: t("month.chartFixedSalarySavingsShort"),
+      husband:
+        Math.max(totals.husbandFixedTotal, 0) +
+        Math.max(totals.husbandDailyFromSalaryTotal, 0) +
+        Math.max(totals.husbandDailyFromSavingsTotal, 0),
+      wife:
+        Math.max(totals.wifeFixedTotal, 0) +
+        Math.max(totals.wifeDailyFromSalaryTotal, 0) +
+        Math.max(totals.wifeDailyFromSavingsTotal, 0)
+    },
+    {
+      key: "fixedSalary",
+      label: t("month.chartFixedSalaryShort"),
+      husband: Math.max(totals.husbandFixedTotal, 0) + Math.max(totals.husbandDailyFromSalaryTotal, 0),
+      wife: Math.max(totals.wifeFixedTotal, 0) + Math.max(totals.wifeDailyFromSalaryTotal, 0)
+    },
+    {
+      key: "fixed",
+      label: t("month.chartFixedShort"),
+      husband: Math.max(totals.husbandFixedTotal, 0),
+      wife: Math.max(totals.wifeFixedTotal, 0)
+    },
+    {
+      key: "salary",
+      label: t("month.chartSalaryShort"),
+      husband: Math.max(totals.husbandDailyFromSalaryTotal, 0),
+      wife: Math.max(totals.wifeDailyFromSalaryTotal, 0)
+    },
+    {
+      key: "savings",
+      label: t("month.chartSavingsShort"),
+      husband: Math.max(totals.husbandDailyFromSavingsTotal, 0),
+      wife: Math.max(totals.wifeDailyFromSavingsTotal, 0)
+    }
+  ].map((b) => ({ ...b, total: b.husband + b.wife })));
+  const expenseMax = $derived(
+    Math.max(...expenseBars.map((b) => b.total), 1)
+  );
 
   $effect(() => {
     if (!isAuthenticated()) {
@@ -377,17 +411,21 @@ import Seo from "#lib/components/Seo.svelte";
     <!-- Chart skeleton -->
     <div class="chart-section" aria-hidden="true">
       <Skeleton width="200px" height="0.9rem" />
-      <div class="chart-body" style="margin-top:1.1rem">
-        <Skeleton circle size={190} />
-        <div class="chart-legend">
-          {#each Array(3) as _}
-            <div class="legend-row">
-              <Skeleton width="14px" height="14px" radius="4px" />
-              <Skeleton width="120px" height="0.82rem" />
-              <Skeleton width="90px" height="0.85rem" />
+      <div class="charts-grid" style="margin-top:1.1rem">
+        {#each Array(2) as _}
+          <div class="bar-chart">
+            <Skeleton width="55%" height="0.82rem" />
+            <div class="bar-chart-plot" style="margin-top:0.85rem">
+              {#each Array(2) as _}
+                <div class="bar-col">
+                  <div class="bar-col-track">
+                    <Skeleton width="62px" height="140px" radius="8px 8px 0 0" />
+                  </div>
+                </div>
+              {/each}
             </div>
-          {/each}
-        </div>
+          </div>
+        {/each}
       </div>
     </div>
 
@@ -466,93 +504,92 @@ import Seo from "#lib/components/Seo.svelte";
       <span class="chart-title">{t("month.chartTitle")}</span>
     </div>
 
-    <div class="chart-body">
-      <!-- Donut ring -->
-      <div class="chart-donut">
-        <svg viewBox="0 0 120 120" width="190" height="190" role="img" aria-label={t("month.chartDonutAria")}>
-          {#each chartCumulative() as seg, i}
-            {@const dash = seg.frac * DONUT_C}
-            {@const offset = -seg.start * DONUT_C}
-            <circle
-              cx="60" cy="60" r={DONUT_R}
-              fill="none"
-              stroke={seg.color}
-              stroke-width="18"
-              stroke-linecap="butt"
-              stroke-dasharray={`${dash} ${DONUT_C - dash}`}
-              stroke-dashoffset={offset}
-              transform="rotate(-90 60 60)"
-              style:transition={`stroke-dashoffset 0.8s ease, stroke-dasharray 0.8s ease`}
-              style:opacity={i === 0 ? "1" : "1"}
-            />
+    <div class="charts-grid">
+      <!-- Chart 1: Income by source -->
+      <div class="bar-chart">
+        <div class="bar-chart-head">
+          <span class="bar-chart-title">{t("month.chartIncomeTitle")}</span>
+          <span class="bar-chart-total">{formatCurrency(totals.totalIncome)}</span>
+        </div>
+        <div class="bar-chart-plot" role="img" aria-label={t("month.chartIncomeAria")}>
+          {#each incomeBars as bar}
+            <div class="bar-col" class:combined={bar.combined}>
+              <div class="bar-col-track">
+                <div class="bar-stack" style:height={`${(bar.total / incomeMax) * 100}%`}>
+                  <span class="bar-value">{formatCurrency(bar.total)}</span>
+                  <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
+                  <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
+                </div>
+              </div>
+            </div>
           {/each}
-          <text x="60" y="56" text-anchor="middle" class="donut-value">{formatCurrency(totals.totalIncome)}</text>
-          <text x="60" y="72" text-anchor="middle" class="donut-label">{t("month.totalIncomeLabel")}</text>
-        </svg>
-      </div>
-
-      <!-- Legend -->
-      <div class="chart-legend">
-        {#each chartSegments() as seg}
-          <div class="legend-row" title={formatCurrency(seg.value)}>
-            <span class="legend-dot" style:background={seg.color}></span>
-            <span class="legend-label">{seg.label}</span>
-            <span class="legend-value">{formatCurrency(seg.value)}</span>
-          </div>
-          {#if seg.key === "fixed"}
-            <div class="legend-split">
-              <span class="legend-split-label">{t("common.husband")}</span>
-              <span class="legend-split-value blue">{formatCurrency(totals.husbandFixedTotal)}</span>
-              <span class="legend-split-sep">·</span>
-              <span class="legend-split-label">{t("common.wife")}</span>
-              <span class="legend-split-value rose">{formatCurrency(totals.wifeFixedTotal)}</span>
-            </div>
-          {/if}
-          {#if seg.key === "salary"}
-            <div class="legend-split">
-              <span class="legend-split-label">{t("common.husband")}</span>
-              <span class="legend-split-value blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</span>
-              <span class="legend-split-sep">·</span>
-              <span class="legend-split-label">{t("common.wife")}</span>
-              <span class="legend-split-value rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</span>
-            </div>
-          {/if}
-        {/each}
-      </div>
-    </div>
-
-    <!-- Daily from savings: separate block, funded from savings (not income) -->
-    <div class="chart-savings">
-      <div class="savings-head">
-        <span class="savings-icon">🏦</span>
-        <span class="savings-title">{t("month.dailyFromSavings")}</span>
-        <span class="savings-value">{formatCurrency(dailyFromSavingsTotal)}</span>
-      </div>
-      <div class="savings-bar">
-        <span class="savings-fill" style:width={`${Math.min((dailyFromSavingsTotal / (totals.totalIncome || 1)) * 100, 100)}%`}></span>
-      </div>
-      <div class="savings-split">
-        <div class="split-person">
-          <span class="split-person-label">{t("common.husband")}</span>
-          <span class="split-person-value blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</span>
         </div>
-        <div class="split-person">
-          <span class="split-person-label">{t("common.wife")}</span>
-          <span class="split-person-value rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</span>
+        <div class="bar-chart-labels">
+          {#each incomeBars as bar}
+            <span class="bar-label" class:combined={bar.combined}>{bar.label}</span>
+          {/each}
+        </div>
+        <div class="bar-legend">
+          <span class="legend-chip"><span class="legend-dot blue"></span>{t("common.husband")}</span>
+          <span class="legend-chip"><span class="legend-dot rose"></span>{t("common.wife")}</span>
         </div>
       </div>
-      <p class="savings-note">
-        {t("month.savingsNote")}
-      </p>
+
+      <!-- Chart 2: Expenses by source -->
+      <div class="bar-chart">
+        <div class="bar-chart-head">
+          <span class="bar-chart-title">{t("month.chartExpenseTitle")}</span>
+          <span class="bar-chart-total">{formatCurrency(totalExpense)}</span>
+        </div>
+        <div class="bar-chart-plot" role="img" aria-label={t("month.chartExpenseAria")}>
+          {#each expenseBars as bar}
+            <div class="bar-col">
+              <div class="bar-col-track">
+                <div class="bar-stack" style:height={`${(bar.total / expenseMax) * 100}%`}>
+                  <span class="bar-value">{formatCurrency(bar.total)}</span>
+                  <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
+                  <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
+                </div>
+              </div>
+            </div>
+          {/each}
+        </div>
+        <div class="bar-chart-labels">
+          {#each expenseBars as bar}
+            <span class="bar-label" class:combined={bar.key === "allTotal" || bar.key === "fixedSalary"}>{bar.label}</span>
+          {/each}
+        </div>
+        <div class="bar-legend">
+          <span class="legend-chip"><span class="legend-dot blue"></span>{t("common.husband")}</span>
+          <span class="legend-chip"><span class="legend-dot rose"></span>{t("common.wife")}</span>
+        </div>
+      </div>
     </div>
 
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
-      <span>
-        {t("month.chartNoteStart", { income: formatCurrency(totals.totalIncome) })}
-        <strong>{t("month.chartNoteAmount", { perPerson: formatCurrency(totals.equalSplitAmount) })}</strong>
-        {t("month.chartNoteEnd")}
-      </span>
+      <div class="chart-note-body">
+        <p>
+          {t("month.chartConclusionIncome", {
+            income: formatCurrency(totals.totalIncome),
+            husband: formatCurrency(budget.husbandIncome),
+            wife: formatCurrency(budget.wifeIncome)
+          })}
+        </p>
+        <p>
+          {t("month.chartConclusionSplit", {
+            fixed: formatCurrency(totals.totalFixedExpenses),
+            salary: formatCurrency(dailyFromSalaryTotal),
+            remaining: formatCurrency(Math.max(totals.balanceAfterFixed - dailyFromSalaryTotal, 0))
+          })}
+        </p>
+        <p>
+          {t("month.chartConclusionSavings", {
+            total: formatCurrency(totalExpense),
+            savings: formatCurrency(dailyFromSavingsTotal)
+          })}
+        </p>
+      </div>
     </div>
   </div>
 
@@ -911,42 +948,59 @@ import Seo from "#lib/components/Seo.svelte";
   .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
   .chart-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
 
-  .chart-body { display: flex; align-items: center; gap: 1.75rem; flex-wrap: wrap; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
-  .chart-donut { flex-shrink: 0; margin: 0 auto; }
-  .donut-value { font-size: 13px; font-weight: 800; fill: var(--text-primary); }
-  .donut-label { font-size: 7px; font-weight: 600; letter-spacing: 0.04em; fill: var(--text-tertiary); text-transform: uppercase; }
+  .bar-chart { display: flex; flex-direction: column; }
+  .bar-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.85rem; }
+  .bar-chart-title { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); }
+  .bar-chart-total { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
-  .chart-legend { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 0.6rem; }
-  .legend-row { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 0.6rem; }
-  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
-  .legend-label { font-size: 0.82rem; color: var(--text-secondary); }
-  .legend-value { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
-  .legend-split { display: flex; align-items: center; gap: 0.4rem; padding-left: 1.25rem; font-size: 0.78rem; color: var(--text-tertiary); }
-  .legend-split-label { color: var(--text-tertiary); }
-  .legend-split-value { font-weight: 700; }
-  .legend-split-value.blue { color: var(--accent-blue); }
-  .legend-split-value.rose { color: var(--accent-rose); }
-  .legend-split-sep { color: var(--text-tertiary); }
+  .bar-chart-plot {
+    display: flex; align-items: flex-end; justify-content: space-around;
+    gap: 0.75rem; height: 210px; padding: 0.5rem 0.25rem 0;
+    border-bottom: 1px solid var(--surface-border);
+  }
+  .bar-col { display: flex; align-items: flex-end; justify-content: center; flex: 1; height: 100%; max-width: 96px; }
+  .bar-col-track { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 
-  .chart-savings { margin-top: 1.1rem; padding: 0.9rem 1rem; background: var(--accent-blue-light); border-radius: var(--radius-md); }
-  .savings-head { display: flex; align-items: center; gap: 0.6rem; }
-  .savings-icon { font-size: 1.1rem; }
-  .savings-title { font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); flex: 1; }
-  .savings-value { font-size: 0.95rem; font-weight: 800; color: var(--accent-blue); }
-  .savings-bar { height: 8px; background: rgba(107, 127, 163, 0.15); border-radius: 99px; overflow: hidden; margin-top: 0.6rem; }
-  .savings-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-blue), #5a7090); border-radius: 99px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-  .savings-note { font-size: 0.74rem; color: var(--text-tertiary); margin-top: 0.5rem; }
-  .savings-split { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.7rem; }
-  .split-person { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; background: var(--surface); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
-  .split-person-label { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
-  .split-person-value { font-size: 0.9rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .split-person-value.blue { color: var(--accent-blue); }
-  .split-person-value.rose { color: var(--accent-rose); }
+  .bar-chart-labels {
+    display: flex; justify-content: space-around;
+    gap: 0.75rem; padding: 0 0.25rem; margin-top: 0.55rem;
+  }
+  .bar-label {
+    flex: 1; max-width: 96px;
+    font-size: 0.74rem; font-weight: 600;
+    color: var(--text-tertiary); text-align: center; line-height: 1.25;
+  }
+  .bar-label.combined { color: var(--text-primary); font-weight: 800; }
+
+  .bar-stack {
+    width: 100%; max-width: 62px; min-height: 3px;
+    display: flex; flex-direction: column;
+    position: relative; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .bar-stack > :first-child { border-radius: 8px 8px 0 0; }
+  .bar-seg { width: 100%; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+  .bar-seg.blue { background: linear-gradient(180deg, var(--accent-blue), #5a7090); }
+  .bar-seg.rose { background: linear-gradient(180deg, var(--accent-rose), #b06a7c); }
+
+  .bar-value {
+    position: absolute; bottom: calc(100% + 0.15rem); left: 50%; transform: translateX(-50%);
+    font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+
+  .bar-legend { display: flex; gap: 1rem; margin-top: 0.85rem; justify-content: center; }
+  .legend-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 4px; }
+  .legend-dot.blue { background: var(--accent-blue); }
+  .legend-dot.rose { background: var(--accent-rose); }
 
   .chart-note { display: flex; gap: 0.6rem; margin-top: 1.25rem; padding: 0.85rem 1rem; background: var(--bg-muted); border-radius: var(--radius-md); font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
-  .chart-note strong { color: var(--text-primary); }
+  .chart-note-body { display: flex; flex-direction: column; gap: 0.35rem; }
+  .chart-note-body p { margin: 0; }
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
 
@@ -1096,6 +1150,7 @@ import Seo from "#lib/components/Seo.svelte";
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
     .sections { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
   }
 
   @media (max-width: 768px) {
@@ -1103,11 +1158,8 @@ import Seo from "#lib/components/Seo.svelte";
     .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
-    .chart-body { flex-direction: column; gap: 1.25rem; }
-    .chart-legend { width: 100%; }
-
-    /* Stack the spouse split vertically on small screens. */
-    .savings-split { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .bar-chart-plot { height: 180px; }
     .back-text { display: none; }
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }
