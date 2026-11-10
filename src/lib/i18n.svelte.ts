@@ -90,7 +90,8 @@ const en: Dict = {
   "dashboard.viewMore": "View more ({n} more)",
   "dashboard.loading": "Loading your budgets…",
   "dashboard.noBudgetTitle": "No budget yet",
-  "dashboard.noBudgetText": "Create your first budget period from the month buttons above.",
+  "dashboard.noBudgetText":
+    "Create your first budget period from the month buttons above.",
   "dashboard.infoIncomeFixed": "Income & fixed",
   "dashboard.infoIncomeFixedSub": "husband and wife",
   "dashboard.infoSalary": "Daily from salary",
@@ -117,13 +118,14 @@ const en: Dict = {
   "month.equalSplitTransfer": "Equal Split Transfer",
   "month.eachHolds": "each holds {amount} after fixed",
   "month.chartTitle": "How this month's money flows",
-  "month.chartFixed": "Fixed expenses",
+  "month.chartFixed": "Total Fixed Expenses",
   "month.chartSalary": "Total Daily Expenses from Salary",
   "month.chartRemaining": "Remaining",
   "month.totalIncomeLabel": "total income",
   "month.chartDonutAria": "Income allocation donut",
-  "month.dailyFromSavings": "Daily from savings",
-  "month.savingsNote": "Dibayar dari pengeluaran harian — terpisah dari penghasilan bulan ini.",
+  "month.dailyFromSavings": "Total Daily Expenses from Savings",
+  "month.savingsNote":
+    "Paid from daily expenses — separate from this month's income.",
   "month.chartNote":
     "Total income {income} is split into fixed expenses, daily expenses from salary, and the remainder. After fixed is paid and split evenly, each person holds {perPerson}.",
   "month.chartNoteStart":
@@ -180,8 +182,9 @@ const en: Dict = {
   "expense.deleteText": "{name} ({amount}) will be removed permanently.",
   "expense.thisItem": "This expense",
   "expense.inactiveTitle": "Inactive month",
-  "expense.inactiveText": "This month is not the active budget period. Changes here affect past records. Continue?",
-  "expense.continue": "Continue"
+  "expense.inactiveText":
+    "This month is not the active budget period. Changes here affect past records. Continue?",
+  "expense.continue": "Continue",
 };
 
 const id: Dict = {
@@ -205,7 +208,8 @@ const id: Dict = {
   "nav.familyPlan": "Rencana Keluarga",
   "nav.signOut": "Keluar",
   "nav.language": "Bahasa",
-  "footer.tagline": "Anggaran Bulanan Nia Ilham · Tetap seimbang, menabung bersama",
+  "footer.tagline":
+    "Anggaran Bulanan Nia Ilham · Tetap seimbang, menabung bersama",
 
   // ── Login ─────────────────────────────────────────────────────────────────
   "login.title": "Anggaran Bulanan Nia Ilham",
@@ -253,7 +257,8 @@ const id: Dict = {
   "dashboard.viewMore": "Lihat {n} lagi",
   "dashboard.loading": "Memuat anggaran Anda…",
   "dashboard.noBudgetTitle": "Belum ada anggaran",
-  "dashboard.noBudgetText": "Buat periode anggaran pertama Anda dari tombol bulan di atas.",
+  "dashboard.noBudgetText":
+    "Buat periode anggaran pertama Anda dari tombol bulan di atas.",
   "dashboard.infoIncomeFixed": "Penghasilan & tetap",
   "dashboard.infoIncomeFixedSub": "suami dan istri",
   "dashboard.infoSalary": "Harian dari gaji",
@@ -262,7 +267,8 @@ const id: Dict = {
   "dashboard.infoSavingsSub": "suami dan istri",
   "dashboard.infoPerPerson": "Per orang",
   "dashboard.infoPerPersonSub": "setelah tetap, dibagi rata",
-  "dashboard.confirmDelete": "Hapus {month}? Tindakan ini tidak dapat dibatalkan.",
+  "dashboard.confirmDelete":
+    "Hapus {month}? Tindakan ini tidak dapat dibatalkan.",
   "dashboard.searchPlaceholder": "Cari pengeluaran di semua bulan…",
   "dashboard.searchEmpty": "Tidak ada pengeluaran yang sesuai",
 
@@ -280,13 +286,14 @@ const id: Dict = {
   "month.equalSplitTransfer": "Transfer Bagi Rata",
   "month.eachHolds": "masing-masing memegang {amount} setelah tetap",
   "month.chartTitle": "Alur uang bulan ini",
-  "month.chartFixed": "Pengeluaran tetap",
+  "month.chartFixed": "Total Pengeluaran Tetap",
   "month.chartSalary": "Pengeluaran Harian dari Gaji",
   "month.chartRemaining": "Sisa",
   "month.totalIncomeLabel": "total penghasilan",
   "month.chartDonutAria": "Donat alokasi penghasilan",
-  "month.dailyFromSavings": "Harian dari tabungan",
-  "month.savingsNote": "Dibayar dari pengeluaran harian — terpisah dari penghasilan bulan ini.",
+  "month.dailyFromSavings": "Total Pengeluaran Harian dari Tabungan",
+  "month.savingsNote":
+    "Dibayar dari pengeluaran harian — terpisah dari penghasilan bulan ini.",
   "month.chartNote":
     "Total penghasilan {income} dibagi menjadi pengeluaran tetap, pengeluaran harian dari gaji, dan sisanya. Setelah pengeluaran tetap dibayar dan dibagi rata, setiap orang memegang {perPerson}.",
   "month.chartNoteStart":
@@ -343,8 +350,9 @@ const id: Dict = {
   "expense.deleteText": "{name} ({amount}) akan dihapus permanen.",
   "expense.thisItem": "Pengeluaran ini",
   "expense.inactiveTitle": "Bulan tidak aktif",
-  "expense.inactiveText": "Bulan ini bukan periode anggaran aktif. Perubahan di sini memengaruhi catatan lampau. Lanjutkan?",
-  "expense.continue": "Lanjutkan"
+  "expense.inactiveText":
+    "Bulan ini bukan periode anggaran aktif. Perubahan di sini memengaruhi catatan lampau. Lanjutkan?",
+  "expense.continue": "Lanjutkan",
 };
 
 const dictionaries: Record<Lang, Dict> = { en, id };
@@ -376,7 +384,10 @@ export function toggleLang() {
  * Translate a key, optionally interpolating `{name}` placeholders.
  * Falls back to English, then to the raw key, when a translation is missing.
  */
-export function t(key: string, params?: Record<string, string | number>): string {
+export function t(
+  key: string,
+  params?: Record<string, string | number>,
+): string {
   const dict = dictionaries[lang.value] ?? en;
   let text = dict[key] ?? en[key] ?? key;
   if (params) {
