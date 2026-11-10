@@ -44,6 +44,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
 - Keep changes small and consistent with the surrounding code; run
   `npm run check` before finishing.
+- **License: MIT** (see `LICENSE`). Keep the `license` field in both
+  `package.json` files in sync.
 
 ## Data model
 

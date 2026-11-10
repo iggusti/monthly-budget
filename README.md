@@ -258,3 +258,8 @@ notification feature can be turned on fully:
   starts delivering notifications to every registered phone.
 
 Maintainer: **Iggusti** — [github.com/iggusti](https://github.com/iggusti).
+
+## License
+
+Released under the [MIT License](./LICENSE) © 2026 Iggusti. You may use, copy,
+modify and redistribute the code as long as the copyright notice is kept.

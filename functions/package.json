@@ -3,6 +3,7 @@
   "description": "Push notification sender for the monthly budget app",
   "private": true,
   "main": "index.js",
+  "license": "MIT",
   "engines": {
     "node": "22"
   },
