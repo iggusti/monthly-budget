@@ -7,6 +7,11 @@ Built with SvelteKit, TypeScript, Firebase Firestore, Firebase Anonymous
 Authentication, and Firebase Cloud Messaging (with a Cloud Function) for push
 notifications. The data model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
 
+> 💛 **Push notifications need donations.** Everything else runs on Firebase's
+> free plan, but the notification sender requires the paid Blaze plan.
+> [Support the project on Saweria](https://saweria.co/iggusti) to unlock the
+> feature fully.
+
 ## Login
 
 The app is protected by a shared family keyword. Once the keyword is accepted,
@@ -246,9 +251,9 @@ That upgrade is the only thing keeping notifications switched off. If this app
 is useful to you, **donations are needed** to enable and run Blaze so the push
 notification feature can be turned on fully:
 
+> ☕ **Donate via Saweria → [saweria.co/iggusti](https://saweria.co/iggusti)**
+
 - Any amount helps — the goal is simply to keep the Blaze plan active.
-- Want to contribute? Open an issue in this repository or contact the
-  maintainer to arrange a donation.
 - Once the plan is active, the function is deployed and the bell in the topbar
   starts delivering notifications to every registered phone.
 
