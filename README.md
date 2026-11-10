@@ -3,8 +3,9 @@
 A monthly family budget app that keeps husband and wife spending in balance,
 tracks daily expenses, and shows how money is funded from salary or savings.
 
-Built with SvelteKit, TypeScript, Firebase Firestore and Firebase Anonymous
-Authentication. The data model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
+Built with SvelteKit, TypeScript, Firebase Firestore, Firebase Anonymous
+Authentication, and Firebase Cloud Messaging (with a Cloud Function) for push
+notifications. The data model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
 
 ## Login
 
@@ -60,6 +61,55 @@ in the `budget` collection.
 - **Gender colors** — blue for husband sections, pink for wife sections; icons
   distinguish categories (income, fixed, wallet, savings).
 - **View more / View less** — collapsible sections toggle both directions.
+- **Push notifications** — when an expense is added, edited or deleted, the
+  other phone gets a system notification even with the app closed. The device
+  that made the change is never notified. See
+  [Push notifications](#push-notifications).
+
+## Push notifications
+
+Each phone registers an FCM token through the bell button in the topbar; the
+token is stored in the `devices` collection together with the anonymous
+Firebase uid and the UI language.
+
+Every budget write is stamped with `lastEditBy = <anonymous uid>` (see
+`saveBudget()` / `deleteBudget()`). A Firestore-triggered Cloud Function
+(`functions/index.js`) diffs the six expense arrays before/after, classifies the
+change as **add**, **edit** or **delete**, and sends a data-only FCM message to
+every token whose uid differs from `lastEditBy` — so you never get a push for
+your own edit.
+
+Details:
+
+- Notifications arrive in the language selected on each phone (EN / ID).
+- Only field changes matter: name, amount and payment method. Ticking a fixed
+  expense as "settled" (`checked`) does **not** notify, and income edits are
+  ignored too.
+- Deleting a whole month sends a "Month deleted" notification to the other
+  phones; `deleteBudget()` stamps the deleter just before removing the
+  document so the delete trigger can exclude them.
+- Dead tokens are pruned automatically when FCM reports them as unregistered.
+
+> Sending pushes requires Cloud Functions, and Cloud Functions require the
+> Firebase **Blaze** plan. The project is currently on Spark, so the bell can
+> register a device but no notification is sent yet. See
+> [Support & donations](#support--donations).
+
+### Notification setup
+
+1. Firebase Console → Project settings → Cloud Messaging → *Web Push
+   certificates* → generate a key pair and put the public key in
+   `FCM_VAPID_KEY` (`src/lib/firebase.ts`, overridable with
+   `VITE_FCM_VAPID_KEY`).
+2. Enable the Blaze plan (see [Support & donations](#support--donations)).
+3. Install and deploy the function:
+
+   ```sh
+   npm install --prefix functions
+   npx firebase-tools deploy --only functions
+   ```
+
+Full step-by-step notes live in [`NOTIFICATIONS.md`](./NOTIFICATIONS.md).
 
 ## Pages
 
@@ -76,17 +126,24 @@ in the `budget` collection.
 src/
   lib/
     types.ts                 data model + calculations
-    firebase.ts              Firebase initialisation (Firestore + Auth)
+    firebase.ts              Firebase initialisation (Firestore + Auth + VAPID key)
     auth.ts                  keyword gate + anonymous sign-in
     budget-store.ts          Firestore read/write + real-time subscribe helpers
+    notifications.svelte.ts  FCM permission, token registration, foreground push
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
+      NotificationToggle.svelte  topbar bell: enable/disable push per device
       BadgeIcon.svelte       outline SVG category icons
   routes/
     +layout.svelte           shell with navigation and logout
     login/+page.svelte       login screen
     +page.svelte             dashboard
     month/[id]/+page.svelte  edit one budget period
+static/
+  firebase-messaging-sw.js   FCM service worker (background push)
+functions/
+  index.js                   Firestore trigger that sends the pushes
+  changes.js                 pure diff/format helpers (unit-testable)
 scripts/                     data seeding / migration / repair helpers
 ```
 
@@ -145,10 +202,54 @@ firebase deploy --only hosting
 npx firebase-tools deploy --only firestore:rules
 ```
 
-The rules allow read/write only for authenticated users:
+The rules allow read/write only for authenticated users, and let each device
+manage only its own notification token:
 
 ```
 match /budget/{document} {
   allow read, write: if request.auth != null;
 }
+
+match /devices/{token} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null
+    && request.resource.data.uid == request.auth.uid;
+  allow update: if request.auth != null
+    && resource.data.uid == request.auth.uid
+    && request.resource.data.uid == request.auth.uid;
+  allow delete: if request.auth != null
+    && resource.data.uid == request.auth.uid;
+}
 ```
+
+## Deploying the notification function
+
+Cloud Functions are not part of the GitHub Actions workflow (they need the Blaze
+plan). Deploy them manually after changing anything under `functions/`:
+
+```sh
+npm install --prefix functions
+npx firebase-tools deploy --only functions
+```
+
+The function targets `us-central1` because the Firestore database lives in the
+`nam5` multi-region location. Override with `FUNCTION_REGION` if that changes.
+
+## Support & donations
+
+The whole app runs on Firebase's free Spark plan **except push notifications**.
+The sender is a Cloud Function, and Firebase only allows deploying functions
+after switching the project to the paid **Blaze** plan. Real usage stays well
+inside the free monthly allowances, but a payment method must be on file.
+
+That upgrade is the only thing keeping notifications switched off. If this app
+is useful to you, **donations are needed** to enable and run Blaze so the push
+notification feature can be turned on fully:
+
+- Any amount helps — the goal is simply to keep the Blaze plan active.
+- Want to contribute? Open an issue in this repository or contact the
+  maintainer to arrange a donation.
+- Once the plan is active, the function is deployed and the bell in the topbar
+  starts delivering notifications to every registered phone.
+
+Maintainer: **Iggusti** — [github.com/iggusti](https://github.com/iggusti).
