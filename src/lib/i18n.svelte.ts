@@ -164,6 +164,7 @@ const en: Dict = {
   "month.searchPlaceholder": "Search expenses…",
   "month.searchEmpty": "No expenses found matching",
   "month.clearSearch": "Clear search",
+  "month.clearFilter": "Clear filter",
   "month.pageTitle": "{title} — Monthly Budget Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────
@@ -340,6 +341,7 @@ const id: Dict = {
   "month.searchPlaceholder": "Cari pengeluaran…",
   "month.searchEmpty": "Tidak ada pengeluaran yang sesuai",
   "month.clearSearch": "Bersihkan pencarian",
+  "month.clearFilter": "Bersihkan filter",
   "month.pageTitle": "{title} — Anggaran Bulanan Nia Ilham",
 
   // ── ExpenseSection component ──────────────────────────────────────────────

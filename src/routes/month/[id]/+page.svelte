@@ -825,6 +825,31 @@ import Seo from "#lib/components/Seo.svelte";
     </div>
   {/if}
 
+  {#if searchActive}
+    <div class="clear-filter-row" in:fade={{ duration: 250 }}>
+      <button
+        type="button"
+        class="clear-filter-btn"
+        onclick={() => (searchQuery = "")}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          class="clear-filter-icon"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+        {t("month.clearFilter")}
+      </button>
+    </div>
+  {/if}
+
   <!-- Mobile-only floating navigation to jump between the eight sections. -->
   <div class="section-nav">
     {#if showSectionNav}
@@ -1034,6 +1059,20 @@ import Seo from "#lib/components/Seo.svelte";
   .search-empty-icon { font-size: 2rem; color: var(--text-tertiary); }
   .search-empty h3 { font-size: 1rem; font-weight: 700; }
   .search-empty p { font-size: 0.85rem; color: var(--text-tertiary); overflow-wrap: anywhere; }
+
+  .clear-filter-row { display: flex; justify-content: center; margin-top: 1.25rem; }
+  .clear-filter-btn {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.6rem 1.15rem; border-radius: 999px;
+    border: 1px solid var(--surface-border); background: var(--surface);
+    color: var(--text-secondary); font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; box-shadow: var(--shadow-sm);
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .clear-filter-btn:hover {
+    background: var(--accent-gold-light); color: var(--text-primary); border-color: var(--accent-gold);
+  }
+  .clear-filter-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
 
   /* ── Mobile quick section navigation ──────────────────────────────────── */
   .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 200; }
