@@ -9,6 +9,13 @@
   import NotificationToggle from "#lib/components/NotificationToggle.svelte";
   import ThemeToggle from "#lib/components/ThemeToggle.svelte";
 
+  /**
+   * Push notifications are hidden until the sender Cloud Function can be
+   * deployed (the project is still on the Firebase Spark plan, so nothing would
+   * be delivered). Flip this flag back to `true` once the function is live.
+   */
+  const PUSH_NOTIFICATIONS_ENABLED = false;
+
   let { children } = $props();
 
   let authed = $state(false);
@@ -27,6 +34,7 @@
   // Refresh the push registration (and its stored language) once signed in.
   $effect(() => {
     const currentLang = lang.value;
+    if (!PUSH_NOTIFICATIONS_ENABLED) return;
     if (isLogin || !isAuthenticated()) return;
     void initNotifications(currentLang);
   });
@@ -49,7 +57,9 @@
         </a>
         <nav class="topbar-nav">
           <LanguageToggle />
-          <NotificationToggle />
+          {#if PUSH_NOTIFICATIONS_ENABLED}
+            <NotificationToggle />
+          {/if}
           <ThemeToggle />
           {#if authed}
             <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
