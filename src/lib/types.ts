@@ -69,6 +69,10 @@ export interface MonthBudget {
   title: string;
   /** Budget period label, for example "25 January - 24 February 2026". */
   period: string;
+  /** Optional period start date, formatted `YYYY-MM-DD`. */
+  periodStart?: string;
+  /** Optional period end date, formatted `YYYY-MM-DD`. */
+  periodEnd?: string;
 
   // ── Income ────────────────────────────────────────────────────────────────
   husbandIncome: number;
@@ -139,6 +143,8 @@ export function createEmptyBudget(id: string): MonthBudget {
     // because the period runs 25 Oct – 24 Nov).
     title: `${end.toLocaleString("en-US", { month: "long" })} ${end.getFullYear()}`,
     period: `${formatDay(start)} - ${formatDay(end)}`,
+    periodStart: toISODate(start),
+    periodEnd: toISODate(end),
     husbandIncome: 0,
     wifeIncome: 0,
     husbandFixed: [],
@@ -153,6 +159,24 @@ export function createEmptyBudget(id: string): MonthBudget {
 
 function formatDay(date: Date): string {
   return `${date.getDate()} ${date.toLocaleString("en-US", { month: "long" })}`;
+}
+
+/**
+ * Build the human-readable period label from two `YYYY-MM-DD` dates, e.g.
+ * "25 Jan - 24 Feb 2026". Returns an empty string when a date is missing.
+ */
+export function formatPeriod(
+  startISO: string | undefined,
+  endISO: string | undefined,
+  locale = "en-US"
+): string {
+  const start = parseISODate(startISO);
+  const end = parseISODate(endISO);
+  if (!start || !end) return "";
+
+  const startText = start.toLocaleDateString(locale, { day: "numeric", month: "short" });
+  const endText = end.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  return `${startText} - ${endText}`;
 }
 
 /** Sum a list of items that all carry an `amount`. */
@@ -172,6 +196,8 @@ export function normalizeBudget(id: string, raw: Partial<MonthBudget> | undefine
     id,
     title: raw.title ?? base.title,
     period: raw.period ?? base.period,
+    periodStart: raw.periodStart ?? base.periodStart,
+    periodEnd: raw.periodEnd ?? base.periodEnd,
     husbandIncome: Number(raw.husbandIncome) || 0,
     wifeIncome: Number(raw.wifeIncome) || 0,
     husbandFixed: raw.husbandFixed ?? [],

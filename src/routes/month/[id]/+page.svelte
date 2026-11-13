@@ -8,6 +8,7 @@
     computeTotals,
     createEmptyBudget,
     formatCurrency,
+    formatPeriod,
     type MonthBudget,
     type ExpenseItem
   } from "#lib/types";
@@ -137,7 +138,15 @@ import Seo from "#lib/components/Seo.svelte";
     target.focus({ preventScroll: true });
   }
 
-  let headerDraft = $state({ title: "", period: "" });
+  let headerDraft = $state({ title: "", periodStart: "", periodEnd: "" });
+
+  /** Locale for date formatting, following the active language. */
+  const dateLocale = $derived(lang.value === "id" ? "id-ID" : "en-US");
+
+  /** Live preview of the period label built from the two draft dates. */
+  const headerPeriodPreview = $derived(
+    formatPeriod(headerDraft.periodStart, headerDraft.periodEnd, dateLocale)
+  );
 
   // On narrow screens the bar value labels have little room, so they switch to
   // a compact currency form (e.g. "Rp 9,6 jt") to avoid overlapping each other.
@@ -287,7 +296,11 @@ import Seo from "#lib/components/Seo.svelte";
       budget = next;
       // Don't clobber an in-progress header edit.
       if (!showHeaderEditor) {
-        headerDraft = { title: next.title, period: next.period };
+        headerDraft = {
+          title: next.title,
+          periodStart: next.periodStart ?? "",
+          periodEnd: next.periodEnd ?? ""
+        };
       }
       loading = false;
     });
@@ -357,15 +370,22 @@ import Seo from "#lib/components/Seo.svelte";
   }
 
   function openHeaderEditor() {
-    headerDraft = { title: budget.title, period: budget.period };
+    headerDraft = {
+      title: budget.title,
+      periodStart: budget.periodStart ?? "",
+      periodEnd: budget.periodEnd ?? ""
+    };
     showHeaderEditor = true;
   }
 
   function saveHeader() {
+    const period = headerPeriodPreview || budget.period;
     persist({
       ...budget,
       title: headerDraft.title.trim() || budget.title,
-      period: headerDraft.period.trim() || budget.period
+      period,
+      periodStart: headerDraft.periodStart,
+      periodEnd: headerDraft.periodEnd
     });
     showHeaderEditor = false;
   }
@@ -434,36 +454,54 @@ import Seo from "#lib/components/Seo.svelte";
     <div class="chart-section" aria-hidden="true">
       <Skeleton width="200px" height="0.9rem" />
       <div class="charts-grid" style="margin-top:1.1rem">
-        {#each Array(2) as _}
+        <!-- Mirror the two real charts: 3 income bars, 5 expense bars. -->
+        {#each [{ bars: 3, h: [95, 60, 40] }, { bars: 5, h: [90, 72, 55, 38, 24] }] as chart}
           <div class="bar-chart">
-            <Skeleton width="55%" height="0.82rem" />
-            <div class="bar-chart-plot" style="margin-top:0.85rem">
-              {#each Array(2) as _}
+            <div class="bar-chart-head">
+              <Skeleton width="55%" height="0.82rem" />
+              <Skeleton width="72px" height="0.95rem" />
+            </div>
+            <div class="bar-chart-plot">
+              {#each chart.h as barHeight}
                 <div class="bar-col">
                   <div class="bar-col-track">
-                    <Skeleton width="62px" height="140px" radius="8px 8px 0 0" />
+                    <Skeleton
+                      width="62px"
+                      height="{barHeight}%"
+                      radius="8px 8px 0 0"
+                      style="align-self:flex-end;"
+                    />
                   </div>
                 </div>
               {/each}
+            </div>
+            <div class="bar-chart-labels">
+              {#each Array(chart.bars) as _}
+                <Skeleton width="60%" height="0.72rem" style="margin:0 auto;" />
+              {/each}
+            </div>
+            <div class="bar-legend">
+              <Skeleton width="70px" height="0.76rem" radius="999px" />
+              <Skeleton width="70px" height="0.76rem" radius="999px" />
             </div>
           </div>
         {/each}
       </div>
     </div>
 
-    <!-- Sections skeleton -->
+    <!-- Sections skeleton (mirrors the 8 real expense sections) -->
     <div class="sections" aria-hidden="true">
       {#each Array(8) as _}
         <div class="section-skeleton">
           <div class="section-skeleton-head">
             <Skeleton circle size={28} />
-            <Skeleton width="60%" height="0.88rem" />
-            <Skeleton width="80px" height="0.9rem" />
+            <Skeleton width="55%" height="0.88rem" style="flex:1;" />
+            <Skeleton width="76px" height="0.9rem" />
           </div>
           {#each Array(3) as _}
             <div class="section-skeleton-row">
-              <Skeleton width="55%" height="0.86rem" />
-              <Skeleton width="70px" height="0.86rem" />
+              <Skeleton width="48%" height="0.86rem" />
+              <Skeleton width="68px" height="0.86rem" />
             </div>
           {/each}
         </div>
@@ -477,10 +515,23 @@ import Seo from "#lib/components/Seo.svelte";
           <span>{t("month.fieldTitle")}</span>
           <input type="text" bind:value={headerDraft.title} />
         </label>
-        <label class="field">
-          <span>{t("month.fieldPeriod")}</span>
-          <input type="text" bind:value={headerDraft.period} />
-        </label>
+        <div class="period-field">
+          <span class="period-label">{t("month.fieldPeriod")}</span>
+          <div class="period-dates">
+            <label class="period-date">
+              <span>{t("month.fieldPeriodFrom")}</span>
+              <input type="date" bind:value={headerDraft.periodStart} />
+            </label>
+            <span class="period-arrow" aria-hidden="true">→</span>
+            <label class="period-date">
+              <span>{t("month.fieldPeriodTo")}</span>
+              <input type="date" bind:value={headerDraft.periodEnd} />
+            </label>
+          </div>
+          <span class="period-preview" class:empty={!headerPeriodPreview}>
+            {headerPeriodPreview || t("month.fieldPeriodHint")}
+          </span>
+        </div>
       </div>
       <div class="income-actions">
         <button class="btn-save" onclick={saveHeader}>{t("common.saveChanges")}</button>
@@ -977,6 +1028,18 @@ import Seo from "#lib/components/Seo.svelte";
   .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+
+  /* Period input: two date pickers joined by an arrow, plus a live preview. */
+  .period-field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .period-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .period-dates { display: flex; align-items: flex-end; gap: 0.5rem; }
+  .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
+  .period-date span { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); }
+  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
+  .period-preview { font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); }
+  .period-preview.empty { font-weight: 500; color: var(--text-tertiary); }
   .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
   .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }
@@ -1054,6 +1117,27 @@ import Seo from "#lib/components/Seo.svelte";
   .chart-note-body p { margin: 0; }
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
+
+  /* Section skeleton mirrors the real `.section` card: surface, border, radius. */
+  .section-skeleton {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .section-skeleton-head {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--surface-border);
+    background: var(--bg-muted);
+  }
+  .section-skeleton-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    padding: 0.7rem 1.25rem;
+    border-bottom: 1px solid var(--bg-muted);
+  }
+  .section-skeleton-row:last-child { border-bottom: none; }
 
   .search-empty {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
@@ -1223,6 +1307,8 @@ import Seo from "#lib/components/Seo.svelte";
     .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
+    .period-dates { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .period-arrow { display: none; }
     .charts-grid { grid-template-columns: 1fr; gap: 1.25rem; }
     .chart-section { padding: 1rem 0.85rem; }
     .bar-chart-plot { height: 180px; gap: 0.4rem; padding-left: 0; padding-right: 0; }
