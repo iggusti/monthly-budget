@@ -386,19 +386,19 @@
 
   // ── Payment method: datalist suggestions from previously used values ───────
 
+  /** Default payment method offered when adding a new entry. */
+  const defaultMethod = $derived(t("expense.methodDefault"));
+
   /** Distinct payment methods already used in this section, most recent first. */
   const methodSuggestions = $derived(
     [...new Set(
-      [...items]
-        .reverse()
-        .map((item) => (item.method ?? "").trim())
-        .filter((method) => method.length > 0)
+      [
+        defaultMethod,
+        ...[...items]
+          .reverse()
+          .map((item) => (item.method ?? "").trim())
+      ].filter((method) => method.length > 0)
     )]
-  );
-
-  /** The method used by the most recent item, offered as a default. */
-  const lastMethod = $derived(
-    [...items].reverse().map((item) => (item.method ?? "").trim()).find((m) => m.length > 0) ?? ""
   );
 
   let adding = $state(false);
@@ -460,7 +460,7 @@
       id: makeId(),
       name: "",
       amount: 0,
-      method: withMethod ? lastMethod : "",
+      method: withMethod ? defaultMethod : "",
       date: withDate ? todayValue : ""
     };
     amountInput = "";
