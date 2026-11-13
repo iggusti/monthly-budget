@@ -701,10 +701,11 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[4]?.items ?? budget.husbandDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
+      withDate
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSalary",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
+          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
         )}
       footerLabel={t("month.subtotalSalary")}
       footerValue={totals.husbandDailyFromSalaryTotal}
@@ -745,10 +746,11 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[5]?.items ?? budget.husbandDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
+      withDate
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSavings",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
+          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
         )}
       footerLabel={t("month.subtotalSavings")}
       footerValue={totals.husbandDailyFromSavingsTotal}
@@ -770,10 +772,11 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[6]?.items ?? budget.wifeDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
+      withDate
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSalary",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
+          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
         )}
       footerLabel={t("month.subtotalSalary")}
       footerValue={totals.wifeDailyFromSalaryTotal}
@@ -803,10 +806,11 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[7]?.items ?? budget.wifeDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
+      withDate
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSavings",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "" }))
+          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
         )}
       footerLabel={t("month.subtotalSavings")}
       footerValue={totals.wifeDailyFromSavingsTotal}

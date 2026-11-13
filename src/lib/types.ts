@@ -39,6 +39,11 @@ export interface DailyExpense {
   name: string;
   amount: number;
   method: string;
+  /**
+   * Date the expense happened, formatted `YYYY-MM-DD` (local calendar day).
+   * Optional: entries created before the date field existed have no value.
+   */
+  date?: string;
 }
 
 /**
@@ -50,6 +55,8 @@ export interface ExpenseItem {
   name: string;
   amount: number;
   method?: string;
+  /** Date the expense happened, formatted `YYYY-MM-DD`. Daily expenses only. */
+  date?: string;
   /** True when a fixed expense has been settled (checked off). */
   checked?: boolean;
 }
@@ -225,6 +232,38 @@ export function formatCurrency(amount: number): string {
 /** Generate a reasonably unique id for a new line item. */
 export function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ── Expense date helpers ────────────────────────────────────────────────────
+
+/** Today's local calendar day as `YYYY-MM-DD`. */
+export function todayISO(): string {
+  return toISODate(new Date());
+}
+
+/** Format a Date as a local `YYYY-MM-DD` string (no timezone drift). */
+export function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Parse a `YYYY-MM-DD` string into a Date at local midnight, or null. */
+export function parseISODate(value: string | undefined): Date | null {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** Whole days between two calendar days (b - a), ignoring time of day. */
+export function daysBetween(a: Date, b: Date): number {
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const aMidnight = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const bMidnight = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+  return Math.round((bMidnight - aMidnight) / MS_PER_DAY);
 }
 
 /** All month ids for a given year, formatted `YYYY-MM`. */

@@ -180,8 +180,16 @@
 
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { formatCurrency, makeId, type ExpenseItem } from "#lib/types";
-  import { t } from "#lib/i18n.svelte";
+  import {
+    formatCurrency,
+    makeId,
+    todayISO,
+    toISODate,
+    parseISODate,
+    daysBetween,
+    type ExpenseItem
+  } from "#lib/types";
+  import { t, lang } from "#lib/i18n.svelte";
   import BadgeIcon from "./BadgeIcon.svelte";
 
   interface Props {
@@ -203,6 +211,8 @@
     withMethod?: boolean;
     /** Placeholder for the payment method input. */
     methodPlaceholder?: string;
+    /** When true each row also captures the date the expense happened. */
+    withDate?: boolean;
     /** When true each row shows a checkbox and the footer shows remaining total. */
     checkboxable?: boolean;
     /** When true, only the most recent items are shown with a view more/less toggle. */
@@ -250,6 +260,7 @@
     amountLabel,
     withMethod = false,
     methodPlaceholder,
+    withDate = false,
     checkboxable = false,
     collapsible = false,
     collapseLimit = 8,
@@ -278,6 +289,74 @@
     return name.replace(regex, "<mark>$1</mark>");
   }
 
+  // ── Date helpers ──────────────────────────────────────────────────────────
+
+  /** Quick-pick options shown above the native date input (today, 1, 2 … ago). */
+  const DATE_QUICK_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+
+  interface DateOption {
+    /** `YYYY-MM-DD` value stored on the item. */
+    value: string;
+    /** Relative label, e.g. "Today" / "2 days ago". */
+    relative: string;
+    /** Human day + date, e.g. "Fri, 13 Nov 2026". */
+    detail: string;
+  }
+
+  /** The locale currently in use for date formatting. */
+  function dateLocale(): string {
+    return lang.value === "id" ? "id-ID" : "en-US";
+  }
+
+  /** "Fri, 13 Nov 2026" for a `YYYY-MM-DD` value. */
+  function formatFullDate(value: string | undefined): string {
+    const date = parseISODate(value);
+    if (!date) return "";
+    return date.toLocaleDateString(dateLocale(), {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  /** Relative label for a `YYYY-MM-DD` value ("Today", "1 day ago", a date). */
+  function relativeLabel(value: string | undefined): string {
+    const date = parseISODate(value);
+    if (!date) return t("expense.noDate");
+    const diff = daysBetween(date, new Date());
+    if (diff === 0) return t("expense.dateToday");
+    if (diff === 1) return t("expense.dateYesterday");
+    if (diff > 1) return t("expense.daysAgo", { n: diff });
+    // Future date: fall back to the absolute day.
+    return formatFullDate(value);
+  }
+
+  /** Build the quick-pick list, each with its relative label and full date. */
+  const dateOptions = $derived.by<DateOption[]>(() => {
+    const now = new Date();
+    return DATE_QUICK_DAYS.map((offset) => {
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+      const value = toISODate(date);
+      return {
+        value,
+        relative: offset === 0
+          ? t("expense.dateToday")
+          : offset === 1
+            ? t("expense.dateYesterday")
+            : t("expense.daysAgo", { n: offset }),
+        detail: formatFullDate(value)
+      };
+    });
+  });
+
+  /** Today's date, offered as the default when adding a new entry. */
+  const todayValue = $derived(dateOptions[0]?.value ?? todayISO());
+
+  function pickDate(value: string) {
+    draft.date = value;
+  }
+
   let adding = $state(false);
   let editingId = $state<string | null>(null);
   let showAll = $state(false);
@@ -302,7 +381,7 @@
     beginSectionDrag(e, item, sectionKey, dragGroup, rowEl);
   }
 
-  let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "" });
+  let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "", date: "" });
 
   const total = $derived(items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
   const checkedTotal = $derived(
@@ -330,7 +409,7 @@
   const hiddenCount = $derived(showAll ? 0 : Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
-    draft = { id: makeId(), name: "", amount: 0, method: "" };
+    draft = { id: makeId(), name: "", amount: 0, method: "", date: withDate ? todayValue : "" };
     editingId = null;
     adding = true;
   }
@@ -351,6 +430,7 @@
       checked: existingItem?.checked ?? draft.checked ?? false
     };
     if (withMethod) clean.method = draft.method?.trim() ?? "";
+    if (withDate) clean.date = draft.date ?? "";
 
     const exists = items.some((item) => item.id === clean.id);
     const nextItems = exists
@@ -449,6 +529,36 @@
             <input type="text" bind:value={draft.method} placeholder={methodText} />
           </label>
         {/if}
+        {#if withDate}
+          <div class="field date-field">
+            <span>{t("expense.date")}</span>
+            <div class="date-quick">
+              {#each dateOptions as option (option.value)}
+                <button
+                  type="button"
+                  class="date-chip"
+                  class:active={draft.date === option.value}
+                  onclick={() => pickDate(option.value)}
+                  title={option.detail}
+                >
+                  <span class="date-chip-relative">{option.relative}</span>
+                  <span class="date-chip-detail">{option.detail}</span>
+                </button>
+              {/each}
+            </div>
+            <label class="date-custom">
+              <span class="date-custom-label">{t("expense.dateOther")}</span>
+              <input type="date" bind:value={draft.date} />
+            </label>
+            <span class="date-preview" class:empty={!draft.date}>
+              {#if draft.date}
+                🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+              {:else}
+                {t("expense.noDate")}
+              {/if}
+            </span>
+          </div>
+        {/if}
       </div>
       <div class="editor-actions">
         <button class="btn-save" onclick={commit}>{t("expense.add")}</button>
@@ -480,6 +590,12 @@
             <span class="item-name">
               {@html highlightText(item.name, highlightedQuery)}
               {#if item.method}<span class="tag">{item.method}</span>{/if}
+              {#if withDate && item.date}
+                <span class="date-badge" title={formatFullDate(item.date)}>
+                  <span class="date-badge-relative">{relativeLabel(item.date)}</span>
+                  <span class="date-badge-detail">{formatFullDate(item.date)}</span>
+                </span>
+              {/if}
             </span>
           </span>
           <span class="item-right">
@@ -510,6 +626,36 @@
                     <span>{t("expense.method")}</span>
                     <input type="text" bind:value={draft.method} placeholder={methodText} />
                   </label>
+                {/if}
+                {#if withDate}
+                  <div class="field date-field">
+                    <span>{t("expense.date")}</span>
+                    <div class="date-quick">
+                      {#each dateOptions as option (option.value)}
+                        <button
+                          type="button"
+                          class="date-chip"
+                          class:active={draft.date === option.value}
+                          onclick={() => pickDate(option.value)}
+                          title={option.detail}
+                        >
+                          <span class="date-chip-relative">{option.relative}</span>
+                          <span class="date-chip-detail">{option.detail}</span>
+                        </button>
+                      {/each}
+                    </div>
+                    <label class="date-custom">
+                      <span class="date-custom-label">{t("expense.dateOther")}</span>
+                      <input type="date" bind:value={draft.date} />
+                    </label>
+                    <span class="date-preview" class:empty={!draft.date}>
+                      {#if draft.date}
+                        🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+                      {:else}
+                        {t("expense.noDate")}
+                      {/if}
+                    </span>
+                  </div>
                 {/if}
               </div>
               <div class="editor-actions">
@@ -646,6 +792,38 @@
   .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+
+  /* Date capture: quick-pick chips + a native picker + a live preview. */
+  .date-field { grid-column: 1 / -1; }
+  .date-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .date-chip {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-secondary);
+    text-align: left; line-height: 1.15;
+    transition: all 0.15s ease;
+  }
+  .date-chip:hover { border-color: var(--accent-gold); background: var(--bg-muted); }
+  .date-chip.active {
+    border-color: var(--accent-gold);
+    background: color-mix(in srgb, var(--accent-gold) 14%, transparent);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-gold) 25%, transparent);
+  }
+  .date-chip-relative { font-size: 0.74rem; font-weight: 700; }
+  .date-chip-detail { font-size: 0.64rem; font-weight: 500; color: var(--text-tertiary); }
+  .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
+  .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
+  .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
+  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .date-preview {
+    margin-top: 0.45rem; font-size: 0.75rem; font-weight: 600;
+    color: var(--accent-gold);
+  }
+  .date-preview.empty { color: var(--text-tertiary); font-weight: 500; }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.85rem; }
   .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.8rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }
@@ -683,6 +861,34 @@
   .check input:checked + .checkmark::after { content: "✓"; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
   .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: rgba(107, 127, 163, 0.1); color: var(--accent-blue); }
+  .date-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.66rem; font-weight: 600;
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent-gold) 12%, transparent);
+    color: var(--accent-gold);
+    border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
+    white-space: nowrap;
+  }
+  .date-badge-relative { font-weight: 700; }
+  .date-badge-detail {
+    font-weight: 500; color: var(--text-tertiary);
+    padding-left: 0.35rem;
+    border-left: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
+  }
+  .rose .date-badge {
+    background: color-mix(in srgb, var(--accent-rose) 12%, transparent);
+    color: var(--accent-rose);
+    border-color: color-mix(in srgb, var(--accent-rose) 30%, transparent);
+  }
+  .rose .date-badge-detail { border-left-color: color-mix(in srgb, var(--accent-rose) 30%, transparent); }
+  .blue .date-badge {
+    background: color-mix(in srgb, var(--accent-blue) 12%, transparent);
+    color: var(--accent-blue);
+    border-color: color-mix(in srgb, var(--accent-blue) 30%, transparent);
+  }
+  .blue .date-badge-detail { border-left-color: color-mix(in srgb, var(--accent-blue) 30%, transparent); }
   .item-right { display: flex; align-items: center; gap: 0.5rem; }
   .item-amount { font-size: 0.86rem; font-weight: 600; color: var(--text-secondary); }
   .icon-btn { width: 26px; height: 26px; border-radius: var(--radius-sm); background: transparent; color: var(--text-tertiary); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
