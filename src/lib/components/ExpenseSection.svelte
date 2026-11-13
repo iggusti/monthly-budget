@@ -357,6 +357,50 @@
     draft.date = value;
   }
 
+  // ── Amount input: thousands-separated text, digits only ───────────────────
+
+  /** Format a numeric amount as grouped digits, e.g. 1000000 -> "1.000.000". */
+  function formatAmountInput(value: number | string): string {
+    const digits = String(value ?? "").replace(/\D/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("id-ID");
+  }
+
+  /** Parse a formatted amount string back to a whole number. */
+  function parseAmountInput(value: string): number {
+    const digits = String(value ?? "").replace(/\D/g, "");
+    return digits ? Number(digits) : 0;
+  }
+
+  /** The amount shown in the draft editor, kept in sync with `draft.amount`. */
+  let amountInput = $state("");
+
+  function onAmountInput(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    amountInput = formatAmountInput(input.value);
+    draft.amount = parseAmountInput(amountInput);
+    // Keep the live-formatted value in the DOM (caret stays at the end, which
+    // is the natural position when typing digits).
+    input.value = amountInput;
+  }
+
+  // ── Payment method: datalist suggestions from previously used values ───────
+
+  /** Distinct payment methods already used in this section, most recent first. */
+  const methodSuggestions = $derived(
+    [...new Set(
+      [...items]
+        .reverse()
+        .map((item) => (item.method ?? "").trim())
+        .filter((method) => method.length > 0)
+    )]
+  );
+
+  /** The method used by the most recent item, offered as a default. */
+  const lastMethod = $derived(
+    [...items].reverse().map((item) => (item.method ?? "").trim()).find((m) => m.length > 0) ?? ""
+  );
+
   let adding = $state(false);
   let editingId = $state<string | null>(null);
   let showAll = $state(false);
@@ -382,6 +426,9 @@
   }
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "", date: "" });
+
+  /** True when the draft has a name, so it can be saved. */
+  const canCommit = $derived(draft.name.trim().length > 0);
 
   const total = $derived(items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
   const checkedTotal = $derived(
@@ -409,24 +456,41 @@
   const hiddenCount = $derived(showAll ? 0 : Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
-    draft = { id: makeId(), name: "", amount: 0, method: "", date: withDate ? todayValue : "" };
+    draft = {
+      id: makeId(),
+      name: "",
+      amount: 0,
+      method: withMethod ? lastMethod : "",
+      date: withDate ? todayValue : ""
+    };
+    amountInput = "";
     editingId = null;
     adding = true;
   }
 
   function startEdit(item: ExpenseItem) {
     draft = { ...item };
+    amountInput = formatAmountInput(item.amount);
     adding = false;
     editingId = item.id;
   }
 
+  // Focus the name field whenever an editor opens (add or edit).
+  let nameInputEl = $state<HTMLInputElement | null>(null);
+  $effect(() => {
+    if ((adding || editingId) && nameInputEl) {
+      nameInputEl.focus();
+      nameInputEl.select();
+    }
+  });
+
   function commit() {
-    if (!draft.name.trim()) return;
+    if (!canCommit) return;
     const existingItem = items.find((item) => item.id === draft.id);
     const clean: ExpenseItem = {
       id: draft.id || makeId(),
       name: draft.name.trim(),
-      amount: Number(draft.amount) || 0,
+      amount: parseAmountInput(amountInput) || Number(draft.amount) || 0,
       checked: existingItem?.checked ?? draft.checked ?? false
     };
     if (withMethod) clean.method = draft.method?.trim() ?? "";
@@ -508,6 +572,7 @@
           <span>{nameText}</span>
           <input
             type="text"
+            bind:this={nameInputEl}
             bind:value={draft.name}
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
@@ -516,9 +581,12 @@
         <label class="field">
           <span>{amountText}</span>
           <input
-            type="number"
-            min="0"
-            bind:value={draft.amount}
+            class="amount-input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            value={amountInput}
+            oninput={onAmountInput}
             placeholder="0"
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
@@ -526,7 +594,18 @@
         {#if withMethod}
           <label class="field">
             <span>{t("expense.method")}</span>
-            <input type="text" bind:value={draft.method} placeholder={methodText} />
+            <input
+              type="text"
+              list="{sectionKey || 'method'}-methods"
+              bind:value={draft.method}
+              placeholder={methodText}
+              onkeydown={(e) => e.key === "Enter" && commit()}
+            />
+            <datalist id="{sectionKey || 'method'}-methods">
+              {#each methodSuggestions as method (method)}
+                <option value={method}></option>
+              {/each}
+            </datalist>
           </label>
         {/if}
         {#if withDate}
@@ -561,7 +640,8 @@
         {/if}
       </div>
       <div class="editor-actions">
-        <button class="btn-save" onclick={commit}>{t("expense.add")}</button>
+        <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
+        <button class="btn-save" onclick={commit} disabled={!canCommit}>{t("expense.add")}</button>
         <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
       </div>
     </div>
@@ -615,16 +695,36 @@
               <div class="editor-fields">
                 <label class="field">
                   <span>{nameText}</span>
-                  <input type="text" bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <input type="text" bind:this={nameInputEl} bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
-                  <input type="number" min="0" bind:value={draft.amount} placeholder="0" onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <input
+                    class="amount-input"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    value={amountInput}
+                    oninput={onAmountInput}
+                    placeholder="0"
+                    onkeydown={(e) => e.key === "Enter" && commit()}
+                  />
                 </label>
                 {#if withMethod}
                   <label class="field">
                     <span>{t("expense.method")}</span>
-                    <input type="text" bind:value={draft.method} placeholder={methodText} />
+                    <input
+                      type="text"
+                      list="{sectionKey || 'method'}-methods-edit"
+                      bind:value={draft.method}
+                      placeholder={methodText}
+                      onkeydown={(e) => e.key === "Enter" && commit()}
+                    />
+                    <datalist id="{sectionKey || 'method'}-methods-edit">
+                      {#each methodSuggestions as method (method)}
+                        <option value={method}></option>
+                      {/each}
+                    </datalist>
                   </label>
                 {/if}
                 {#if withDate}
@@ -659,7 +759,8 @@
                 {/if}
               </div>
               <div class="editor-actions">
-                <button class="btn-save" onclick={commit}>{t("expense.saveChanges")}</button>
+                <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
+                <button class="btn-save" onclick={commit} disabled={!canCommit}>{t("expense.saveChanges")}</button>
                 <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
               </div>
             </div>
@@ -792,6 +893,7 @@
   .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
 
   /* Date capture: quick-pick chips + a native picker + a live preview. */
   .date-field { grid-column: 1 / -1; }
@@ -824,9 +926,15 @@
     color: var(--accent-gold);
   }
   .date-preview.empty { color: var(--text-tertiary); font-weight: 500; }
-  .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.85rem; }
+  .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
+  .editor-hint {
+    margin-right: auto; font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
+    opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
+  }
+  .editor-hint.visible { opacity: 1; transform: translateX(0); }
   .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.8rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }
+  .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-cancel { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; }
   .btn-cancel:hover { background: var(--bg-muted); }
 

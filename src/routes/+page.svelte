@@ -377,14 +377,16 @@
             </div>
             <div class="card-groups">
               <div class="card-group">
-                <Skeleton width="50px" height="0.66rem" />
+                <Skeleton width="50px" height="0.66rem" style="margin-bottom:0.3rem;" />
                 <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
                 <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
+                <div class="card-group-row"><Skeleton width="50px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
               </div>
               <div class="card-group">
-                <Skeleton width="40px" height="0.66rem" />
+                <Skeleton width="40px" height="0.66rem" style="margin-bottom:0.3rem;" />
                 <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
                 <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
+                <div class="card-group-row"><Skeleton width="50px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
               </div>
             </div>
           </div>
