@@ -210,8 +210,11 @@
     amountLabel?: string;
     /** When true each row also captures a payment method. */
     withMethod?: boolean;
-    /** Placeholder for the payment method input. */
-    methodPlaceholder?: string;
+    /**
+     * Method preselected when adding an entry, e.g.
+     * `{ base: "qris", channel: "Bank Jago" }`. Falls back to QRIS.
+     */
+    methodDefault?: { base: string; channel: string };
     /** When true each row also captures the date the expense happened. */
     withDate?: boolean;
     /** When true each row shows a checkbox and the footer shows remaining total. */
@@ -260,7 +263,7 @@
     nameLabel,
     amountLabel,
     withMethod = false,
-    methodPlaceholder,
+    methodDefault,
     withDate = false,
     checkboxable = false,
     collapsible = false,
@@ -281,7 +284,6 @@
   /** Reactive labels so they follow the active language unless overridden. */
   const nameText = $derived(nameLabel ?? t("expense.nameLabel"));
   const amountText = $derived(amountLabel ?? t("expense.amountLabel"));
-  const methodText = $derived(methodPlaceholder ?? t("expense.methodPlaceholder"));
 
   /** Highlight matching text in item names when search query is provided. */
   function highlightText(name: string, query: string): string {
@@ -292,8 +294,8 @@
 
   // ── Date helpers ──────────────────────────────────────────────────────────
 
-  /** Quick-pick options shown above the native date input (today, 1, 2 … ago). */
-  const DATE_QUICK_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
+  /** Quick-pick options shown above the native date input (today, 1 … up to 5 days ago). */
+  const DATE_QUICK_DAYS = [0, 1, 2, 3, 4, 5] as const;
 
   interface DateOption {
     /** `YYYY-MM-DD` value stored on the item. */
@@ -385,22 +387,92 @@
     input.value = amountInput;
   }
 
-  // ── Payment method: datalist suggestions from previously used values ───────
+  // ── Payment method: preset base + optional bank / e-wallet ────────────────
 
-  /** Default payment method offered when adding a new entry. */
-  const defaultMethod = $derived(t("expense.methodDefault"));
+  /** Bases that can carry a bank / e-wallet channel. */
+  const CHANNEL_BASES: readonly string[] = ["qris", "transfer", "cash"];
 
-  /** Distinct payment methods already used in this section, most recent first. */
-  const methodSuggestions = $derived(
-    [...new Set(
-      [
-        defaultMethod,
-        ...[...items]
-          .reverse()
-          .map((item) => (item.method ?? "").trim())
-      ].filter((method) => method.length > 0)
-    )]
+  /** Payment method choices, in display order. */
+  const methodBaseOptions = $derived([
+    { value: "qris", label: t("expense.methodQris") },
+    { value: "transfer", label: t("expense.methodTransfer") },
+    { value: "cash", label: t("expense.methodCash") }
+  ]);
+
+  /** Bank accounts — also the only choices for a cash withdrawal. */
+  const METHOD_CHANNELS_BANK: readonly string[] = [
+    "BRI",
+    "Bank Jago",
+    "Allo Bank",
+    "BSI",
+    "SeaBank"
+  ];
+
+  /** E-wallets, offered for QRIS and Transfer only. */
+  const METHOD_CHANNELS_EWALLET: readonly string[] = ["ShopeePay", "GoPay", "Flip", "Dana"];
+
+  /** Everything offered for QRIS and Transfer: every bank plus every e-wallet. */
+  const METHOD_CHANNELS_ALL: readonly string[] = [
+    ...METHOD_CHANNELS_BANK,
+    ...METHOD_CHANNELS_EWALLET
+  ];
+
+  /** Banks / e-wallets valid for a given method base. */
+  function channelsFor(base: string): readonly string[] {
+    if (base === "cash") return METHOD_CHANNELS_BANK;
+    if (CHANNEL_BASES.includes(base)) return METHOD_CHANNELS_ALL;
+    return [];
+  }
+
+  /** Selected base (`qris` | `transfer` | `cash`) for the open editor. */
+  let methodBase = $state("");
+  /** Selected bank / e-wallet label for the open editor. */
+  let methodChannel = $state("");
+  /**
+   * Stored value from an older free-text entry that matches no preset.
+   * Kept so editing such an item does not silently wipe its method.
+   */
+  let methodLegacy = $state("");
+
+  /** Options for the second select; narrowed to banks for cash withdrawals. */
+  const methodChannelOptions = $derived(channelsFor(methodBase));
+
+  /** Label of the second select ("Bank" for cash, "Bank / e-wallet" otherwise). */
+  const channelLabel = $derived(
+    methodBase === "cash" ? t("expense.methodChannelBank") : t("expense.methodChannel")
   );
+
+  /** True when the chosen base also offers a bank / e-wallet choice. */
+  const needsChannel = $derived(CHANNEL_BASES.includes(methodBase));
+
+  /**
+   * Clear the channel when the newly chosen method cannot use it (e.g. GoPay
+   * is not a bank, so it is dropped when switching to a cash withdrawal).
+   */
+  function onMethodBaseChange() {
+    methodLegacy = "";
+    if (!channelsFor(methodBase).includes(methodChannel)) methodChannel = "";
+  }
+
+  /** Split a stored method ("QRIS · BRI") back into base + channel. */
+  function splitMethod(stored: string | undefined) {
+    const [rawBase = "", rawChannel = ""] = String(stored ?? "").split("·");
+    const baseText = rawBase.trim();
+    return {
+      base: methodBaseOptions.find((option) => option.label === baseText)?.value ?? "",
+      channel: rawChannel.trim(),
+      legacy: baseText
+    };
+  }
+
+  /** Value stored on the item: "QRIS · BRI", "Tarik tunai · BRI", or an old free-text entry. */
+  function composeMethod(): string {
+    const base = methodBaseOptions.find((option) => option.value === methodBase)?.label ?? "";
+    if (!base) return methodLegacy;
+    // Guard against a stale channel that is not valid for this method.
+    const channel = channelsFor(methodBase).includes(methodChannel) ? methodChannel : "";
+    return channel ? `${base} · ${channel}` : base;
+  }
 
   let adding = $state(false);
   let editingId = $state<string | null>(null);
@@ -461,10 +533,16 @@
       id: makeId(),
       name: "",
       amount: 0,
-      method: withMethod ? defaultMethod : "",
+      method: "",
       date: withDate ? todayValue : ""
     };
     amountInput = "";
+    // New entries default to the section's preferred method (e.g. QRIS from
+    // Bank Jago for salary spending), falling back to plain QRIS.
+    const preferred = methodDefault ?? { base: "qris", channel: "" };
+    methodBase = withMethod ? preferred.base : "";
+    methodChannel = withMethod ? preferred.channel : "";
+    methodLegacy = "";
     editingId = null;
     adding = true;
     void focusNameField("add");
@@ -473,6 +551,10 @@
   function startEdit(item: ExpenseItem) {
     draft = { ...item };
     amountInput = formatAmountInput(item.amount);
+    const method = splitMethod(item.method);
+    methodBase = method.base;
+    methodChannel = method.channel;
+    methodLegacy = method.base ? "" : method.legacy;
     adding = false;
     editingId = item.id;
     void focusNameField("edit");
@@ -510,7 +592,7 @@
       amount: parseAmountInput(amountInput) || Number(draft.amount) || 0,
       checked: existingItem?.checked ?? draft.checked ?? false
     };
-    if (withMethod) clean.method = draft.method?.trim() ?? "";
+    if (withMethod) clean.method = composeMethod();
     if (withDate) clean.date = draft.date ?? "";
 
     const exists = items.some((item) => item.id === clean.id);
@@ -609,21 +691,28 @@
           />
         </label>
         {#if withMethod}
-          <label class="field">
+          <label class="field method-field" class:wide={!needsChannel}>
             <span>{t("expense.method")}</span>
-            <input
-              type="text"
-              list="{sectionKey || 'method'}-methods"
-              bind:value={draft.method}
-              placeholder={methodText}
-              onkeydown={(e) => e.key === "Enter" && commit()}
-            />
-            <datalist id="{sectionKey || 'method'}-methods">
-              {#each methodSuggestions as method (method)}
-                <option value={method}></option>
+            <select bind:value={methodBase} onchange={onMethodBaseChange}>
+              {#if methodLegacy && !methodBase}
+                <option value="">{methodLegacy}</option>
+              {/if}
+              {#each methodBaseOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
               {/each}
-            </datalist>
+            </select>
           </label>
+          {#if needsChannel}
+            <label class="field method-field">
+              <span>{channelLabel}</span>
+              <select bind:value={methodChannel}>
+                <option value="">{t("expense.methodChannelAny")}</option>
+                {#each methodChannelOptions as channel (channel)}
+                  <option value={channel}>{channel}</option>
+                {/each}
+              </select>
+            </label>
+          {/if}
         {/if}
         {#if withDate}
           <div class="field date-field">
@@ -638,7 +727,6 @@
                   title={option.detail}
                 >
                   <span class="date-chip-relative">{option.relative}</span>
-                  <span class="date-chip-detail">{option.detail}</span>
                 </button>
               {/each}
             </div>
@@ -728,21 +816,28 @@
                   />
                 </label>
                 {#if withMethod}
-                  <label class="field">
+                  <label class="field method-field" class:wide={!needsChannel}>
                     <span>{t("expense.method")}</span>
-                    <input
-                      type="text"
-                      list="{sectionKey || 'method'}-methods-edit"
-                      bind:value={draft.method}
-                      placeholder={methodText}
-                      onkeydown={(e) => e.key === "Enter" && commit()}
-                    />
-                    <datalist id="{sectionKey || 'method'}-methods-edit">
-                      {#each methodSuggestions as method (method)}
-                        <option value={method}></option>
+                    <select bind:value={methodBase} onchange={onMethodBaseChange}>
+                      {#if methodLegacy && !methodBase}
+                        <option value="">{methodLegacy}</option>
+                      {/if}
+                      {#each methodBaseOptions as option (option.value)}
+                        <option value={option.value}>{option.label}</option>
                       {/each}
-                    </datalist>
+                    </select>
                   </label>
+                  {#if needsChannel}
+                    <label class="field method-field">
+                      <span>{channelLabel}</span>
+                      <select bind:value={methodChannel}>
+                        <option value="">{t("expense.methodChannelAny")}</option>
+                        {#each methodChannelOptions as channel (channel)}
+                          <option value={channel}>{channel}</option>
+                        {/each}
+                      </select>
+                    </label>
+                  {/if}
                 {/if}
                 {#if withDate}
                   <div class="field date-field">
@@ -757,7 +852,6 @@
                           title={option.detail}
                         >
                           <span class="date-chip-relative">{option.relative}</span>
-                          <span class="date-chip-detail">{option.detail}</span>
                         </button>
                       {/each}
                     </div>
@@ -905,24 +999,47 @@
   .editor-item { list-style: none; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
   .editor-item .editor { border-bottom: none; }
   .editor-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.75rem; }
-  .editor-fields .field:last-child:nth-child(3) { grid-column: 1 / -1; }
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
   .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
 
+  /* Payment method: two native selects (method, then bank / e-wallet). The
+     native arrow is replaced with a chevron so it never sits on the border. */
+  .field select {
+    width: 100%;
+    padding: 0.55rem 2.1rem 0.55rem 0.75rem;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23807a74' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+    background-size: 14px;
+    cursor: pointer;
+    text-overflow: ellipsis;
+  }
+  .field select:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  /* Shown alone when no preset is matched (legacy value): let it fill the row. */
+  .method-field.wide { grid-column: 1 / -1; }
+
   /* Date capture: quick-pick chips + a native picker + a live preview. */
   .date-field { grid-column: 1 / -1; }
   .date-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  /* Quick picks are single-line pills; the full date stays available as the
+     tooltip and as a hint once the date is picked (see .date-preview). */
   .date-chip {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem;
-    padding: 0.35rem 0.6rem;
+    display: inline-flex; align-items: center;
+    padding: 0.35rem 0.7rem;
     border: 1px solid var(--surface-border);
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: var(--surface);
     color: var(--text-secondary);
-    text-align: left; line-height: 1.15;
+    line-height: 1.2;
     transition: all 0.15s ease;
   }
   .date-chip:hover { border-color: var(--accent-gold); background: var(--bg-muted); }
@@ -933,7 +1050,6 @@
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-gold) 25%, transparent);
   }
   .date-chip-relative { font-size: 0.74rem; font-weight: 700; }
-  .date-chip-detail { font-size: 0.64rem; font-weight: 500; color: var(--text-tertiary); }
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
   .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
@@ -956,7 +1072,7 @@
   .btn-cancel:hover { background: var(--bg-muted); }
 
   .items { list-style: none; }
-  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background 0.15s; }
+  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background 0.15s; }
   .item.draggable { cursor: grab; }
   .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
@@ -964,7 +1080,7 @@
   .item.editing { background: rgba(200, 149, 108, 0.08); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
-  .item-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+  .item-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1; }
   .drag-handle {
     flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
     width: 22px; height: 22px; border-radius: 6px;
@@ -984,7 +1100,7 @@
   .check:hover .checkmark { border-color: var(--accent-gold); }
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
   .check input:checked + .checkmark::after { content: "✓"; }
-  .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
   .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: rgba(107, 127, 163, 0.1); color: var(--accent-blue); }
   .date-badge {
     display: inline-flex; align-items: center; gap: 0.35rem;
@@ -1014,8 +1130,8 @@
     border-color: color-mix(in srgb, var(--accent-blue) 30%, transparent);
   }
   .blue .date-badge-detail { border-left-color: color-mix(in srgb, var(--accent-blue) 30%, transparent); }
-  .item-right { display: flex; align-items: center; gap: 0.5rem; }
-  .item-amount { font-size: 0.86rem; font-weight: 600; color: var(--text-secondary); }
+  .item-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+  .item-amount { font-size: 0.86rem; font-weight: 600; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .icon-btn { width: 26px; height: 26px; border-radius: var(--radius-sm); background: transparent; color: var(--text-tertiary); font-size: 0.75rem; display: flex; align-items: center; justify-content: center; }
   .icon-btn-svg { width: 14px; height: 14px; }
   .icon-btn:hover { background: var(--bg-muted); color: var(--text-primary); }
@@ -1130,7 +1246,12 @@
 
   @media (max-width: 640px) {
     .editor-fields { grid-template-columns: 1fr; }
-    .editor-fields .field:last-child:nth-child(3) { grid-column: auto; }
+    .method-field.wide { grid-column: auto; }
+
+    /* Phones: trim the horizontal padding so names, the date badge and the
+       amount keep more room without changing the row's alignment. */
+    .item { padding: 0.7rem 1rem; gap: 0.6rem; }
+    .item-right { gap: 0.5rem; }
   }
 
   /* Global drag & drop visuals (target both mouse and touch). */

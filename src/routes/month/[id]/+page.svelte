@@ -752,6 +752,7 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[4]?.items ?? budget.husbandDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
+      methodDefault={{ base: "qris", channel: "Bank Jago" }}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -797,6 +798,7 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[5]?.items ?? budget.husbandDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
+      methodDefault={{ base: "qris", channel: "Allo Bank" }}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -823,6 +825,7 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[6]?.items ?? budget.wifeDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
+      methodDefault={{ base: "qris", channel: "BSI" }}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -857,6 +860,7 @@ import Seo from "#lib/components/Seo.svelte";
       items={visibleItemsPerSection[7]?.items ?? budget.wifeDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
+      methodDefault={{ base: "qris", channel: "Bank Jago" }}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -1035,7 +1039,12 @@ import Seo from "#lib/components/Seo.svelte";
   .period-dates { display: flex; align-items: flex-end; gap: 0.5rem; }
   .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
   .period-date span { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
-  .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); }
+  .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
+  /* Native date inputs render their calendar button flush to the right edge;
+     give it breathing room so the icon is not stuck against the border. */
+  .period-date input[type="date"] { padding-right: 1.6rem; }
+  .period-date input[type="date"]::-webkit-calendar-picker-indicator { margin-right: 0.1rem; opacity: 0.65; cursor: pointer; }
+  .period-date input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
   .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
   .period-preview { font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); }
