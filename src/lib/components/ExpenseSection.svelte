@@ -179,6 +179,7 @@
 </script>
 
 <script lang="ts">
+  import { tick } from "svelte";
   import { slide } from "svelte/transition";
   import {
     formatCurrency,
@@ -466,6 +467,7 @@
     amountInput = "";
     editingId = null;
     adding = true;
+    void focusNameField("add");
   }
 
   function startEdit(item: ExpenseItem) {
@@ -473,16 +475,31 @@
     amountInput = formatAmountInput(item.amount);
     adding = false;
     editingId = item.id;
+    void focusNameField("edit");
   }
 
   // Focus the name field whenever an editor opens (add or edit).
-  let nameInputEl = $state<HTMLInputElement | null>(null);
-  $effect(() => {
-    if ((adding || editingId) && nameInputEl) {
-      nameInputEl.focus();
-      nameInputEl.select();
-    }
-  });
+  // Each editor keeps its own ref: sharing one `bind:this` between the add and
+  // edit editors lets the unmounting editor's cleanup null the ref that the
+  // mounting one just set, so the focus call silently targets nothing.
+  let addNameEl = $state<HTMLInputElement | null>(null);
+  let editNameEl = $state<HTMLInputElement | null>(null);
+
+  /**
+   * Focus the name input and keep the editor visible.
+   *
+   * Called explicitly from `startAdd()` / `startEdit()` after `tick()` instead
+   * of from an `$effect`. An effect can run while the `slide` transition is
+   * still measuring the editor, and on mobile the keyboard then covers a form
+   * that never got scrolled into view — the form looks like it failed to open.
+   */
+  async function focusNameField(which: "add" | "edit") {
+    await tick();
+    const el = which === "add" ? addNameEl : editNameEl;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "nearest" });
+  }
 
   function commit() {
     if (!canCommit) return;
@@ -572,7 +589,7 @@
           <span>{nameText}</span>
           <input
             type="text"
-            bind:this={nameInputEl}
+            bind:this={addNameEl}
             bind:value={draft.name}
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
@@ -695,7 +712,7 @@
               <div class="editor-fields">
                 <label class="field">
                   <span>{nameText}</span>
-                  <input type="text" bind:this={nameInputEl} bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <input type="text" bind:this={editNameEl} bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
