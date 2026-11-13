@@ -53,6 +53,20 @@ every push to `main`; that workflow does **not** touch functions or rules.
   totals live in `src/lib/types.ts`; expense arrays are `husbandFixed`,
   `wifeFixed`, `husbandDailyFromSalary`, `husbandDailyFromSavings`,
   `wifeDailyFromSalary`, `wifeDailyFromSavings`.
+- Period dates are editable: `periodStart` / `periodEnd` hold `YYYY-MM-DD`. The
+  readable `period` label is derived from them with `formatPeriod()` in
+  `types.ts` — never hand-write the label when those dates change.
+- Daily items also carry an optional `date` (`YYYY-MM-DD`, local calendar day;
+  use the `todayISO()` / `parseISODate()` / `daysBetween()` helpers, not raw
+  `Date` math). Documents created before the field existed have none.
+- Payment method is one string in `item.method`, composed from a preset pair:
+  base (`qris` / `transfer` / `cash`) plus a channel (bank or e-wallet). The
+  preset lists live in `ExpenseSection.svelte` (`CHANNEL_BASES`,
+  `METHOD_CHANNELS_BANK`, `METHOD_CHANNELS_EWALLET`). Do not turn it back into a
+  free-text field.
+- `ExpenseSection.svelte` is opt-in per feature: `withMethod`, `withDate` and
+  `methodDefault` (base + channel preselected for new entries, e.g. husband
+  salary → `qris` / `Bank Jago`).
 - **All budget writes go through `src/lib/budget-store.ts`**
   (`saveBudget()`, `deleteBudget()`). Do not call `setDoc`/`deleteDoc` on the
   budget collection elsewhere: the notification pipeline depends on the stamps
@@ -83,6 +97,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Intended behaviour: notify on add/edit/delete of expense items (name, amount,
   payment method). **Do not** notify for `checked`-only toggles on fixed
   expenses or for income edits. Never notify the editor's own device.
+- `sameItem()` in `changes.js` compares only `name`, `amount` and `method`, so a
+  date-only edit sends no push today. Include `date` there (and its callers) if
+  that should change — keep the function pure and testable with plain `node`.
 - VAPID public key lives in `src/lib/firebase.ts` (`FCM_VAPID_KEY`), overridable
   via `VITE_FCM_VAPID_KEY` / `.env.local`. It is a public key — safe to commit.
 - Debounce/aggregate awareness: each budget write produces at most one
@@ -101,4 +118,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Clearing browser storage creates a new anonymous uid; device documents are
   refreshed with the current uid on app start, and dead FCM tokens are pruned
   server-side.
+- Native `<input type="date">`: Chrome/Firefox keep the calendar button flush to
+  the right border. Do **not** add `padding-right` to "give it breathing room" —
+  it drags the arrow away from the border and looks wrong on desktop, while
+  phones hide the indicator anyway (reverted in `ed434e5`).
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).

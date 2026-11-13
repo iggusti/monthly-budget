@@ -29,10 +29,20 @@ Every entry can be added, edited and removed from the UI:
 2. **Wife income** — monthly salary
 3. **Husband fixed expenses** — utilities, rent, insurance, savings pots, ...
 4. **Wife fixed expenses** — family support, zakat, koperasi, ...
-5. **Husband daily expenses (from salary)** — with payment method
-6. **Husband daily expenses (from savings)** — with payment method
-7. **Wife daily expenses (from salary)** — with payment method
-8. **Wife daily expenses (from savings)** — with payment method
+5. **Husband daily expenses (from salary)** — with date and payment method
+6. **Husband daily expenses (from savings)** — with date and payment method
+7. **Wife daily expenses (from salary)** — with date and payment method
+8. **Wife daily expenses (from savings)** — with date and payment method
+
+Daily entries also record **when** and **how** the money left:
+
+- **Date** — quick-pick chips (today, yesterday, … up to 5 days back) plus a
+  full date picker; older entries without a date simply show none.
+- **Payment method** — two selects: `QRIS`, `Transfer` or `Cash withdrawal`,
+  then the bank (`BRI`, `Bank Jago`, `Allo Bank`, `BSI`, `SeaBank`) or e-wallet
+  (`ShopeePay`, `GoPay`, `Flip`, `Dana`) it came from. Cash withdrawals only
+  offer bank accounts. Each daily section preselects its usual pair, and legacy
+  free-text values are kept when an old entry is edited.
 
 ## Calculations
 
@@ -48,9 +58,11 @@ Every entry can be added, edited and removed from the UI:
   `equalSplitAmount − subtotal salary`.
 
 Each budget period follows the pattern `25 January - 24 February 2026` (the 25th
-cycle). A period's **title reflects its ending month** (so `2026-01` is titled
-"February 2026"). Each period is stored as one Firestore document (id `YYYY-MM`)
-in the `budget` collection.
+cycle), and the start/end dates are edited with two date pickers in the month
+header. The stored `periodStart` / `periodEnd` (`YYYY-MM-DD`) feed the readable
+`period` label. A period's **title reflects its ending month** (so `2026-01` is
+titled "February 2026"). Each period is stored as one Firestore document (id
+`YYYY-MM`) in the `budget` collection.
 
 ## Features
 
@@ -65,6 +77,9 @@ in the `budget` collection.
   30,000 Auto Donate item.
 - **Gender colors** — blue for husband sections, pink for wife sections; icons
   distinguish categories (income, fixed, wallet, savings).
+- **Expense dates & method presets** — daily rows show the day and the payment
+  channel; forms offer quick date chips and the method/bank selects described
+  above.
 - **View more / View less** — collapsible sections toggle both directions.
 - **Push notifications** — when an expense is added, edited or deleted, the
   other phone gets a system notification even with the app closed. The device
@@ -89,7 +104,8 @@ Details:
 - Notifications arrive in the language selected on each phone (EN / ID).
 - Only field changes matter: name, amount and payment method. Ticking a fixed
   expense as "settled" (`checked`) does **not** notify, and income edits are
-  ignored too.
+  ignored too. A date-only change is not part of the diff, so it sends no push
+  either.
 - Deleting a whole month sends a "Month deleted" notification to the other
   phones; `deleteBudget()` stamps the deleter just before removing the
   document so the delete trigger can exclude them.
@@ -134,6 +150,7 @@ src/
     firebase.ts              Firebase initialisation (Firestore + Auth + VAPID key)
     auth.ts                  keyword gate + anonymous sign-in
     budget-store.ts          Firestore read/write + real-time subscribe helpers
+    i18n.svelte.ts           EN/ID dictionary and the reactive t() helper
     notifications.svelte.ts  FCM permission, token registration, foreground push
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
