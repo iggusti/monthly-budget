@@ -1,14 +1,8 @@
-import * as firebase from "firebase-admin";
-import { serviceAccount } from "./service-account.js";
+import { getFirestore } from "firebase-admin/firestore";
+import { initAdmin } from "./admin-app.mjs";
 
-if (!firebase.apps.length) {
-  firebase.initializeApp({
-    credential: firebase.credential.cert(serviceAccount),
-    projectId: "monthly-budget-580b2"
-  });
-}
-
-const db = firebase.firestore();
+initAdmin();
+const db = getFirestore();
 
 const budgetData = {
   "2026-01": {

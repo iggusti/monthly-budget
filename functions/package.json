@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.1.0",
-    "monthly-budget": "file:.."
+    "firebase-functions": "^6.1.0"
   }
 }

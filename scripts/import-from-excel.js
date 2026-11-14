@@ -1,16 +1,12 @@
-// Reads an Excel/CSV file and stores it to Firebase.
+// Placeholder for importing an Excel/CSV export into Firestore.
 // Usage: node scripts/import-from-excel.js data.xlsx
+//
+// The real importers live next to this file (for example `seed-daily-2026.mjs`
+// and `resync-daily-from-excel.mjs`). They authenticate with
+// `scripts/firebase-config.mjs` or, for Admin SDK access,
+// `GOOGLE_APPLICATION_CREDENTIALS` (see `scripts/admin-app.mjs`).
 
-const fs = require('fs');
-const path = require('path');
-
-// Load firebase config from the environment or hardcode.
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug",
-  projectId: process.env.FIREBASE_PROJECT_ID || "monthly-budget-580b2"
-};
-
-console.log("Import script ready");
-console.log("1. Install: npm install xlsx firebase-admin");
-console.log("2. Get the service account from Firebase Console > Project Settings > Service Accounts");
+console.log("Import script placeholder");
+console.log("1. Install: npm install xlsx");
+console.log("2. Set GOOGLE_APPLICATION_CREDENTIALS to a service-account JSON");
 console.log("3. Run: node scripts/import-from-excel.js your-data.xlsx");

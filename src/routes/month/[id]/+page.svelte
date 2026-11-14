@@ -9,31 +9,19 @@
     createEmptyBudget,
     formatCurrency,
     formatPeriod,
+    totalExpenses,
     type MonthBudget,
     type ExpenseItem
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
+  import { currentPeriodId } from "#lib/period";
+  import { matchesQuery } from "#lib/search";
   import { t, lang } from "#lib/i18n.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
 import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
 
   const monthId = $derived(page.params.id ?? "");
-
-  /**
-   * Current budget period id (`YYYY-MM`). The period runs from the 25th of the
-   * previous month through the 24th of the period month, so on the 25th or
-   * later we are already in the current month's period.
-   */
-  function currentPeriodId(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 1-based
-    const day = now.getDate();
-    const startMonth = day >= 25 ? month : month - 1;
-    const [targetYear, targetMonth] = startMonth <= 0 ? [year - 1, 12] : [year, startMonth];
-    return `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
-  }
 
   /** Month pages outside the active period require confirmation before edits. */
   const isActiveMonth = $derived(monthId === currentPeriodId());
@@ -56,15 +44,6 @@ import Seo from "#lib/components/Seo.svelte";
   let showHeaderEditor = $state(false);
   let showSectionNav = $state(false);
   let searchQuery = $state("");
-
-  /** Filter items per section based on the current search query. */
-  function matchesSearch(item: ExpenseItem, query: string): boolean {
-    if (!query.trim()) return true;
-    const lowered = query.toLowerCase();
-    const nameMatch = item.name.toLowerCase().includes(lowered);
-    const methodMatch = (item.method ?? "").toLowerCase().includes(lowered);
-    return nameMatch || methodMatch;
-  }
 
   // Section keys mapped 1:1 to sections 1–8 (index 0 = section 1, … index 7 = section 8).
   const SECTION_KEYS = [
@@ -94,7 +73,7 @@ import Seo from "#lib/components/Seo.svelte";
         index, // 0 = section 1, 1 = section 2, …, 7 = section 8
         key: sectionKey,
         title: t(`month.section${index + 1}`),
-        items: items.filter((item) => matchesSearch(item, searchQuery)),
+        items: items.filter((item) => matchesQuery(item.name, item.method, searchQuery)),
       };
     })
   );
@@ -200,9 +179,7 @@ import Seo from "#lib/components/Seo.svelte";
   );
 
   // Total expenses = fixed + daily from salary + daily from savings.
-  const totalExpense = $derived(
-    totals.totalFixedExpenses + dailyFromSalaryTotal + dailyFromSavingsTotal
-  );
+  const totalExpense = $derived(totalExpenses(totals));
   const husbandTotalExpense = $derived(
     totals.husbandFixedTotal + totals.husbandDailyFromSalaryTotal + totals.husbandDailyFromSavingsTotal
   );

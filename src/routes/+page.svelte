@@ -12,12 +12,13 @@
     createEmptyBudget,
     formatCurrency,
     makeId,
-    monthsOfYear,
+    totalExpenses,
     type MonthBudget,
-    type MonthTotals,
     type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
+  import { allMonthsTo, currentPeriodId, monthLabel, previousMonthId } from "#lib/period";
+  import { highlightText, matchesQuery } from "#lib/search";
   import { t, lang } from "#lib/i18n.svelte";
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
@@ -54,7 +55,7 @@
   const currentMonthId = $derived(currentPeriodId());
   // All months from the earliest budget year (or this year) through the current
   // period, newest first.
-  const orderedMonths = $derived(allMonthsTo(currentMonthId).reverse());
+  const orderedMonths = $derived(allMonthsTo(currentMonthId, thisYear).reverse());
   // Show the 8 most recent by default; reveal the rest via "View more".
   const visibleMonths = $derived(showAllMonths ? orderedMonths : orderedMonths.slice(0, 8));
   const hasMoreMonths = $derived(orderedMonths.length > 8);
@@ -81,27 +82,20 @@
     section: string;
   }
 
-  /** True when an item's name or payment method contains the query. */
-  function matchesSearch(name: string, method: string | undefined, query: string): boolean {
-    if (!query.trim()) return true;
-    const lowered = query.toLowerCase();
-    return name.toLowerCase().includes(lowered) || (method ?? "").toLowerCase().includes(lowered);
-  }
-
   /** Collect every item in a budget that matches `query`, with section labels. */
   function findMatchingItems(budget: MonthBudget, query: string): ItemMatch[] {
     const matches: ItemMatch[] = [];
-    if (matchesSearch(t("month.husbandIncome"), undefined, query)) {
+    if (matchesQuery(t("month.husbandIncome"), undefined, query)) {
       matches.push({ id: "husband-income", name: t("month.husbandIncome"), section: t("month.section1") });
     }
-    if (matchesSearch(t("month.wifeIncome"), undefined, query)) {
+    if (matchesQuery(t("month.wifeIncome"), undefined, query)) {
       matches.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
     }
     SECTION_KEYS.forEach((key, i) => {
       if (key === "husbandIncome" || key === "wifeIncome") return;
       const items = (budget[key] ?? []) as { id: string; name: string; method?: string }[];
       for (const item of items) {
-        if (matchesSearch(item.name, item.method, query)) {
+        if (matchesQuery(item.name, item.method, query)) {
           matches.push({ id: item.id, name: item.name, section: t(`month.section${i + 1}`) });
         }
       }
@@ -138,19 +132,6 @@
     }
   });
 
-  /** Escape a string for safe use inside a RegExp. */
-  function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
-  /** Wrap the matching part of a name in <mark> for highlighting. */
-  function highlightText(name: string, query: string): string {
-    if (!query.trim()) return name;
-    const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-    return name.replace(regex, "<mark>$1</mark>");
-  }
-
-
   // The budget for the current period (may be undefined if not created yet).
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
   const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
@@ -171,72 +152,16 @@
   // Total expenses = fixed + daily from salary + daily from savings.
   const currentTotalExpense = $derived(currentFixedExpense + currentSalary + currentSavings);
 
-  function monthLabel(id: string): string {
-    // Reflect the END month of the period (e.g. 2026-10 -> "November 2026").
-    const [year, month] = id.split("-").map(Number);
-    const end = new Date(year, month || 1, 24);
-    const locale = lang.value === "id" ? "id-ID" : "en-US";
-    return `${end.toLocaleString(locale, { month: "long" })} ${end.getFullYear()}`;
-  }
+  const locale = $derived(lang.value === "id" ? "id-ID" : "en-US");
 
   function monthBudget(id: string): MonthBudget | undefined {
     return budgets.find((b) => b.id === id);
-  }
-
-  /** Total expenses for a month: fixed + daily from salary + daily from savings. */
-  function totalExpense(totals: MonthTotals): number {
-    return (
-      totals.totalFixedExpenses +
-      totals.husbandDailyFromSalaryTotal +
-      totals.husbandDailyFromSavingsTotal +
-      totals.wifeDailyFromSalaryTotal +
-      totals.wifeDailyFromSavingsTotal
-    );
   }
 
   function monthPeriod(id: string): string {
     const budget = monthBudget(id);
     if (budget?.period) return budget.period;
     return "25th → 24th";
-  }
-
-  /**
-   * The budget period that contains today. A period `YYYY-MM` covers the 25th
-   * of month (M-1) through the 24th of month M. For example `2026-10` covers
-   * 25 Oct – 24 Nov. So if today is the 25th or later, we are already in the
-   * current month's period; otherwise we are still in the previous month's.
-   */
-  function currentPeriodId(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 1-based
-    const day = now.getDate();
-    const startMonth = day >= 25 ? month : month - 1;
-    const [targetYear, targetMonth] = startMonth <= 0 ? [year - 1, 12] : [year, startMonth];
-    return `${targetYear}-${String(targetMonth).padStart(2, "0")}`;
-  }
-
-  /**
-   * All month ids from the start of the earliest budget year up to `end`.
-   * Falls back to the current year when no budgets exist yet.
-   */
-  function allMonthsTo(end: string): string[] {
-    const endYear = Number(end.slice(0, 4));
-    const startYear = Math.min(thisYear, endYear);
-    const result: string[] = [];
-    for (let year = startYear; year <= endYear; year++) {
-      for (const id of monthsOfYear(year)) {
-        if (id <= end) result.push(id);
-      }
-    }
-    return result;
-  }
-
-  /** ID of the calendar month before `id` (`YYYY-MM`). */
-  function previousMonthId(id: string): string {
-    const [year, month] = id.split("-").map(Number);
-    if (month <= 1) return `${year - 1}-12`;
-    return `${year}-${String(month - 1).padStart(2, "0")}`;
   }
 
   async function createMonth(id: string) {
@@ -272,7 +197,7 @@
   }
 
   async function removeMonth(id: string) {
-    if (!confirm(t("dashboard.confirmDelete", { month: monthLabel(id) }))) return;
+    if (!confirm(t("dashboard.confirmDelete", { month: monthLabel(id, locale) }))) return;
     await deleteBudget(id);
     budgets = budgets.filter((b) => b.id !== id);
   }
@@ -308,7 +233,7 @@
     <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
       <div class="overview-head">
         <span class="overview-head-title">{t("dashboard.thisMonth")}</span>
-        <span class="overview-head-sub">{monthLabel(currentMonthId)}</span>
+        <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalIncome")}</span>
@@ -420,7 +345,7 @@
           >
             <div class="card-top">
               <div class="card-titleblock">
-                <span class="card-month">{monthLabel(id)}</span>
+                <span class="card-month">{monthLabel(id, locale)}</span>
                 <span class="card-period">{monthPeriod(id)}</span>
               </div>
               {#if searchActive}
@@ -446,7 +371,7 @@
             {:else if exists && totals}
               <div class="card-person">
                 <span class="card-person-label">{t("dashboard.expense")}</span>
-                <span class="card-person-value">{formatCurrency(totalExpense(totals))}</span>
+                <span class="card-person-value">{formatCurrency(totalExpenses(totals))}</span>
               </div>
               <div class="card-groups">
                 <div class="card-group">

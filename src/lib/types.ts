@@ -106,6 +106,15 @@ export interface MonthBudget {
   lastEditBy?: string | null;
 }
 
+/**
+ * Field names used before the per-spouse split. Old documents may still carry
+ * them; `normalizeBudget()` migrates them for the husband's buckets.
+ */
+interface LegacyMonthFields {
+  dailyFromSalary?: DailyExpense[];
+  dailyFromSavings?: DailyExpense[];
+}
+
 /** Aggregated numbers derived from a {@link MonthBudget}. */
 export interface MonthTotals {
   husbandFixedTotal: number;
@@ -190,6 +199,8 @@ export function normalizeBudget(id: string, raw: Partial<MonthBudget> | undefine
   const base = createEmptyBudget(id);
   if (!raw) return base;
 
+  const legacy = raw as Partial<MonthBudget> & LegacyMonthFields;
+
   return {
     ...base,
     ...raw,
@@ -202,8 +213,8 @@ export function normalizeBudget(id: string, raw: Partial<MonthBudget> | undefine
     wifeIncome: Number(raw.wifeIncome) || 0,
     husbandFixed: raw.husbandFixed ?? [],
     wifeFixed: raw.wifeFixed ?? [],
-    husbandDailyFromSalary: raw.husbandDailyFromSalary ?? (raw as any).dailyFromSalary ?? [],
-    husbandDailyFromSavings: raw.husbandDailyFromSavings ?? (raw as any).dailyFromSavings ?? [],
+    husbandDailyFromSalary: raw.husbandDailyFromSalary ?? legacy.dailyFromSalary ?? [],
+    husbandDailyFromSavings: raw.husbandDailyFromSavings ?? legacy.dailyFromSavings ?? [],
     wifeDailyFromSalary: raw.wifeDailyFromSalary ?? [],
     wifeDailyFromSavings: raw.wifeDailyFromSavings ?? [],
     transferReceived: raw.transferReceived ?? false
@@ -243,6 +254,17 @@ export function computeTotals(budget: MonthBudget): MonthTotals {
     equalSplitTransfer,
     equalSplitAmount
   };
+}
+
+/** Total expenses for a period: fixed + daily from salary + daily from savings. */
+export function totalExpenses(totals: MonthTotals): number {
+  return (
+    totals.totalFixedExpenses +
+    totals.husbandDailyFromSalaryTotal +
+    totals.husbandDailyFromSavingsTotal +
+    totals.wifeDailyFromSalaryTotal +
+    totals.wifeDailyFromSavingsTotal
+  );
 }
 
 /** Format a number as Indonesian Rupiah. */
