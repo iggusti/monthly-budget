@@ -699,6 +699,7 @@
     <ExpenseSection
       sectionId="section-1"
       confirmChanges={!isActiveMonth}
+      noRowShift
       title={t("month.section1")}
       sectionIndex={0}
       highlightedQuery={searchQuery}
@@ -715,6 +716,7 @@
     <ExpenseSection
       sectionId="section-2"
       confirmChanges={!isActiveMonth}
+      noRowShift
       title={t("month.section2")}
       sectionIndex={1}
       highlightedQuery={searchQuery}

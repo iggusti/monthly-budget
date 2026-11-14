@@ -258,6 +258,8 @@
     highlightedQuery?: string;
     /** When true, ask for confirmation before adding, editing, or deleting. */
     confirmChanges?: boolean;
+    /** When true, rows do not slide right on hover (used by the income sections). */
+    noRowShift?: boolean;
   }
 
   let {
@@ -284,7 +286,8 @@
     dragGroup,
     onExternalDrop,
     highlightedQuery = "",
-    confirmChanges = false
+    confirmChanges = false,
+    noRowShift = false
   }: Props = $props();
 
   /** Reactive labels so they follow the active language unless overridden. */
@@ -617,7 +620,7 @@
   }
 </script>
 
-<div id={sectionId} class="section {tone}" tabindex="-1" bind:this={rootEl} data-section-key={sectionKey || ""}>
+<div id={sectionId} class="section {tone}" class:no-shift={noRowShift} tabindex="-1" bind:this={rootEl} data-section-key={sectionKey || ""}>
   <div class="section-head">
     <span class="badge">
       {#if icon}
@@ -1047,6 +1050,8 @@
   .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
   .item:hover { background: var(--bg); padding-left: 1.5rem; }
+  /* Income sections (1 & 2) keep rows in place: no slide on hover. */
+  .no-shift .item:hover { padding-left: 1.25rem; }
   .item.editing { background: rgba(200, 149, 108, 0.08); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
