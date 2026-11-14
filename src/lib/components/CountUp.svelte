@@ -9,6 +9,7 @@
    *
    *   <CountUp value={totals.totalIncome} />
    */
+  import { untrack } from "svelte";
   import { formatCurrency } from "#lib/types";
 
   interface Props {
@@ -46,7 +47,7 @@
       return;
     }
 
-    const from = displayed;
+    const from = untrack(() => displayed);
     const delta = target - from;
     if (delta === 0) return;
 
