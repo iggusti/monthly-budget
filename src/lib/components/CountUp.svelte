@@ -9,7 +9,7 @@
    *
    *   <CountUp value={totals.totalIncome} />
    */
-  import { untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { formatCurrency } from "#lib/types";
 
   interface Props {
@@ -40,7 +40,10 @@
   }
 
   function animateTo(target: number) {
-    if (frame !== null) cancelAnimationFrame(frame);
+    if (frame !== null) {
+      cancelAnimationFrame(frame);
+      frame = null;
+    }
 
     if (prefersReducedMotion()) {
       displayed = target;
@@ -65,13 +68,22 @@
     frame = requestAnimationFrame(step);
   }
 
-  // Re-run whenever the target changes (including the first render).
+  // Re-run whenever the target changes (including the first render). Guard on the
+  // last target so a spurious re-run (e.g. a parent re-render that re-reads the
+  // same value) cannot restart the tween mid-flight and make it creep forever.
+  // Cancellation lives in onDestroy, not the effect cleanup: a cleanup would also
+  // run before every re-run and cancel an animation that should keep going.
+  let lastTarget: number | null = null;
+
   $effect(() => {
     const target = Number(value) || 0;
+    if (target === lastTarget) return;
+    lastTarget = target;
     animateTo(target);
-    return () => {
-      if (frame !== null) cancelAnimationFrame(frame);
-    };
+  });
+
+  onDestroy(() => {
+    if (frame !== null) cancelAnimationFrame(frame);
   });
 </script>
 

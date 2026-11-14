@@ -2,6 +2,7 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { fade, fly, slide } from "svelte/transition";
+  import { untrack } from "svelte";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
   import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
   import {
@@ -277,7 +278,10 @@
     });
 
     // Start from a correctly-titled empty budget until the live data arrives.
-    if (budget.id !== monthId) {
+    // Read `budget.id` untracked: otherwise every snapshot's `budget = next`
+    // reassignment invalidates this effect, which re-subscribes, fires again and
+    // loops forever (constant re-renders that never let the count-up settle).
+    if (untrack(() => budget.id) !== monthId) {
       budget = createEmptyBudget(monthId);
       loading = true;
     }
