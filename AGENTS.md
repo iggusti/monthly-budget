@@ -69,9 +69,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
   preset lists live in `ExpenseSection.svelte` (`CHANNEL_BASES`,
   `METHOD_CHANNELS_BANK`, `METHOD_CHANNELS_EWALLET`). Do not turn it back into a
   free-text field.
-- `ExpenseSection.svelte` is opt-in per feature: `withMethod`, `withDate` and
+- `ExpenseSection.svelte` is opt-in per feature: `withMethod`, `withDate`,
   `methodDefault` (base + channel preselected for new entries, e.g. husband
-  salary → `qris` / `Bank Jago`).
+  salary → `qris` / `Bank Jago`), and `noRowShift` (rows stay put on hover;
+  used by the two income sections on the month page).
 - **All budget writes go through `src/lib/budget-store.ts`**
   (`saveBudget()`, `deleteBudget()`). Do not call `setDoc`/`deleteDoc` on the
   budget collection elsewhere: the notification pipeline depends on the stamps
@@ -129,4 +130,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
   the right border. Do **not** add `padding-right` to "give it breathing room" —
   it drags the arrow away from the border and looks wrong on desktop, while
   phones hide the indicator anyway (reverted in `ed434e5`).
+- **Svelte 5 `$effect` loops:** an effect that writes state it also reads re-runs
+  forever. The month page's live-sync effect reads `budget.id` through
+  `untrack()`; without it every `onSnapshot` reassignment re-subscribes in an
+  endless loop (which also restarts the summary `CountUp`). `CountUp` likewise
+  reads `displayed` via `untrack()` and only tweens when its target changes.
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).

@@ -53,6 +53,8 @@ Daily entries also record **when** and **how** the money left:
   each pays their own fixed expenses:
   `transfer = (husband income − husband fixed − (wife income − wife fixed)) / 2`
 - Salary-funded and savings-funded daily totals are shown separately per spouse
+- The dashboard overview shows per-spouse amounts for income, fixed expenses,
+  and the salary/savings-funded daily totals
 - On the salary daily sections (`5` and `7`), a **"Max planned budget"** row shows
   `equalSplitAmount` (each hold after fixed), and **"Remaining money"** shows
   `equalSplitAmount − subtotal salary`.
@@ -154,6 +156,7 @@ src/
     notifications.svelte.ts  FCM permission, token registration, foreground push
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
+      CountUp.svelte         animated rupiah figure for headline totals
       NotificationToggle.svelte  topbar bell: enable/disable push per device
       BadgeIcon.svelte       outline SVG category icons
   routes/
