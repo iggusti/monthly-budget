@@ -142,6 +142,12 @@
   const currentFixedExpense = $derived(currentTotals ? currentTotals.totalFixedExpenses : 0);
   const currentPerPerson = $derived(currentTotals ? currentTotals.equalSplitAmount : 0);
 
+  // Per-spouse splits for the income and fixed-expense cards.
+  const currentIncomeHusband = $derived(currentBudget ? currentBudget.husbandIncome : 0);
+  const currentIncomeWife = $derived(currentBudget ? currentBudget.wifeIncome : 0);
+  const currentFixedHusband = $derived(currentTotals ? currentTotals.husbandFixedTotal : 0);
+  const currentFixedWife = $derived(currentTotals ? currentTotals.wifeFixedTotal : 0);
+
   // Daily spending for the CURRENT month only (broken down per spouse).
   const currentSalaryHusband = $derived(currentTotals ? currentTotals.husbandDailyFromSalaryTotal : 0);
   const currentSalaryWife = $derived(currentTotals ? currentTotals.wifeDailyFromSalaryTotal : 0);
@@ -239,7 +245,7 @@
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalIncome")}</span>
         <CountUp value={currentIncome} class="overview-value income" />
-        <span class="overview-sub">{t("dashboard.husbandWife")}</span>
+        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentIncomeHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentIncomeWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
@@ -254,7 +260,7 @@
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalFixed")}</span>
         <CountUp value={currentFixedExpense} class="overview-value violet" />
-        <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
+        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentFixedHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentFixedWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
