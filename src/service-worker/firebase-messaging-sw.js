@@ -1,24 +1,23 @@
 /* eslint-disable no-undef */
 /**
- * Firebase Cloud Messaging service worker.
+ * Firebase Cloud Messaging service worker — build template.
  *
- * Served from the site root so its scope covers the whole app. The Cloud
- * Function sends **data-only** messages, which means this worker is fully in
+ * `vite.config.ts` emits this file as `/firebase-messaging-sw.js` at the site
+ * root (and serves it in dev), replacing two build tokens: the Firebase SDK
+ * version (from the `firebase` dependency) and the project config (from
+ * `src/lib/firebase-config.ts`). Keeping both injected means the app and the
+ * worker cannot drift apart.
+ * The Cloud Function sends **data-only** messages, so this worker is fully in
  * charge of what the notification looks like and where a tap takes the user.
- *
- * Note: keep the Firebase config in sync with `src/lib/firebase.ts`.
  */
-importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
+importScripts(
+  "https://www.gstatic.com/firebasejs/__FIREBASE_SDK_VERSION__/firebase-app-compat.js"
+);
+importScripts(
+  "https://www.gstatic.com/firebasejs/__FIREBASE_SDK_VERSION__/firebase-messaging-compat.js"
+);
 
-firebase.initializeApp({
-  apiKey: "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug",
-  authDomain: "monthly-budget-580b2.firebaseapp.com",
-  projectId: "monthly-budget-580b2",
-  storageBucket: "monthly-budget-580b2.firebasestorage.app",
-  messagingSenderId: "276706600878",
-  appId: "1:276706600878:web:0d8914bd9e8ecbc4048a3f"
-});
+firebase.initializeApp(__FIREBASE_CONFIG__);
 
 const messaging = firebase.messaging();
 

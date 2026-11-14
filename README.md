@@ -161,8 +161,8 @@ src/
     login/+page.svelte       login screen
     +page.svelte             dashboard
     month/[id]/+page.svelte  edit one budget period
-static/
-  firebase-messaging-sw.js   FCM service worker (background push)
+src/service-worker/
+  firebase-messaging-sw.js   template for the generated FCM service worker
 functions/
   index.js                   Firestore trigger that sends the pushes
   changes.js                 pure diff/format helpers (unit-testable)

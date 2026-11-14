@@ -4,12 +4,10 @@
  *
  * Run with: node scripts/update-titles.mjs
  */
-import { initializeApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import fs from "fs";
+import { initAdmin } from "./admin-app.mjs";
 
-const SERVICE_ACCOUNT = "C:/Users/DevTI-TelU/Downloads/monthly-budget-580b2-firebase-adminsdk-fbsvc-bc1049a859.json";
-const app = initializeApp({ credential: cert(JSON.parse(fs.readFileSync(SERVICE_ACCOUNT, "utf8"))) });
+const app = initAdmin();
 const db = getFirestore(app);
 
 function titleFor(id) {

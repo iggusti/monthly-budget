@@ -13,16 +13,11 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getAuth, signInAnonymously } from "firebase/auth";
 
-const EXTRACTED = "C:/Users/DevTI-TelU/AppData/Local/Temp/opencode/budget_xlsx2/extracted";
+const EXTRACTED =
+  process.env.BUDGET_EXTRACTED ||
+  "C:/Users/DevTI-TelU/AppData/Local/Temp/opencode/budget_xlsx2/extracted";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug",
-  authDomain: "monthly-budget-580b2.firebaseapp.com",
-  projectId: "monthly-budget-580b2",
-  storageBucket: "monthly-budget-580b2.firebasestorage.app",
-  messagingSenderId: "276706600878",
-  appId: "1:276706600878:web:0d8914bd9e8ecbc4048a3f"
-};
+import { firebaseConfig } from "./firebase-config.mjs";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

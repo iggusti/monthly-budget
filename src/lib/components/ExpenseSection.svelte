@@ -191,6 +191,12 @@
     type ExpenseItem
   } from "#lib/types";
   import { t, lang } from "#lib/i18n.svelte";
+  import {
+    channelsFor,
+    isMethodBase,
+    joinMethod,
+    parseMethod
+  } from "#lib/expense-methods";
   import BadgeIcon from "./BadgeIcon.svelte";
 
   interface Props {
@@ -389,40 +395,12 @@
 
   // ── Payment method: preset base + optional bank / e-wallet ────────────────
 
-  /** Bases that can carry a bank / e-wallet channel. */
-  const CHANNEL_BASES: readonly string[] = ["qris", "transfer", "cash"];
-
   /** Payment method choices, in display order. */
   const methodBaseOptions = $derived([
     { value: "qris", label: t("expense.methodQris") },
     { value: "transfer", label: t("expense.methodTransfer") },
     { value: "cash", label: t("expense.methodCash") }
   ]);
-
-  /** Bank accounts — also the only choices for a cash withdrawal. */
-  const METHOD_CHANNELS_BANK: readonly string[] = [
-    "BRI",
-    "Bank Jago",
-    "Allo Bank",
-    "BSI",
-    "SeaBank"
-  ];
-
-  /** E-wallets, offered for QRIS and Transfer only. */
-  const METHOD_CHANNELS_EWALLET: readonly string[] = ["ShopeePay", "GoPay", "Flip", "Dana"];
-
-  /** Everything offered for QRIS and Transfer: every bank plus every e-wallet. */
-  const METHOD_CHANNELS_ALL: readonly string[] = [
-    ...METHOD_CHANNELS_BANK,
-    ...METHOD_CHANNELS_EWALLET
-  ];
-
-  /** Banks / e-wallets valid for a given method base. */
-  function channelsFor(base: string): readonly string[] {
-    if (base === "cash") return METHOD_CHANNELS_BANK;
-    if (CHANNEL_BASES.includes(base)) return METHOD_CHANNELS_ALL;
-    return [];
-  }
 
   /** Selected base (`qris` | `transfer` | `cash`) for the open editor. */
   let methodBase = $state("");
@@ -443,7 +421,7 @@
   );
 
   /** True when the chosen base also offers a bank / e-wallet choice. */
-  const needsChannel = $derived(CHANNEL_BASES.includes(methodBase));
+  const needsChannel = $derived(isMethodBase(methodBase));
 
   /**
    * Clear the channel when the newly chosen method cannot use it (e.g. GoPay
@@ -454,24 +432,13 @@
     if (!channelsFor(methodBase).includes(methodChannel)) methodChannel = "";
   }
 
-  /** Split a stored method ("QRIS · BRI") back into base + channel. */
-  function splitMethod(stored: string | undefined) {
-    const [rawBase = "", rawChannel = ""] = String(stored ?? "").split("·");
-    const baseText = rawBase.trim();
-    return {
-      base: methodBaseOptions.find((option) => option.label === baseText)?.value ?? "",
-      channel: rawChannel.trim(),
-      legacy: baseText
-    };
-  }
-
   /** Value stored on the item: "QRIS · BRI", "Tarik tunai · BRI", or an old free-text entry. */
   function composeMethod(): string {
     const base = methodBaseOptions.find((option) => option.value === methodBase)?.label ?? "";
     if (!base) return methodLegacy;
     // Guard against a stale channel that is not valid for this method.
     const channel = channelsFor(methodBase).includes(methodChannel) ? methodChannel : "";
-    return channel ? `${base} · ${channel}` : base;
+    return joinMethod(base, channel);
   }
 
   let adding = $state(false);
@@ -551,10 +518,10 @@
   function startEdit(item: ExpenseItem) {
     draft = { ...item };
     amountInput = formatAmountInput(item.amount);
-    const method = splitMethod(item.method);
-    methodBase = method.base;
-    methodChannel = method.channel;
-    methodLegacy = method.base ? "" : method.legacy;
+    const { baseLabel, channel } = parseMethod(item.method);
+    methodBase = methodBaseOptions.find((option) => option.label === baseLabel)?.value ?? "";
+    methodChannel = channel;
+    methodLegacy = methodBase ? "" : baseLabel;
     adding = false;
     editingId = item.id;
     void focusNameField("edit");

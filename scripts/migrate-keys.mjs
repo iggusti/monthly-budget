@@ -15,8 +15,10 @@
  *
  * Run with: node scripts/migrate-keys.mjs
  */
-const PROJECT_ID = "monthly-budget-580b2";
-const API_KEY = "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug";
+import { firebaseConfig } from "./firebase-config.mjs";
+
+const PROJECT_ID = firebaseConfig.projectId;
+const API_KEY = firebaseConfig.apiKey;
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 const RENAME = {

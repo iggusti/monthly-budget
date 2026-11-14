@@ -10,17 +10,7 @@ import {
   collection,
   onSnapshot
 } from "firebase/firestore";
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug",
-  authDomain: "monthly-budget-580b2.firebaseapp.com",
-  projectId: "monthly-budget-580b2",
-  storageBucket: "monthly-budget-580b2.firebasestorage.app",
-  messagingSenderId: "276706600878",
-  appId: "1:276706600878:web:0d8914bd9e8ecbc4048a3f",
-  measurementId: "G-CQM5K87C7K"
-};
+import { firebaseConfig } from "./firebase-config";
 
 /**
  * Web Push VAPID public key (safe to ship: it is a public key).

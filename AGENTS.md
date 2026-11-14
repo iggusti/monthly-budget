@@ -18,6 +18,9 @@ changing code; the rules below are easy to break accidentally.
 npm run dev            # dev server (long-running: run in background)
 npm run build          # static build to build/
 npm run check          # svelte-check — keep 0 errors AND 0 warnings
+npm run lint           # eslint: plain TS/JS modules (not .svelte files)
+npm test               # vitest: pure helpers in src/lib and functions/changes.js
+npm run verify         # check + lint + test, run this before finishing
 npm install --prefix functions   # function deps (separate package)
 ```
 
@@ -43,7 +46,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Styling is plain CSS per component using the CSS variables in `app.css`.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
 - Keep changes small and consistent with the surrounding code; run
-  `npm run check` before finishing.
+  `npm run verify` before finishing.
+- Logic worth testing belongs in `src/lib/*.ts` (no Svelte imports) so it stays
+  unit-testable with Vitest.
 - **License: MIT** (see `LICENSE`). Keep the `license` field in both
   `package.json` files in sync.
 
@@ -81,9 +86,11 @@ every push to `main`; that workflow does **not** touch functions or rules.
   (`{ uid, lang, platform, enabled, updatedAt }`), foreground `onMessage` and
   the reactive `notify` state consumed by the bell.
 - `src/lib/components/NotificationToggle.svelte` — topbar bell + toast.
-- `static/firebase-messaging-sw.js` — background handler and notification taps.
-  Its Firebase config is duplicated from `src/lib/firebase.ts`: **keep both in
-  sync**.
+- `src/service-worker/firebase-messaging-sw.js` — **template** for the FCM
+  worker (background handler and notification taps). Do not put real config in
+  it: `vite.config.ts` emits `/firebase-messaging-sw.js` into the build (and
+  serves it in dev) by injecting `src/lib/firebase-config.ts` and the `firebase`
+  SDK version. No manual sync needed.
 - `saveBudget()` stamps `lastEditBy = auth.currentUser.uid`;
   `deleteBudget()` stamps the deleter *before* deleting so the delete trigger
   knows who to exclude. Never remove or bypass these stamps.
@@ -91,9 +98,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
   Runs in `us-central1` because Firestore is in `nam5`; sends **data-only** FCM
   messages (the service worker renders them), prunes unregistered tokens, and
   skips tokens whose `uid` equals `lastEditBy`.
-- `functions/changes.js` — pure diff/format logic (no Firebase imports). Keep it
-  pure so it stays testable with plain `node`; `index.js` must stay a thin
-  adapter around it.
+- `functions/changes.js` — pure diff/format logic (no Firebase imports) with
+  tests in `functions/changes.test.js`; `index.js` must stay a thin adapter
+  around it.
 - Intended behaviour: notify on add/edit/delete of expense items (name, amount,
   payment method). **Do not** notify for `checked`-only toggles on fixed
   expenses or for income edits. Never notify the editor's own device.

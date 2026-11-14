@@ -1,15 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, collection } from "firebase/firestore";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA76dfX8IPTvTx7ehorlHi9OFvr2s-Npug",
-  authDomain: "monthly-budget-580b2.firebaseapp.com",
-  projectId: "monthly-budget-580b2",
-  storageBucket: "monthly-budget-580b2.firebasestorage.app",
-  messagingSenderId: "276706600878",
-  appId: "1:276706600878:web:0d8914bd9e8ecbc4048a3f",
-  measurementId: "G-CQM5K87C7K"
-};
+import { firebaseConfig } from "./firebase-config.mjs";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

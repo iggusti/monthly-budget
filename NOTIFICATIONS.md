@@ -9,7 +9,7 @@ change is skipped, so you never get a notification for your own edit.
 | Piece | Role |
 | --- | --- |
 | `src/lib/notifications.svelte.ts` | Asks for permission, registers the service worker, stores the FCM token in `devices/{token}` with the anonymous Firebase uid. |
-| `static/firebase-messaging-sw.js` | Displays pushes that arrive while the app is closed and handles taps. |
+| `src/service-worker/firebase-messaging-sw.js` | Template for the generated `/firebase-messaging-sw.js`: displays pushes that arrive while the app is closed and handles taps. |
 | `src/lib/budget-store.ts` | Stamps `lastEditBy = uid` on every write (and just before a month is deleted). |
 | `functions/index.js` | Firestore trigger on `budget/{monthId}`. Diffs the expense arrays, classifies add/edit/delete and sends a data-only FCM message to every token whose uid differs from `lastEditBy`. |
 | `devices` collection | One document per device, keyed by FCM token: `{ uid, lang, enabled }`. |

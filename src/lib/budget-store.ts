@@ -45,7 +45,7 @@ export async function fetchAllBudgets(): Promise<MonthBudget[]> {
  */
 export function subscribeBudget(
   id: string,
-  onChange: (budget: MonthBudget) => void
+  onChange: (_budget: MonthBudget) => void
 ): () => void {
   return onSnapshot(
     doc(db, BUDGET_COLLECTION, id),
@@ -64,7 +64,7 @@ export function subscribeBudget(
 
 /** Live-subscribe to all budget documents, newest first. Returns an unsubscribe function. */
 export function subscribeAllBudgets(
-  onChange: (budgets: MonthBudget[]) => void
+  onChange: (_budgets: MonthBudget[]) => void
 ): () => void {
   return onSnapshot(
     collection(db, BUDGET_COLLECTION),
