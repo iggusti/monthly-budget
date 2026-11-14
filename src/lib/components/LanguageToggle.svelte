@@ -44,9 +44,10 @@
     padding: 0.25rem 0.6rem; border-radius: 999px;
     font-size: 0.7rem; font-weight: 800; letter-spacing: 0.03em;
     color: var(--text-tertiary); background: transparent;
-    transition: all 0.2s ease;
+    transition: color var(--dur-fast, 0.18s) ease, background var(--dur-base, 0.28s) var(--ease-out, ease), box-shadow var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease);
   }
-  .lang-btn:hover { color: var(--text-secondary); }
+  .lang-btn:hover { color: var(--text-secondary); transform: translateY(-1px); }
+  .lang-btn:active { transform: translateY(0) scale(0.95); }
   .lang-btn.active {
     background: var(--surface); color: var(--text-primary);
     box-shadow: var(--shadow-sm);

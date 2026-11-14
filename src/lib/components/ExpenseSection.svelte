@@ -860,7 +860,7 @@
   {/if}
 
   {#if footerLabel !== undefined}
-    <div class="section-footer">
+    <div class="section-footer" class:stackable={checkboxable}>
       <span>{footerLabel}</span>
       {#if checkboxable}
         <span class="footer-check-stats">
@@ -944,14 +944,17 @@
 </div>
 
 <style>
-  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); scroll-margin-top: 4.5rem; }
+  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); scroll-margin-top: 4.5rem; transition: box-shadow var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease); }
+  .section:hover { box-shadow: var(--shadow-md); }
 
   .section-head { display: flex; align-items: center; gap: 0.65rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .section-title { flex: 1; font-size: 0.88rem; font-weight: 700; }
   .section-total { font-size: 0.9rem; font-weight: 700; }
-  .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
-  .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
-  .add-btn:hover { background: var(--text-primary); color: white; }
+  .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
+  .section:hover .badge { transform: scale(1.08) rotate(-4deg); }
+  .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast, 0.18s) ease, color var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
+  .add-btn:hover { background: var(--text-primary); color: white; transform: rotate(90deg) scale(1.08); }
+  .add-btn:active { transform: rotate(90deg) scale(0.96); }
 
   .blue .section-head { background: rgba(107, 127, 163, 0.07); }
   .blue .badge { background: rgba(107, 127, 163, 0.15); color: var(--accent-blue); }
@@ -1039,11 +1042,11 @@
   .btn-cancel:hover { background: var(--bg-muted); }
 
   .items { list-style: none; }
-  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background 0.15s; }
+  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background var(--dur-fast, 0.18s) ease, padding-left var(--dur-base, 0.28s) var(--ease-out, ease); }
   .item.draggable { cursor: grab; }
   .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
-  .item:hover { background: var(--bg); }
+  .item:hover { background: var(--bg); padding-left: 1.5rem; }
   .item.editing { background: rgba(200, 149, 108, 0.08); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
@@ -1062,11 +1065,12 @@
     width: 18px; height: 18px; border-radius: 5px;
     border: 2px solid var(--surface-border); background: var(--surface);
     display: inline-flex; align-items: center; justify-content: center;
-    transition: all 0.15s ease; font-size: 11px; color: white;
+    transition: background var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease); font-size: 11px; color: white;
   }
-  .check:hover .checkmark { border-color: var(--accent-gold); }
+  .check:hover .checkmark { border-color: var(--accent-gold); transform: scale(1.08); }
+  .check:active .checkmark { transform: scale(0.92); }
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
-  .check input:checked + .checkmark::after { content: "✓"; }
+  .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base, 0.28s) var(--ease-spring, ease) both; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
   .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: rgba(107, 127, 163, 0.1); color: var(--accent-blue); }
   .date-badge {
@@ -1141,6 +1145,31 @@
   .footer-check-stats .footer-sub { color: var(--text-tertiary); }
   .section-footer .negative,
   .footer-check-stats .footer-remaining.negative { color: var(--danger); }
+
+  /* Sections 3 & 4 only (fixed expenses, the `checkboxable` footers).
+     On phones the label and the two-value totals no longer sit comfortably side
+     by side; centring the small label against a wrapped value block looked
+     unbalanced. Stack them: label on top, totals underneath, both flush left. */
+  @media (max-width: 768px) {
+    .section-footer.stackable {
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      padding-top: 0.8rem;
+      padding-bottom: 0.85rem;
+    }
+    .section-footer.stackable .footer-check-stats {
+      width: 100%;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.1rem 0.45rem;
+    }
+    /* Keep the type scale identical to the other sections' footers:
+       value 0.8rem, label/supporting text 0.72rem. */
+    .section-footer.stackable .footer-remaining { font-size: 0.8rem; line-height: 1.2; }
+    .section-footer.stackable .footer-sub { font-size: 0.72rem; line-height: 1.35; }
+  }
 
   .section-note {
     display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;

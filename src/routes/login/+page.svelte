@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fade, scale } from "svelte/transition";
+  import { fade } from "svelte/transition";
   import { login, isAuthenticated } from "#lib/auth";
   import { t } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
@@ -56,7 +56,7 @@
   <div class="card" class:show={show} class:shake={shake}>
     <div class="card-glow"></div>
 
-    <div class="logo" in:scale={{ duration: 500, delay: 120 }}>
+    <div class="logo animate-pop" style="--anim-delay: 0.1s">
       <svg viewBox="0 0 64 64" width="46" height="46" aria-hidden="true">
         <defs>
           <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
@@ -73,12 +73,12 @@
       </svg>
     </div>
 
-    <h1 class="title">{t("login.title")}</h1>
-    <p class="subtitle">{t("login.subtitle")}</p>
+    <h1 class="title animate-rise" style="--anim-delay: 0.16s">{t("login.title")}</h1>
+    <p class="subtitle animate-rise" style="--anim-delay: 0.22s">{t("login.subtitle")}</p>
 
     <div class="divider"><span></span></div>
 
-    <form onsubmit={(e) => { e.preventDefault(); submit(); }} class="form">
+    <form onsubmit={(e) => { e.preventDefault(); submit(); }} class="form animate-rise" style="--anim-delay: 0.28s">
       <label class="field-label" for="keyword">{t("login.fieldLabel")}</label>
       <div class="input-wrap" class:focused={focus}>
         <span class="input-icon">🔑</span>
@@ -114,7 +114,7 @@
       </button>
     </form>
 
-    <p class="hint">{t("login.hint")}</p>
+    <p class="hint animate-rise" style="--anim-delay: 0.34s">{t("login.hint")}</p>
   </div>
 </div>
 
@@ -131,10 +131,10 @@
     background: linear-gradient(160deg, #17150f 0%, #221b16 45%, #16201f 100%);
   }
 
-  .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5; animation: floaty 14s ease-in-out infinite; }
   .blob1 { width: 320px; height: 320px; background: #c8956c; top: -80px; left: -80px; }
-  .blob2 { width: 280px; height: 280px; background: #c47070; bottom: -70px; right: -60px; }
-  .blob3 { width: 220px; height: 220px; background: #5b8a8a; bottom: 20%; left: -60px; opacity: 0.35; }
+  .blob2 { width: 280px; height: 280px; background: #c47070; bottom: -70px; right: -60px; animation-delay: -5s; }
+  .blob3 { width: 220px; height: 220px; background: #5b8a8a; bottom: 20%; left: -60px; opacity: 0.35; animation-delay: -9s; }
 
   .lang-corner { position: absolute; top: 1.25rem; right: 1.25rem; z-index: 2; display: flex; align-items: center; gap: 0.5rem; }
 
@@ -221,12 +221,14 @@
   .submit {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
     padding: 0.95rem 1.2rem; border-radius: 14px;
-    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose), var(--accent-gold));
+    background-size: 200% 200%;
     color: #fff; font-size: 1rem; font-weight: 800;
     box-shadow: 0 10px 24px rgba(196, 112, 112, 0.35);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), background-position var(--dur-slower) var(--ease-out);
   }
-  .submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(196, 112, 112, 0.45); }
+  .submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(196, 112, 112, 0.45); background-position: 100% 0; }
+  .submit:active:not(:disabled) { transform: translateY(0) scale(0.99); }
   .submit:disabled { opacity: 0.5; cursor: not-allowed; }
   .arrow { transition: transform 0.2s; }
   .submit:hover:not(:disabled) .arrow { transform: translateX(3px); }

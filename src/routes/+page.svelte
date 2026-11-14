@@ -23,6 +23,7 @@
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
+  import CountUp from "#lib/components/CountUp.svelte";
 
   let budgets = $state<MonthBudget[]>([]);
   let loading = $state(true);
@@ -207,9 +208,9 @@
 
 <div class="page">
   <div in:fade={{ duration: 500 }} class="hero">
-    <p class="hero-eyebrow">{t("dashboard.heroEyebrow")}</p>
-    <h1 class="hero-title">{t("dashboard.heroTitleLine1")}<br />{t("dashboard.heroTitleLine2")}</h1>
-    <p class="hero-sub">
+    <p class="hero-eyebrow animate-rise">{t("dashboard.heroEyebrow")}</p>
+    <h1 class="hero-title animate-rise" style="--anim-delay: 0.08s">{t("dashboard.heroTitleLine1")}<br />{t("dashboard.heroTitleLine2")}</h1>
+    <p class="hero-sub animate-rise" style="--anim-delay: 0.16s">
       {t("dashboard.heroSub")}
     </p>
   </div>
@@ -237,32 +238,32 @@
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalIncome")}</span>
-        <span class="overview-value income">{formatCurrency(currentIncome)}</span>
+        <CountUp value={currentIncome} class="overview-value income" />
         <span class="overview-sub">{t("dashboard.husbandWife")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
-        <span class="overview-value teal">{formatCurrency(currentPerPerson)}</span>
+        <CountUp value={currentPerPerson} class="overview-value teal" />
         <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalExpense")}</span>
-        <span class="overview-value expense">{formatCurrency(currentTotalExpense)}</span>
+        <CountUp value={currentTotalExpense} class="overview-value expense" />
         <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalFixed")}</span>
-        <span class="overview-value violet">{formatCurrency(currentFixedExpense)}</span>
+        <CountUp value={currentFixedExpense} class="overview-value violet" />
         <span class="overview-sub">{t("dashboard.husbandWifeFixed")}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
-        <span class="overview-value rose">{formatCurrency(currentSalary)}</span>
+        <CountUp value={currentSalary} class="overview-value rose" />
         <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSalaryHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSalaryWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
-        <span class="overview-value blue">{formatCurrency(currentSavings)}</span>
+        <CountUp value={currentSavings} class="overview-value blue" />
         <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSavingsHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSavingsWife)}</span>
       </div>
     </div>
@@ -319,7 +320,7 @@
       {/each}
     </div>
   {:else}
-    <div class="months-grid" in:fly={{ y: 14, duration: 450, delay: 140 }}>
+    <div class="months-grid animate-stagger" in:fly={{ y: 14, duration: 450, delay: 140 }}>
       {#each visibleMonthIds as id}
         {@const exists = usedIds.has(id)}
         {@const budget = monthBudget(id)}
@@ -425,7 +426,7 @@
   {/if}
 
   {#if !loading}
-    <div in:fade={{ duration: 500, delay: 400 }} class="info-strip">
+    <div in:fade={{ duration: 500, delay: 400 }} class="info-strip animate-stagger">
       <div class="info-item"><span class="info-dot blue"></span><span><b>{t("dashboard.infoIncomeFixed")}</b> — {t("dashboard.infoIncomeFixedSub")}</span></div>
       <div class="info-item"><span class="info-dot rose"></span><span><b>{t("dashboard.infoSalary")}</b> — {t("dashboard.infoSalarySub")}</span></div>
       <div class="info-item"><span class="info-dot teal"></span><span><b>{t("dashboard.infoSavings")}</b> — {t("dashboard.infoSavingsSub")}</span></div>
@@ -452,17 +453,19 @@
   .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
   .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
   .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
-  .overview-value { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
   .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
-  .overview-value.income { color: var(--success); }
-  .overview-value.expense { color: var(--accent-gold); }
-  .overview-value.teal { color: var(--accent-teal); }
-  .overview-value.rose { color: var(--accent-rose); }
-  .overview-value.blue { color: var(--accent-blue); }
-  .overview-value.violet { color: var(--accent-violet); }
+  /* Values render through the CountUp child component, so their styling must
+     escape scoping; the `.overview-item` prefix keeps it local enough. */
+  .overview-item :global(.overview-value) { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+  .overview-item :global(.overview-value.income) { color: var(--success); }
+  .overview-item :global(.overview-value.expense) { color: var(--accent-gold); }
+  .overview-item :global(.overview-value.teal) { color: var(--accent-teal); }
+  .overview-item :global(.overview-value.rose) { color: var(--accent-rose); }
+  .overview-item :global(.overview-value.blue) { color: var(--accent-blue); }
+  .overview-item :global(.overview-value.violet) { color: var(--accent-violet); }
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
-  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; animation: underlineGrow var(--dur-slower) var(--ease-out) both; animation-delay: 0.2s; }
 
   .search-row { display: flex; justify-content: flex-start; }
   .search-row :global(.search-bar) { max-width: 420px; }
@@ -482,10 +485,24 @@
   .month-card {
     position: relative; background: var(--surface); border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm);
-    display: flex; flex-direction: column; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+    transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
   }
-  .month-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--surface-border); }
-  .month-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .month-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--surface-border); transition: height var(--dur-base) var(--ease-out); }
+  .month-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .month-card:active { transform: translateY(-1px) scale(0.995); }
+  .month-card:hover::before { height: 4px; }
+
+  /* Soft diagonal sheen that sweeps across the card on hover. */
+  .month-card::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+    transform: translateX(-120%); transition: transform var(--dur-slower) var(--ease-out);
+  }
+  .month-card.exists:hover::after { transform: translateX(120%); }
+  :root[data-theme="dark"] .month-card.exists:hover::after {
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.06) 50%, transparent 70%);
+  }
 
   .card-link { text-decoration: none; color: inherit; padding: 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; flex: 1; }
 
@@ -538,18 +555,20 @@
 
   /* Current (active) month stands out, but not overdone. */
   .month-card.current { border-color: rgba(91, 138, 138, 0.55); box-shadow: 0 0 0 1px rgba(91, 138, 138, 0.2), var(--shadow-md); }
-  .month-card.current::before { background: linear-gradient(90deg, var(--accent-teal), var(--accent-gold)); }
+  .month-card.current::before { background: linear-gradient(90deg, var(--accent-teal), var(--accent-gold)); background-size: 200% 100%; animation: gradientPan 6s var(--ease-in-out) infinite; }
   .month-card.past::before { background: var(--bg-muted); }
 
   .empty-state { text-align: center; padding: 4rem 2rem; background: var(--surface); border: 1px dashed var(--surface-border); border-radius: var(--radius-xl); }
-  .empty-icon { font-size: 2.25rem; display: block; margin-bottom: 1rem; color: var(--text-tertiary); }
+  .empty-icon { font-size: 2.25rem; display: block; margin-bottom: 1rem; color: var(--text-tertiary); animation: popIn var(--dur-slow) var(--ease-spring) both, floaty 4s var(--ease-in-out) 0.45s infinite; }
   .empty-state h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
   .empty-state p { font-size: 0.85rem; color: var(--text-tertiary); }
 
   .info-strip { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; padding: 1.25rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
-  .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; }
+  .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
+  .info-item:hover { transform: translateX(3px); color: var(--text-primary); }
   .info-item b { color: var(--text-primary); font-weight: 700; }
-  .info-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .info-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: transform var(--dur-base) var(--ease-spring); }
+  .info-item:hover .info-dot { transform: scale(1.4); }
   .info-dot.blue { background: var(--accent-blue); }
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }

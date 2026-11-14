@@ -16,10 +16,12 @@
   import { isAuthenticated } from "#lib/auth";
   import { currentPeriodId } from "#lib/period";
   import { matchesQuery } from "#lib/search";
+  import { splitEmphasis } from "#lib/emphasis";
   import { t, lang } from "#lib/i18n.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
-import Seo from "#lib/components/Seo.svelte";
+  import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
+  import CountUp from "#lib/components/CountUp.svelte";
 
   const monthId = $derived(page.params.id ?? "");
 
@@ -145,6 +147,20 @@ import Seo from "#lib/components/Seo.svelte";
     const compact = new Intl.NumberFormat(lang.value, {
       notation: "compact",
       maximumFractionDigits: 1
+    }).format(value);
+    return `Rp ${compact}`;
+  }
+
+  /**
+   * Compact rupiah for labels drawn *inside* a bar segment. The coloured strip is
+   * only ~62px wide, so a full "Rp 9.600.000" would be clipped: always use the
+   * compact notation and drop the decimal once it no longer adds information.
+   */
+  function formatInBarIDR(value: number): string {
+    if (!value) return "Rp 0";
+    const compact = new Intl.NumberFormat(lang.value, {
+      notation: "compact",
+      maximumFractionDigits: value >= 1_000_000 ? 0 : 1
     }).format(value);
     return `Rp ${compact}`;
   }
@@ -384,7 +400,7 @@ import Seo from "#lib/components/Seo.svelte";
 />
 
 <div class="page">
-  <div class="page-header" in:fade={{ duration: 350 }}>
+  <div class="page-header animate-stagger" in:fade={{ duration: 350 }}>
     <div class="header-top">
       <a href="/" class="back-btn" aria-label={t("month.allMonths")}>← <span class="back-text">{t("month.allMonths")}</span></a>
       <div class="header-side">
@@ -517,31 +533,31 @@ import Seo from "#lib/components/Seo.svelte";
     </div>
   {/if}
 
-  <div class="summary-row" in:fly={{ y: 14, duration: 420, delay: 60 }}>
+  <div class="summary-row animate-stagger" in:fly={{ y: 14, duration: 420, delay: 60 }}>
     <div class="stat-card income">
       <span class="stat-label">{t("month.totalIncome")}</span>
-      <span class="stat-value">{formatCurrency(totals.totalIncome)}</span>
+      <CountUp value={totals.totalIncome} class="stat-value" />
       <span class="stat-sub">
         {t("common.husband")} {formatCurrency(budget.husbandIncome)} · {t("common.wife")} {formatCurrency(budget.wifeIncome)}
       </span>
     </div>
     <div class="stat-card expense">
       <span class="stat-label">{t("month.totalExpense")}</span>
-      <span class="stat-value">{formatCurrency(totalExpense)}</span>
+      <CountUp value={totalExpense} class="stat-value" />
       <span class="stat-sub">
         {t("common.husband")} {formatCurrency(husbandTotalExpense)} · {t("common.wife")} {formatCurrency(wifeTotalExpense)}
       </span>
     </div>
     <div class="stat-card savings">
       <span class="stat-label">{t("month.totalDailyFromSavings")}</span>
-      <span class="stat-value">{formatCurrency(dailyFromSavingsTotal)}</span>
+      <CountUp value={dailyFromSavingsTotal} class="stat-value" />
       <span class="stat-sub">
         {t("common.husband")} {formatCurrency(totals.husbandDailyFromSavingsTotal)} · {t("common.wife")} {formatCurrency(totals.wifeDailyFromSavingsTotal)}
       </span>
     </div>
     <div class="stat-card split" class:negative={totals.equalSplitTransfer < 0}>
       <span class="stat-label">{t("month.equalSplitTransfer")}</span>
-      <span class="stat-value">{formatCurrency(Math.abs(totals.equalSplitTransfer))}</span>
+      <CountUp value={Math.abs(totals.equalSplitTransfer)} class="stat-value" />
       <span class="stat-sub">
         {#if totals.equalSplitTransfer >= 0}{t("common.husband")} → {t("common.wife")}{:else}{t("common.wife")} → {t("common.husband")}{/if}
         · {t("month.eachHolds", { amount: formatCurrency(totals.equalSplitAmount) })}
@@ -562,24 +578,34 @@ import Seo from "#lib/components/Seo.svelte";
           <span class="bar-chart-total">{formatCurrency(totals.totalIncome)}</span>
         </div>
         <div class="bar-chart-plot" role="img" aria-label={t("month.chartIncomeAria")}>
-          {#each incomeBars as bar}
-            <div class="bar-col" class:combined={bar.combined}>
+          {#each incomeBars as bar, i}
+            <div class="bar-col" class:combined={bar.combined} style:--bar-index={i}>
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / incomeMax) * 100}%`}>
                   <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
-                  <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
-                  <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
+                  <div class="bar-fill">
+                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}>
+                      {#if bar.husband > 0 && bar.wife > 0}
+                        <span class="bar-seg-value">{formatInBarIDR(bar.husband)}</span>
+                      {/if}
+                    </div>
+                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}>
+                      {#if bar.husband > 0 && bar.wife > 0}
+                        <span class="bar-seg-value">{formatInBarIDR(bar.wife)}</span>
+                      {/if}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           {/each}
         </div>
         <div class="bar-chart-labels">
-          {#each incomeBars as bar}
-            <span class="bar-label" class:combined={bar.combined}>{bar.label}</span>
+          {#each incomeBars as bar, i}
+            <span class="bar-label" class:combined={bar.combined} style:--bar-index={i}>{bar.label}</span>
           {/each}
         </div>
-        <div class="bar-legend">
+        <div class="bar-legend animate-stagger">
           <span class="legend-chip"><span class="legend-dot blue"></span>{t("common.husband")}</span>
           <span class="legend-chip"><span class="legend-dot rose"></span>{t("common.wife")}</span>
         </div>
@@ -592,24 +618,34 @@ import Seo from "#lib/components/Seo.svelte";
           <span class="bar-chart-total">{formatCurrency(totalExpense)}</span>
         </div>
         <div class="bar-chart-plot" role="img" aria-label={t("month.chartExpenseAria")}>
-          {#each expenseBars as bar}
-            <div class="bar-col">
+          {#each expenseBars as bar, i}
+            <div class="bar-col" style:--bar-index={i}>
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / expenseMax) * 100}%`}>
                   <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
-                  <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}></div>
-                  <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}></div>
+                  <div class="bar-fill">
+                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}>
+                      {#if bar.husband > 0 && bar.wife > 0}
+                        <span class="bar-seg-value">{formatInBarIDR(bar.husband)}</span>
+                      {/if}
+                    </div>
+                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}>
+                      {#if bar.husband > 0 && bar.wife > 0}
+                        <span class="bar-seg-value">{formatInBarIDR(bar.wife)}</span>
+                      {/if}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           {/each}
         </div>
         <div class="bar-chart-labels">
-          {#each expenseBars as bar}
-            <span class="bar-label" class:combined={bar.key === "allTotal" || bar.key === "fixedSalary"}>{bar.label}</span>
+          {#each expenseBars as bar, i}
+            <span class="bar-label" class:combined={bar.key === "allTotal" || bar.key === "fixedSalary"} style:--bar-index={i}>{bar.label}</span>
           {/each}
         </div>
-        <div class="bar-legend">
+        <div class="bar-legend animate-stagger">
           <span class="legend-chip"><span class="legend-dot blue"></span>{t("common.husband")}</span>
           <span class="legend-chip"><span class="legend-dot rose"></span>{t("common.wife")}</span>
         </div>
@@ -619,31 +655,42 @@ import Seo from "#lib/components/Seo.svelte";
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
       <div class="chart-note-body">
+        {#snippet conclusion(text: string)}
+          {#each splitEmphasis(text) as run}
+            {#if run.strong}<strong>{run.text}</strong>{:else}{run.text}{/if}
+          {/each}
+        {/snippet}
         <p>
-          {t("month.chartConclusionIncome", {
-            income: formatCurrency(totals.totalIncome),
-            husband: formatCurrency(budget.husbandIncome),
-            wife: formatCurrency(budget.wifeIncome)
-          })}
+          {@render conclusion(
+            t("month.chartConclusionIncome", {
+              income: formatCurrency(totals.totalIncome),
+              husband: formatCurrency(budget.husbandIncome),
+              wife: formatCurrency(budget.wifeIncome)
+            })
+          )}
         </p>
         <p>
-          {t("month.chartConclusionSplit", {
-            fixed: formatCurrency(totals.totalFixedExpenses),
-            salary: formatCurrency(dailyFromSalaryTotal),
-            remaining: formatCurrency(Math.max(totals.balanceAfterFixed - dailyFromSalaryTotal, 0))
-          })}
+          {@render conclusion(
+            t("month.chartConclusionSplit", {
+              fixed: formatCurrency(totals.totalFixedExpenses),
+              salary: formatCurrency(dailyFromSalaryTotal),
+              remaining: formatCurrency(Math.max(totals.balanceAfterFixed - dailyFromSalaryTotal, 0))
+            })
+          )}
         </p>
         <p>
-          {t("month.chartConclusionSavings", {
-            total: formatCurrency(totalExpense),
-            savings: formatCurrency(dailyFromSavingsTotal)
-          })}
+          {@render conclusion(
+            t("month.chartConclusionSavings", {
+              total: formatCurrency(totalExpense),
+              savings: formatCurrency(dailyFromSavingsTotal)
+            })
+          )}
         </p>
       </div>
     </div>
   </div>
 
-  <div class="sections" in:fade={{ duration: 350, delay: 120 }}>
+  <div class="sections animate-stagger" in:fade={{ duration: 350, delay: 120 }}>
     {#if !searchActive || matchedSections[0]}
     <ExpenseSection
       sectionId="section-1"
@@ -895,6 +942,7 @@ import Seo from "#lib/components/Seo.svelte";
         tabindex="-1"
         aria-label={t("month.sectionMenuClose")}
         onclick={() => (showSectionNav = false)}
+        transition:fade={{ duration: 180 }}
       ></button>
       <nav
         id="section-nav-menu"
@@ -992,16 +1040,18 @@ import Seo from "#lib/components/Seo.svelte";
 
   .page-header { display: flex; flex-direction: column; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
-  .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: all 0.2s; }
-  .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); }
+  .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-base) var(--ease-out); }
+  .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); transform: translateX(-3px); }
   .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
   .header-side { display: flex; align-items: center; gap: 0.75rem; }
-  .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); }
-  .save-state.saving { color: var(--accent-gold); }
-  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(200, 149, 108, 0.2); }
-  .edit-btn-svg { width: 14px; height: 14px; }
-  .edit-btn:hover { background: rgba(200, 149, 108, 0.2); }
+  .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); transition: color var(--dur-base) var(--ease-out); }
+  .save-state.saving { color: var(--accent-gold); animation: pulse 1.2s var(--ease-in-out) infinite; }
+  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(200, 149, 108, 0.2); transition: background var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
+  .edit-btn-svg { width: 14px; height: 14px; transition: transform var(--dur-base) var(--ease-spring); }
+  .edit-btn:hover { background: rgba(200, 149, 108, 0.2); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
+  .edit-btn:active { transform: translateY(0) scale(0.97); }
 
   .income-panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }
   .income-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
@@ -1028,16 +1078,19 @@ import Seo from "#lib/components/Seo.svelte";
   .btn-cancel:hover { background: var(--bg-muted); }
 
   .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-  .stat-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); }
+  .stat-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); display: block; margin-bottom: 0.5rem; }
-  .stat-value { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; display: block; margin-bottom: 0.4rem; }
   .stat-sub { font-size: 0.78rem; color: var(--text-tertiary); display: block; line-height: 1.5; }
-  .stat-card.income .stat-value { color: var(--success); }
-  .stat-card.expense .stat-value { color: var(--accent-gold); }
-  .stat-card.savings .stat-value { color: var(--accent-blue); }
+  /* Values render through the CountUp child component, so their styling must
+     escape scoping; the `.stat-card` prefix keeps it local enough. */
+  .stat-card :global(.stat-value) { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; display: block; margin-bottom: 0.4rem; }
+  .stat-card.income :global(.stat-value) { color: var(--success); }
+  .stat-card.expense :global(.stat-value) { color: var(--accent-gold); }
+  .stat-card.savings :global(.stat-value) { color: var(--accent-blue); }
   .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-color: rgba(91, 138, 138, 0.35); }
-  .stat-card.split .stat-value { color: var(--accent-teal); }
-  .stat-card.split.negative .stat-value { color: var(--danger); }
+  .stat-card.split :global(.stat-value) { color: var(--accent-teal); }
+  .stat-card.split.negative :global(.stat-value) { color: var(--danger); }
 
   .chart-section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); }
   .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
@@ -1055,7 +1108,22 @@ import Seo from "#lib/components/Seo.svelte";
     gap: 0.75rem; height: 210px; padding: 0.5rem 0.25rem 0;
     border-bottom: 1px solid var(--surface-border);
   }
-  .bar-col { display: flex; align-items: flex-end; justify-content: center; flex: 1; height: 100%; max-width: 96px; }
+  /* ── Bar chart motion ──────────────────────────────────────────────────────
+   * Bars grow up from the baseline one after another, then their numbers fade
+   * in. Hovering a column lifts it and dims the others so the highlighted bar
+   * is immediately readable. */
+  .bar-col {
+    display: flex; align-items: flex-end; justify-content: center;
+    flex: 1; height: 100%; max-width: 96px;
+    transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out);
+  }
+  /* Only dim the other columns while one is actually hovered, so moving over the
+     empty plot area does not fade the whole chart. */
+  /* `:not(:hover)` matters: `:has(.bar-col:hover)` carries the specificity of its
+     argument, so a plain `.bar-col` selector here would outrank the hover rule
+     below and dim the hovered column too. */
+  .bar-chart-plot:has(.bar-col:hover) .bar-col:not(:hover) { opacity: 0.55; }
+  .bar-chart-plot .bar-col:hover { opacity: 1; transform: translateY(-3px); }
   .bar-col-track { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 
   .bar-chart-labels {
@@ -1066,6 +1134,8 @@ import Seo from "#lib/components/Seo.svelte";
     flex: 1; max-width: 96px;
     font-size: 0.74rem; font-weight: 600;
     color: var(--text-tertiary); text-align: center; line-height: 1.25;
+    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation-delay: calc(var(--bar-index, 0) * 90ms + 160ms);
   }
   .bar-label.combined { color: var(--text-primary); font-weight: 800; }
 
@@ -1074,16 +1144,62 @@ import Seo from "#lib/components/Seo.svelte";
     display: flex; flex-direction: column;
     position: relative; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .bar-stack > :first-child { border-radius: 8px 8px 0 0; }
-  .bar-seg { width: 100%; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+  /* The coloured stack. Kept in its own absolutely-positioned layer so the total
+     label above the bar is not affected by the grow clip. */
+  .bar-fill {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    animation: barGrow var(--dur-slower) var(--ease-out) both;
+    animation-delay: calc(var(--bar-index, 0) * 90ms);
+  }
+
+  /* Reveal from the baseline upward. clip-path (instead of scaleY) keeps the
+     in-bar numbers undistorted, and the `round` radius gives the bar its soft
+     top edge for every stack (even when the top segment is empty). */
+  @keyframes barGrow {
+    from { clip-path: inset(100% 0 0 0 round 8px 8px 0 0); }
+    to { clip-path: inset(0 0 0 0 round 8px 8px 0 0); }
+  }
+
+  @keyframes barTextIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .bar-seg {
+    width: 100%; position: relative;
+    container-type: size; container-name: barseg;
+    display: flex; align-items: center; justify-content: center;
+    filter: brightness(1) saturate(1);
+    transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), filter var(--dur-base) var(--ease-out);
+  }
+  .bar-col:hover .bar-seg { filter: brightness(1.07) saturate(1.06); }
   .bar-seg.blue { background: linear-gradient(180deg, var(--accent-blue), #5a7090); }
   .bar-seg.rose { background: linear-gradient(180deg, var(--accent-rose), #b06a7c); }
+
+  /* Value of a single source, drawn inside its own coloured segment. Kept short
+     (compact notation) and shrunk to the strip width so it never gets clipped. */
+  .bar-seg-value {
+    font-size: 0.66rem; font-weight: 700; color: #fff;
+    max-width: 100%; padding: 0 0.15rem;
+    overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation-delay: calc(var(--bar-index, 0) * 90ms + 720ms);
+  }
+  /* A segment too short to hold its label simply hides it (threshold ≈ 1.2rem). */
+  @container barseg (max-height: 1.2rem) {
+    .bar-seg-value { display: none; }
+  }
 
   .bar-value {
     position: absolute; bottom: calc(100% + 0.15rem); left: 50%; transform: translateX(-50%);
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none;
+    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation-delay: calc(var(--bar-index, 0) * 90ms + 560ms);
   }
 
   .bar-legend { display: flex; gap: 1rem; margin-top: 0.85rem; justify-content: center; }
@@ -1096,6 +1212,13 @@ import Seo from "#lib/components/Seo.svelte";
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
   .chart-note-body { display: flex; flex-direction: column; gap: 0.35rem; }
   .chart-note-body p { margin: 0; }
+  /* Only the takeaway figures are emphasised (income total, unspent balance,
+     savings-paid expenses), so the note can be skimmed at a glance. */
+  .chart-note-body strong {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
 
   .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
 
@@ -1201,20 +1324,32 @@ import Seo from "#lib/components/Seo.svelte";
     font-weight: 500;
     line-height: 1.35;
     text-align: left;
-    transition: background 0.18s ease, color 0.18s ease;
+    animation: riseIn var(--dur-base) var(--ease-out) both;
+    transition: background var(--dur-fast) ease, color var(--dur-fast) ease, padding-left var(--dur-base) var(--ease-out);
   }
+  .section-nav-item:nth-child(1) { animation-delay: 0.01s; }
+  .section-nav-item:nth-child(2) { animation-delay: 0.04s; }
+  .section-nav-item:nth-child(3) { animation-delay: 0.07s; }
+  .section-nav-item:nth-child(4) { animation-delay: 0.1s; }
+  .section-nav-item:nth-child(5) { animation-delay: 0.13s; }
+  .section-nav-item:nth-child(6) { animation-delay: 0.16s; }
+  .section-nav-item:nth-child(7) { animation-delay: 0.19s; }
+  .section-nav-item:nth-child(8) { animation-delay: 0.22s; }
+  .section-nav-item:nth-child(n + 9) { animation-delay: 0.25s; }
   .section-nav-item:hover,
   .section-nav-item:active {
     background: var(--accent-gold-light);
     color: var(--text-primary);
+    padding-left: 0.85rem;
   }
   .section-nav-chevron {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
     color: var(--text-tertiary);
+    transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast) ease;
   }
-  .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold); }
+  .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold); transform: translateX(3px); }
 
   .section-nav-fab {
     position: relative;
@@ -1227,7 +1362,7 @@ import Seo from "#lib/components/Seo.svelte";
     color: #fff;
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
     box-shadow: 0 10px 26px rgba(200, 149, 108, 0.42), 0 4px 10px rgba(26, 23, 20, 0.18);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .section-nav-fab:hover {
     transform: translateY(-2px) scale(1.03);
@@ -1235,7 +1370,8 @@ import Seo from "#lib/components/Seo.svelte";
   }
   .section-nav-fab:active { transform: scale(0.96); }
   .section-nav-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
-  .section-nav-icon { width: 1.35rem; height: 1.35rem; }
+  .section-nav-icon { width: 1.35rem; height: 1.35rem; transition: transform var(--dur-base) var(--ease-spring); }
+  .section-nav-fab:hover .section-nav-icon { transform: rotate(90deg); }
 
   /* Month-to-month navigation bar at the bottom of the month page. */
   .month-nav {
@@ -1259,12 +1395,15 @@ import Seo from "#lib/components/Seo.svelte";
     font-size: 1.25rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
   }
   .month-nav-btn:hover:not(:disabled) {
     background: var(--bg-muted);
     color: var(--accent-gold);
+    border-color: var(--accent-gold);
+    transform: scale(1.08);
   }
+  .month-nav-btn:active:not(:disabled) { transform: scale(0.94); }
   .month-nav-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;

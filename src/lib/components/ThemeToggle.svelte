@@ -40,9 +40,10 @@
     border-radius: 999px;
     background: var(--bg-muted); border: 1px solid var(--surface-border);
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+    transition: color var(--dur-fast, 0.18s) ease, border-color var(--dur-fast, 0.18s) ease, background var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease);
   }
-  .theme-toggle:hover { color: var(--accent-gold); border-color: var(--accent-gold); }
+  .theme-toggle:hover { color: var(--accent-gold); border-color: var(--accent-gold); transform: rotate(12deg) scale(1.08); }
+  .theme-toggle:active { transform: rotate(12deg) scale(0.94); }
 
   /* Inline variant sits on the glassy login card. */
   .theme-toggle.inline { background: rgba(255, 255, 255, 0.75); border-color: rgba(255, 255, 255, 0.8); }

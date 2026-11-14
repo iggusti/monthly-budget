@@ -145,11 +145,11 @@ const en: Dict = {
   "month.chartDonutAria": "Income allocation donut",
   "month.dailyFromSavings": "Total Daily Expenses from Savings",
   "month.chartConclusionIncome":
-    "Income comes from {husband} (husband) + {wife} (wife) = {income}.",
+    "Income comes from {husband} (husband) + {wife} (wife) = **{income}**.",
   "month.chartConclusionSplit":
-    "That income covers fixed expenses {fixed} and daily expenses from salary {salary}, leaving {remaining} unspent.",
+    "That income covers fixed expenses {fixed} and daily expenses from salary {salary}, leaving **{remaining}** unspent.",
   "month.chartConclusionSavings":
-    "Total spending {total} also includes {savings} of daily expenses paid from savings — money outside this month's income.",
+    "Total spending {total} also includes **{savings}** of daily expenses paid from savings — money outside this month's income.",
   "month.section1": "1. Husband Income",
   "month.section2": "2. Wife Income",
   "month.section3": "3. Husband Fixed Expenses",
@@ -344,11 +344,11 @@ const id: Dict = {
   "month.chartDonutAria": "Donat alokasi penghasilan",
   "month.dailyFromSavings": "Total Pengeluaran Harian dari Tabungan",
   "month.chartConclusionIncome":
-    "Penghasilan berasal dari {husband} (suami) + {wife} (istri) = {income}.",
+    "Penghasilan berasal dari {husband} (suami) + {wife} (istri) = **{income}**.",
   "month.chartConclusionSplit":
-    "Penghasilan itu menutup pengeluaran tetap {fixed} dan pengeluaran harian dari gaji {salary}, menyisakan {remaining} yang belum terpakai.",
+    "Penghasilan itu menutup pengeluaran tetap {fixed} dan pengeluaran harian dari gaji {salary}, menyisakan **{remaining}** yang belum terpakai.",
   "month.chartConclusionSavings":
-    "Total pengeluaran {total} juga mencakup {savings} pengeluaran harian yang dibayar dari tabungan — di luar penghasilan bulan ini.",
+    "Total pengeluaran {total} juga mencakup **{savings}** pengeluaran harian yang dibayar dari tabungan — di luar penghasilan bulan ini.",
   "month.section1": "1. Penghasilan Suami",
   "month.section2": "2. Penghasilan Istri",
   "month.section3": "3. Pengeluaran Tetap Suami",

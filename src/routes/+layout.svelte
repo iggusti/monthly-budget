@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../app.css";
+  import { fly, fade } from "svelte/transition";
   import { page } from "$app/state";
   import { logout, isAuthenticated } from "#lib/auth";
   import { t, lang } from "#lib/i18n.svelte";
@@ -69,7 +70,13 @@
     </header>
 
     <main class="main-content">
-      {@render children()}
+      <!-- Re-enter the page content on every route change so navigation feels
+           deliberate: a short rise + fade instead of an instant swap. -->
+      {#key page.url.pathname}
+        <div class="page-enter" in:fly={{ y: 12, duration: 380 }} out:fade={{ duration: 120 }}>
+          {@render children()}
+        </div>
+      {/key}
     </main>
 
     <footer class="footer">
@@ -100,7 +107,9 @@
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     font-size: 15px; color: white; font-weight: 700;
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
+  .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.06); box-shadow: 0 6px 16px rgba(200, 149, 108, 0.35); }
   .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
   .nav-logout {
@@ -111,6 +120,9 @@
   }
   .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
   .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2rem 2rem 3rem; }
+
+  /* Wrapper used by the keyed route transition in the markup. */
+  .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; }
   .footer { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 0.8rem; border-top: 1px solid var(--surface-border); }
 
   @media (max-width: 640px) {
