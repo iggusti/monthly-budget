@@ -729,6 +729,7 @@
           class="item"
           class:editing={editingId === item.id}
           class:checked={item.checked}
+          class:no-shift={noRowShift}
           class:draggable={!!sectionKey && !!dragGroup}
           onpointerdown={(e) => onRowPointerDown(e, item)}
         >
@@ -1050,8 +1051,12 @@
   .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
   .item:hover { background: var(--bg); padding-left: 1.5rem; }
-  /* Income sections (1 & 2) keep rows in place: no slide on hover. */
-  .no-shift .item:hover { padding-left: 1.25rem; }
+  /* Income sections (1 & 2) keep rows in place: no slide on hover. The flag is
+     applied on both the section and each row so the override always wins. */
+  .no-shift .item:hover,
+  .item.no-shift:hover { padding-left: 1.25rem; }
+  .no-shift:hover .badge,
+  .section.no-shift:hover .badge { transform: none; }
   .item.editing { background: rgba(200, 149, 108, 0.08); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
