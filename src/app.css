@@ -19,6 +19,10 @@
   --accent-blue-light: #eef1f7;
   --accent-violet: #8a6fa3;
   --accent-violet-light: #f2eef7;
+  --accent-indigo: #6d74b5;
+  --accent-indigo-light: #eef0f9;
+  --accent-olive: #93994f;
+  --accent-olive-light: #f3f4e8;
   --success: #6b9e78;
   --success-light: #eef5f1;
   --danger: #c47070;
@@ -66,6 +70,10 @@
   --accent-blue-light: #212733;
   --accent-violet: #a892c0;
   --accent-violet-light: #28222f;
+  --accent-indigo: #969cd8;
+  --accent-indigo-light: #25273a;
+  --accent-olive: #bcc178;
+  --accent-olive-light: #2b2d1d;
   --success: #86b892;
   --success-light: #1f2a22;
   --danger: #d98a8a;

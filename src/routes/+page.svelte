@@ -280,12 +280,12 @@
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
-        <CountUp value={currentSalary} class="overview-value rose" />
+        <CountUp value={currentSalary} class="overview-value indigo" />
         <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSalaryHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSalaryWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
-        <CountUp value={currentSavings} class="overview-value blue" />
+        <CountUp value={currentSavings} class="overview-value olive" />
         <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSavingsHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSavingsWife)}</span>
       </div>
     </div>
@@ -485,6 +485,8 @@
   .overview-item :global(.overview-value.rose) { color: var(--accent-rose); }
   .overview-item :global(.overview-value.blue) { color: var(--accent-blue); }
   .overview-item :global(.overview-value.violet) { color: var(--accent-violet); }
+  .overview-item :global(.overview-value.indigo) { color: var(--accent-indigo); }
+  .overview-item :global(.overview-value.olive) { color: var(--accent-olive); }
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
   .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; animation: underlineGrow var(--dur-slower) var(--ease-out) both; animation-delay: 0.2s; }
