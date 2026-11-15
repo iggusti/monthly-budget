@@ -19,6 +19,7 @@
   import { isAuthenticated } from "#lib/auth";
   import { allMonthsTo, currentPeriodId, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
+  import { monthPageSize } from "#lib/month-grid";
   import { t, lang } from "#lib/i18n.svelte";
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
@@ -57,9 +58,35 @@
   // All months from the earliest budget year (or this year) through the current
   // period, newest first.
   const orderedMonths = $derived(allMonthsTo(currentMonthId, thisYear).reverse());
-  // Show the 8 most recent by default; reveal the rest via "View more".
-  const visibleMonths = $derived(showAllMonths ? orderedMonths : orderedMonths.slice(0, 8));
-  const hasMoreMonths = $derived(orderedMonths.length > 8);
+
+  // The month grid is responsive, so the first page fills complete rows instead
+  // of always showing 8 cards (which meant 8 tall rows on a phone).
+  let monthsGridEl = $state<HTMLDivElement | null>(null);
+  let monthColumns = $state(3);
+
+  $effect(() => {
+    const el = monthsGridEl;
+    if (!el) return;
+
+    const update = () => {
+      // Read the used column list so the CSS breakpoints stay the source of truth.
+      const columns = getComputedStyle(el).gridTemplateColumns
+        .split(" ")
+        .filter(Boolean).length;
+      monthColumns = Math.max(1, columns);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
+
+  // Phones: 4 rows; tablets (2 columns): 3 rows; wider grids: 2 full rows.
+  const monthLimit = $derived(monthPageSize(monthColumns));
+  // Show the first page of months; reveal the rest via "View more".
+  const visibleMonths = $derived(showAllMonths ? orderedMonths : orderedMonths.slice(0, monthLimit));
+  const hasMoreMonths = $derived(orderedMonths.length > monthLimit);
 
   const usedIds = $derived(new Set(budgets.map((b) => b.id)));
 
@@ -308,8 +335,8 @@
 
   {#if loading}
     <!-- Month card skeletons -->
-    <div class="months-grid" aria-hidden="true">
-      {#each Array(6) as _}
+    <div class="months-grid" aria-hidden="true" bind:this={monthsGridEl}>
+      {#each Array(monthLimit) as _}
         <div class="month-card">
           <div class="card-link">
             <div class="card-top">
@@ -342,7 +369,7 @@
       {/each}
     </div>
   {:else}
-    <div class="months-grid animate-stagger" in:fly={{ y: 14, duration: 450, delay: 140 }}>
+    <div class="months-grid animate-stagger" in:fly={{ y: 14, duration: 450, delay: 140 }} bind:this={monthsGridEl}>
       {#each visibleMonthIds as id}
         {@const exists = usedIds.has(id)}
         {@const budget = monthBudget(id)}
@@ -433,7 +460,7 @@
   {#if !loading && hasMoreMonths && !searchActive}
     <div class="months-toggle">
       <button class="toggle-btn" onclick={() => (showAllMonths = !showAllMonths)}>
-        {showAllMonths ? t("common.viewLess") : t("dashboard.viewMore", { n: orderedMonths.length - 8 })}
+        {showAllMonths ? t("common.viewLess") : t("dashboard.viewMore", { n: orderedMonths.length - monthLimit })}
         <span class="toggle-arrow">{showAllMonths ? "↑" : "↓"}</span>
       </button>
     </div>
