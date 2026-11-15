@@ -1025,7 +1025,9 @@
       disabled={!canGoNext}
       onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
     >
-      ←
+      <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
     </button>
     <span class="month-nav-sep">{monthId}</span>
     <button
@@ -1035,7 +1037,9 @@
       disabled={!canGoPrevious}
       onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
     >
-      →
+      <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" />
+      </svg>
     </button>
   </nav>
   {/if}
@@ -1398,11 +1402,11 @@
     border: 1px solid var(--surface-border);
     background: var(--bg);
     color: var(--text-primary);
-    font-size: 1.25rem;
-    font-weight: 700;
     cursor: pointer;
     transition: background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
   }
+  /* Both arrows are the same SVG so the two buttons stay pixel-identical. */
+  .month-nav-icon { width: 1.15rem; height: 1.15rem; display: block; }
   .month-nav-btn:hover:not(:disabled) {
     background: var(--bg-muted);
     color: var(--accent-gold);
