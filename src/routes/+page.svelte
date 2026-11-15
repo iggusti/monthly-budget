@@ -283,14 +283,14 @@
     <!-- Overview skeleton (mirrors the real summary layout) -->
     <div class="overview" aria-hidden="true">
       <div class="overview-head">
-        <Skeleton width="90px" height="0.9rem" />
-        <Skeleton width="120px" height="0.78rem" />
+        <Skeleton width="90px" height="1rem" />
+        <Skeleton width="120px" height="0.88rem" />
       </div>
       {#each Array(8) as _}
         <div class="overview-item">
-          <Skeleton width="60%" height="0.68rem" />
-          <Skeleton width="80%" height="1.35rem" />
-          <Skeleton width="70%" height="0.7rem" />
+          <Skeleton width="60%" height="1.05rem" />
+          <Skeleton width="80%" height="1.7rem" />
+          <Skeleton width="70%" height="1.1rem" />
         </div>
       {/each}
     </div>
@@ -387,28 +387,24 @@
           <div class="card-link">
             <div class="card-top">
               <div class="card-titleblock">
-                <Skeleton width="110px" height="1.05rem" />
-                <Skeleton width="90px" height="0.72rem" />
+                <Skeleton width="110px" height="1.25rem" />
+                <Skeleton width="90px" height="1.15rem" />
               </div>
-              <Skeleton width="48px" height="18px" radius="999px" />
+              <Skeleton width="52px" height="1.4rem" radius="999px" />
             </div>
             <div class="card-person">
-              <Skeleton width="60px" height="0.72rem" />
-              <Skeleton width="80px" height="1rem" />
+              <Skeleton width="60px" height="1.1rem" />
+              <Skeleton width="80px" height="1.4rem" />
             </div>
             <div class="card-groups">
-              <div class="card-group">
-                <Skeleton width="50px" height="0.66rem" style="margin-bottom:0.3rem;" />
-                <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-                <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-                <div class="card-group-row"><Skeleton width="50px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-              </div>
-              <div class="card-group">
-                <Skeleton width="40px" height="0.66rem" style="margin-bottom:0.3rem;" />
-                <div class="card-group-row"><Skeleton width="45px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-                <div class="card-group-row"><Skeleton width="55px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-                <div class="card-group-row"><Skeleton width="50px" height="0.7rem" /><Skeleton width="70px" height="0.7rem" /></div>
-              </div>
+              {#each Array(2) as _}
+                <div class="card-group">
+                  <Skeleton width="50px" height="1.05rem" style="margin-bottom:0.3rem;" />
+                  <div class="card-group-row"><Skeleton width="45px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                  <div class="card-group-row"><Skeleton width="55px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                  <div class="card-group-row"><Skeleton width="50px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                </div>
+              {/each}
             </div>
           </div>
         </div>
@@ -526,6 +522,16 @@
       <div class="info-item"><span class="info-dot rose"></span><span><b>{t("dashboard.infoSalary")}</b> — {t("dashboard.infoSalarySub")}</span></div>
       <div class="info-item"><span class="info-dot teal"></span><span><b>{t("dashboard.infoSavings")}</b> — {t("dashboard.infoSavingsSub")}</span></div>
       <div class="info-item"><span class="info-dot gold"></span><span><b>{t("dashboard.infoPerPerson")}</b> — {t("dashboard.infoPerPersonSub")}</span></div>
+    </div>
+  {:else}
+    <!-- Info strip skeleton: dot + one text line per item, same padding. -->
+    <div class="info-strip" aria-hidden="true">
+      {#each Array(4) as _}
+        <div class="info-item">
+          <Skeleton circle size={9} />
+          <Skeleton width="180px" height="1.15rem" />
+        </div>
+      {/each}
     </div>
   {/if}
 </div>

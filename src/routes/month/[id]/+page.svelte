@@ -444,9 +444,9 @@
     </div>
     <div class="header-meta">
       {#if loading}
-        <Skeleton width="220px" height="1.7rem" />
-        <Skeleton width="160px" height="0.85rem" style="margin-top:0.35rem;" />
-        <Skeleton width="118px" height="2rem" radius="var(--radius-sm)" style="margin-top:0.75rem;" />
+        <Skeleton width="220px" height="1.85rem" />
+        <Skeleton width="160px" height="1.1rem" style="margin-top:0.35rem;" />
+        <Skeleton width="118px" height="2.4rem" radius="var(--radius-sm)" style="margin-top:0.75rem;" />
       {:else}
         <h1 class="page-title">{budget.title}</h1>
         <p class="page-subtitle">{budget.period}</p>
@@ -461,39 +461,44 @@
   </div>
 
   {#if loading}
-    <!-- Summary skeleton -->
+    <!-- Summary skeleton: same card tones (4th is the tinted split card) and
+         line heights as the real stats, so nothing jumps when data lands. -->
     <div class="summary-row" aria-hidden="true">
-      {#each Array(4) as _}
-        <div class="stat-card">
-          <Skeleton width="65%" height="0.72rem" />
-          <Skeleton width="85%" height="1.5rem" />
-          <Skeleton width="75%" height="0.78rem" />
+      {#each ["income", "expense", "savings", "split"] as tone}
+        <div class="stat-card {tone}">
+          <Skeleton width="65%" height="1.1rem" style="margin-bottom:0.5rem;" />
+          <Skeleton width="85%" height="1.7rem" style="margin-bottom:0.4rem;" />
+          <!-- Captions wrap to two lines on most widths. -->
+          <Skeleton width="100%" height="0.95rem" />
+          <Skeleton width="55%" height="0.95rem" style="margin-top:0.2rem;" />
         </div>
       {/each}
     </div>
 
-    <!-- Chart skeleton -->
+    <!-- Chart skeleton: same plot height, bar widths and text sizes as the
+         real charts. Heights are in px so no engine has to resolve a
+         percentage inside a flex item. -->
     <div class="chart-section" aria-hidden="true">
       <div class="chart-header">
-        <Skeleton width="200px" height="0.9rem" />
+        <Skeleton width="200px" height="1.1rem" />
       </div>
       <div class="charts-grid">
         <!-- Mirror the two real charts: 3 income bars, 5 expense bars. -->
-        {#each [{ bars: 3, h: [95, 60, 40] }, { bars: 5, h: [90, 72, 55, 38, 24] }] as chart}
+        {#each [{ bars: 3, h: [190, 122, 82] }, { bars: 5, h: [186, 146, 112, 78, 50] }] as chart}
           <div class="bar-chart">
             <div class="bar-chart-head">
-              <Skeleton width="55%" height="0.82rem" />
-              <Skeleton width="72px" height="0.95rem" />
+              <Skeleton width="55%" height="1rem" />
+              <Skeleton width="72px" height="1.15rem" />
             </div>
             <div class="bar-chart-plot">
               {#each chart.h as barHeight}
                 <div class="bar-col">
                   <div class="bar-col-track">
                     <Skeleton
-                      width="62px"
-                      height="{barHeight}%"
+                      width="100%"
+                      height="{barHeight}px"
                       radius="8px 8px 0 0"
-                      style="align-self:flex-end;"
+                      style="max-width:62px;"
                     />
                   </div>
                 </div>
@@ -501,46 +506,73 @@
             </div>
             <div class="bar-chart-labels">
               {#each Array(chart.bars) as _}
-                <Skeleton width="60%" height="0.72rem" style="margin:0 auto;" />
+                <Skeleton width="60%" height="1rem" style="margin:0 auto;max-width:60px;" />
               {/each}
             </div>
             <div class="bar-legend">
-              <Skeleton width="70px" height="0.76rem" radius="999px" />
-              <Skeleton width="70px" height="0.76rem" radius="999px" />
+              <span class="legend-chip">
+                <Skeleton width="12px" height="12px" radius="4px" />
+                <Skeleton width="34px" height="1.1rem" />
+              </span>
+              <span class="legend-chip">
+                <Skeleton width="12px" height="12px" radius="4px" />
+                <Skeleton width="34px" height="1.1rem" />
+              </span>
             </div>
           </div>
         {/each}
       </div>
-      <!-- Takeaway note under the charts. -->
+      <!-- Takeaway note under the charts (three short paragraphs). -->
       <div class="chart-note">
         <Skeleton circle size={18} />
         <div class="chart-note-body" style="flex:1;">
-          <Skeleton width="100%" height="0.78rem" />
-          <Skeleton width="82%" height="0.78rem" />
+          <Skeleton width="100%" height="1.1rem" />
+          <Skeleton width="92%" height="1.1rem" />
+          <Skeleton width="68%" height="1.1rem" />
         </div>
       </div>
     </div>
 
     <!-- Sections skeleton (mirrors the 8 real expense sections) -->
     <div class="sections" aria-hidden="true">
-      <!-- Income sections hold one row; fixed sections are the longest. -->
-      {#each [1, 1, 4, 4, 3, 3, 2, 2] as rowCount}
+      <!-- Income sections hold one row; fixed sections are the longest. The
+           two fixed sections also show a checkbox per row. -->
+      {#each [1, 1, 4, 4, 3, 3, 2, 2] as rowCount, sectionIndex}
         <div class="section-skeleton">
           <div class="section-skeleton-head">
-            <Skeleton circle size={28} />
-            <Skeleton width="55%" height="0.88rem" style="flex:1;" />
-            <Skeleton width="76px" height="0.9rem" />
+            <Skeleton width="28px" height="28px" radius="7px" />
+            <Skeleton width="55%" height="1.15rem" style="flex:1;" />
+            <Skeleton width="76px" height="1.1rem" />
             <Skeleton width="28px" height="28px" radius="var(--radius-sm)" />
           </div>
           {#each Array(rowCount) as _}
             <div class="section-skeleton-row">
-              <Skeleton width="48%" height="0.86rem" />
-              <Skeleton width="68px" height="0.86rem" />
+              <div class="section-skeleton-left">
+                {#if sectionIndex === 2 || sectionIndex === 3}
+                  <Skeleton width="18px" height="18px" radius="5px" />
+                {/if}
+                <Skeleton width="45%" height="1.2rem" />
+              </div>
+              <div class="section-skeleton-right">
+                <Skeleton width="68px" height="1.2rem" />
+                <Skeleton width="26px" height="26px" radius="var(--radius-sm)" />
+                <Skeleton width="26px" height="26px" radius="var(--radius-sm)" />
+              </div>
             </div>
           {/each}
         </div>
       {/each}
     </div>
+
+    <!-- Month navigation skeleton (the real nav renders with the content). -->
+    <nav class="month-nav" aria-hidden="true">
+      <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
+      <div class="month-nav-label">
+        <Skeleton width="120px" height="1.2rem" />
+        <Skeleton width="96px" height="1.05rem" style="margin-top:0.15rem;" />
+      </div>
+      <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
+    </nav>
   {:else}
   {#if showHeaderEditor}
     <div class="income-panel" in:slide={{ duration: 220 }}>
@@ -1173,20 +1205,44 @@
 
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 
-  .bar-chart { display: flex; flex-direction: column; }
+  /* Per-bar entrance rhythm: `--bar-start` waits for the section to settle in,
+     `--bar-stagger` walks the bars left to right. Both are inherited by the
+     bars and their labels. */
+  .bar-chart { display: flex; flex-direction: column; --bar-start: 160ms; --bar-stagger: 80ms; }
   .bar-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.85rem; }
   .bar-chart-title { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); }
   .bar-chart-total { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
   .bar-chart-plot {
+    position: relative;
     display: flex; align-items: flex-end; justify-content: space-around;
     gap: 0.75rem; height: 210px; padding: 0.5rem 0.25rem 0;
-    border-bottom: 1px solid var(--surface-border);
+  }
+  /* The axis draws in from the left while the bars rise. A `border-bottom`
+     would be painted at full width straight away, so it is a pseudo-element. */
+  .bar-chart-plot::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: var(--surface-border); transform-origin: left;
+    animation: underlineGrow var(--dur-slow) var(--ease-out) both;
+    animation-delay: 80ms;
   }
   /* ── Bar chart motion ──────────────────────────────────────────────────────
-   * Bars grow up from the baseline one after another, then their numbers fade
-   * in. Hovering a column lifts it and dims the others so the highlighted bar
-   * is immediately readable. */
+   * Entering the month page, every bar grows from the baseline up to its own
+   * height, left to right, then its numbers fade in.
+   *
+   * The rise is a `scaleY` on the coloured layer, not an animated `height`:
+   * percentage heights inside flex items are resolved inconsistently across
+   * engines (Safari/WebKit in particular), so a height keyframe can silently
+   * never run. A transform needs no percentage resolution, is composited on
+   * every browser and stays smooth on low-end phones.
+   *
+   * Both keyframes are spelled out on purpose — an implicit end keyframe
+   * (`from` only) is not reliably resolved by older WebKit builds. With no
+   * animation support at all the bars simply render at full height, because
+   * the animation never owns the layout height.
+   *
+   * Hovering a column lifts it and dims the others so the highlighted bar is
+   * immediately readable. */
   .bar-col {
     display: flex; align-items: flex-end; justify-content: center;
     flex: 1; height: 100%; max-width: 96px;
@@ -1210,7 +1266,7 @@
     font-size: 0.74rem; font-weight: 600;
     color: var(--text-tertiary); text-align: center; line-height: 1.25;
     animation: barTextIn var(--dur-base) var(--ease-out) both;
-    animation-delay: calc(var(--bar-index, 0) * 90ms + 160ms);
+    animation-delay: calc(var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + 120ms);
   }
   .bar-label.combined { color: var(--text-primary); font-weight: 800; }
 
@@ -1219,21 +1275,30 @@
     display: flex; flex-direction: column;
     position: relative; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  /* The coloured stack. Kept in its own absolutely-positioned layer so the total
-     label above the bar is not affected by the grow clip. */
+  /* Grow the coloured layer out of the baseline. `scaleY` is explicit on both
+     ends and needs no percentage resolution, so every engine runs it. The
+     numbers inside are still hidden while the scale is animating (their fade
+     starts after the bar lands), so nothing ever looks stretched. */
+  @keyframes barRise {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  /* The coloured stack, rounded at the top. Kept in its own absolutely
+     positioned layer so the total label above the bar stays outside the clip
+     that the corner radius needs. */
   .bar-fill {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
-    animation: barGrow var(--dur-slower) var(--ease-out) both;
-    animation-delay: calc(var(--bar-index, 0) * 90ms);
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+    transform-origin: bottom center;
+    animation: barRise var(--dur-slower) var(--ease-out) backwards;
+    animation-delay: calc(var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start));
   }
-
-  /* Reveal from the baseline upward. clip-path (instead of scaleY) keeps the
-     in-bar numbers undistorted, and the `round` radius gives the bar its soft
-     top edge for every stack (even when the top segment is empty). */
-  @keyframes barGrow {
-    from { clip-path: inset(100% 0 0 0 round 8px 8px 0 0); }
-    to { clip-path: inset(0 0 0 0 round 8px 8px 0 0); }
+  /* Browsers that cannot animate transforms at all still show the full bar:
+     the keyframes only ever own the transform, never the layout. */
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill { animation: none; transform: none; }
   }
 
   @keyframes barTextIn {
@@ -1261,7 +1326,9 @@
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     animation: barTextIn var(--dur-base) var(--ease-out) both;
-    animation-delay: calc(var(--bar-index, 0) * 90ms + 720ms);
+    animation-delay: calc(
+      var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower) + 60ms
+    );
   }
   /* A segment too short to hold its label simply hides it (threshold ≈ 1.2rem). */
   @container barseg (max-height: 1.2rem) {
@@ -1274,7 +1341,9 @@
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none;
     animation: barTextIn var(--dur-base) var(--ease-out) both;
-    animation-delay: calc(var(--bar-index, 0) * 90ms + 560ms);
+    animation-delay: calc(
+      var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower)
+    );
   }
 
   .bar-legend { display: flex; gap: 1rem; margin-top: 0.85rem; justify-content: center; }
@@ -1309,14 +1378,15 @@
     display: flex; align-items: center; gap: 0.65rem;
     padding: 0.85rem 1.25rem;
     border-bottom: 1px solid var(--surface-border);
-    background: var(--bg-muted);
   }
   .section-skeleton-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 0.85rem;
     padding: 0.7rem 1.25rem;
     border-bottom: 1px solid var(--bg-muted);
   }
   .section-skeleton-row:last-child { border-bottom: none; }
+  .section-skeleton-left { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; }
+  .section-skeleton-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
 
   .search-empty {
     display: flex; flex-direction: column; align-items: center; gap: 0.4rem;

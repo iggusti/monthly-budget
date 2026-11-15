@@ -45,6 +45,11 @@ every push to `main`; that workflow does **not** touch functions or rules.
   `t("namespace.key")`. `svelte-check` does not catch missing translations.
 - Styling is plain CSS per component using the CSS variables in `app.css`.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
+- Loading states use `src/lib/components/Skeleton.svelte` inside the real
+  layout wrappers. Set each placeholder's height to the line box of the text it
+  replaces (e.g. a `0.9rem` value is ~`1.44rem` tall) so the page does not jump
+  when data lands. Shimmer colours are the `--skeleton-base` / `--skeleton-sheen`
+  tokens — keep them plain rgba, `color-mix()` is not supported everywhere.
 - Keep changes small and consistent with the surrounding code; run
   `npm run verify` before finishing.
 - Logic worth testing belongs in `src/lib/*.ts` (no Svelte imports) so it stays
@@ -123,6 +128,12 @@ every push to `main`; that workflow does **not** touch functions or rules.
   only work client-side; direct visits are rewritten to the SPA.
 - `.topbar` uses `backdrop-filter`, which makes it the containing block for
   `position: fixed` descendants — position popovers inside it with `absolute`.
+- **Animation compatibility:** animate `transform`/`opacity`, not `height` and
+  never percentage values inside a flex item (WebKit may resolve those as
+  `auto` and silently skip the animation). Spell out both keyframes, and make
+  sure the element still renders correctly if the animation never runs. The
+  bar-chart rise is `scaleY` on `.bar-fill`; `prefers-reduced-motion` turns it
+  off in both `app.css` and the component.
 - Clearing browser storage creates a new anonymous uid; device documents are
   refreshed with the current uid on app start, and dead FCM tokens are pruned
   server-side.

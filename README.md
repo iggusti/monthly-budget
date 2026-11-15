@@ -83,6 +83,11 @@ titled "February 2026"). Each period is stored as one Firestore document (id
   channel; forms offer quick date chips and the method/bank selects described
   above.
 - **View more / View less** — collapsible sections toggle both directions.
+- **Polished loading & motion** — skeleton placeholders mirror the real layout
+  on both pages (cards, charts and expense rows keep their size, so nothing
+  jumps when Firestore data lands), the flow charts rise in from the baseline
+  on page entry, and every animation honours the OS `prefers-reduced-motion`
+  setting.
 - **Push notifications** — when an expense is added, edited or deleted, the
   other phone gets a system notification even with the app closed. The device
   that made the change is never notified. See
@@ -157,6 +162,7 @@ src/
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
       CountUp.svelte         animated rupiah figure for headline totals
+      Skeleton.svelte        shimmery placeholder used by loading states
       NotificationToggle.svelte  topbar bell: enable/disable push per device
       BadgeIcon.svelte       outline SVG category icons
   routes/

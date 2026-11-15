@@ -3,7 +3,7 @@
    * Base skeleton placeholder with a gentle shimmer, theme-aware colours.
    *
    * Compose page-level skeletons from this primitive:
-   *   <Skeleton w="60%" h="1rem" />
+   *   <Skeleton width="60%" height="1rem" />
    *   <Skeleton circle size={40} />
    */
   interface Props {
@@ -39,27 +39,37 @@
     display: block;
     flex-shrink: 0;
     overflow: hidden;
-    background: var(--bg-muted);
+    background: var(--skeleton-base, #eeece8);
+    pointer-events: none;
   }
 
   /* A single soft highlight sweeps across the block. Doing this on a pseudo
      element (instead of sliding a 200%-wide gradient) keeps the shimmer calm
-     and clips cleanly inside rounded/circular skeletons. */
+     and clips cleanly inside rounded/circular skeletons.
+
+     Longhand offsets and a plain rgba token on purpose: `inset` and
+     `color-mix()` are recent additions, and a browser that drops either one
+     silently loses the whole shimmer. */
   .skeleton::after {
     content: "";
     position: absolute;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: linear-gradient(
       90deg,
       transparent 0%,
-      color-mix(in srgb, var(--text-primary) 5%, transparent) 50%,
+      var(--skeleton-sheen, rgba(255, 255, 255, 0.7)) 50%,
       transparent 100%
     );
     transform: translateX(-100%);
     animation: skeleton-shimmer 1.6s ease-in-out infinite;
   }
 
+  /* Both ends are explicit so no engine has to infer the missing keyframe. */
   @keyframes skeleton-shimmer {
+    0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
 
