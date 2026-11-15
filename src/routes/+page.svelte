@@ -315,7 +315,15 @@
         {:else}
           <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
           <CountUp value={currentPerPerson} class="overview-value teal" />
-          <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
+          <span class="overview-sub">
+            {#if currentTransferAmount > 0}
+              {t("month.splitTransferNote")}
+              <strong class="split-amount">{formatCurrency(currentTransferAmount)}</strong>
+              · {currentTransferDirection}
+            {:else}
+              {t("month.splitTransferNone")}
+            {/if}
+          </span>
         {/if}
       </div>
       <div class="overview-item">
@@ -541,6 +549,12 @@
   .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
   .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
   .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
+  /* The split transfer amount is the key number of that caption, so it gets
+     weight and the body text colour while the rest stays muted. */
+  .overview-sub .split-amount {
+    font-size: 0.8rem; font-weight: 800; letter-spacing: -0.01em;
+    color: var(--text-primary); white-space: nowrap;
+  }
   /* Values render through the CountUp child component, so their styling must
      escape scoping; the `.overview-item` prefix keeps it local enough. */
   .overview-item :global(.overview-value) { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }

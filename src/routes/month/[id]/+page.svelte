@@ -15,7 +15,7 @@
     type ExpenseItem
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { currentPeriodId } from "#lib/period";
+  import { currentPeriodId, monthLabel } from "#lib/period";
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -40,6 +40,10 @@
   const canGoPrevious = $derived(prevMonthId != null);
   /** Left arrow goes to the next month; stop when on the active month. */
   const canGoNext = $derived(nextMonthId != null && !isActiveMonth);
+
+  const locale = $derived(lang.value === "id" ? "id-ID" : "en-US");
+  /** Readable name of the viewed period, e.g. `2026-10` -> "November 2026". */
+  const navMonthLabel = $derived(monthId ? monthLabel(monthId, locale) : "");
 
   let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
   let loading = $state(true);
@@ -205,6 +209,7 @@
       ? `${t("common.husband")} → ${t("common.wife")}`
       : `${t("common.wife")} → ${t("common.husband")}`
   );
+  const equalSplitTransferAmount = $derived(Math.abs(totals.equalSplitTransfer));
 
   // Combined daily totals (husband + wife).
   const dailyFromSalaryTotal = $derived(
@@ -602,7 +607,15 @@
       {:else}
         <span class="stat-label">{t("dashboard.maxPlannedPerPerson")}</span>
         <CountUp value={totals.equalSplitAmount} class="stat-value" />
-        <span class="stat-sub">{t("dashboard.afterFixedSplit")}</span>
+        <span class="stat-sub">
+          {#if equalSplitTransferAmount > 0}
+            {t("month.splitTransferNote")}
+            <strong class="split-amount">{formatCurrency(equalSplitTransferAmount)}</strong>
+            · {transferDirection}
+          {:else}
+            {t("month.splitTransferNone")}
+          {/if}
+        </span>
       {/if}
     </div>
   </div>
@@ -1067,7 +1080,15 @@
         <path d="M15 18l-6-6 6-6" />
       </svg>
     </button>
-    <span class="month-nav-sep">{monthId}</span>
+    <div class="month-nav-label">
+      <span class="month-nav-month">
+        {#if isActiveMonth}<span class="month-nav-dot" aria-hidden="true"></span>{/if}
+        <span class="month-nav-name">{navMonthLabel}</span>
+      </span>
+      {#if budget.period}
+        <span class="month-nav-range">{budget.period}</span>
+      {/if}
+    </div>
     <button
       class="month-nav-btn"
       type="button"
@@ -1130,6 +1151,12 @@
   .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); display: block; margin-bottom: 0.5rem; }
   .stat-sub { font-size: 0.78rem; color: var(--text-tertiary); display: block; line-height: 1.5; }
+  /* The split transfer amount is the key number of that caption, so it gets
+     weight and the body text colour while the rest stays muted. */
+  .stat-sub .split-amount {
+    font-size: 0.86rem; font-weight: 800; letter-spacing: -0.01em;
+    color: var(--text-primary); white-space: nowrap;
+  }
   /* Values render through the CountUp child component, so their styling must
      escape scoping; the `.stat-card` prefix keeps it local enough. */
   .stat-card :global(.stat-value) { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; display: block; margin-bottom: 0.4rem; }
@@ -1457,11 +1484,58 @@
     cursor: not-allowed;
     color: var(--text-tertiary);
   }
-  .month-nav-sep {
-    font-size: 0.78rem;
+  /* Centre label of the month nav: readable period name over the actual date
+     range, so the raw `YYYY-MM` id never has to be shown. Flat on purpose —
+     the two arrows already frame it. */
+  .month-nav-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 0;
+    max-width: 15rem;
+    padding: 0 0.5rem;
+  }
+  .month-nav-month {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    max-width: 100%;
+    font-family: "Playfair Display", serif;
+    font-size: 1.02rem;
     font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+  /* Only the name gets the ellipsis: clipping the flex row would shave the
+     dot's ring on its left edge and make the dot look lopsided. */
+  .month-nav-name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  /* "This is the active period" marker: a crisp ring reads cleaner than a
+     blurred glow at this size. */
+  .month-nav-dot {
+    flex-shrink: 0;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success-light);
+  }
+  .month-nav-range {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     color: var(--text-tertiary);
-    letter-spacing: 0.05em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   @media (max-width: 1000px) {
@@ -1489,5 +1563,10 @@
     .save-state { display: none; }
     .page-title { font-size: 1.3rem; }
     .edit-btn { padding: 0.45rem 0.85rem; font-size: 0.75rem; }
+    .month-nav { gap: 0.4rem; }
+    .month-nav-btn { width: 2.3rem; height: 2.3rem; }
+    .month-nav-label { max-width: 11rem; padding: 0 0.35rem; }
+    .month-nav-month { font-size: 0.92rem; }
+    .month-nav-range { font-size: 0.62rem; }
   }
 </style>
