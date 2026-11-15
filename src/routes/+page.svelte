@@ -20,6 +20,7 @@
   import { allMonthsTo, currentPeriodId, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
+  import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
   import { t, lang } from "#lib/i18n.svelte";
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
@@ -169,6 +170,27 @@
   const currentFixedExpense = $derived(currentTotals ? currentTotals.totalFixedExpenses : 0);
   const currentPerPerson = $derived(currentTotals ? currentTotals.equalSplitAmount : 0);
 
+  // The split card shows a pending transfer until it is settled: the wife's
+  // transfer stays visible until she marks it received, while the husband's
+  // transfer is assumed done from the 26th on.
+  const currentShowTransfer = $derived(
+    currentTotals
+      ? equalSplitCardKind(
+          currentTotals.equalSplitTransfer,
+          currentBudget?.transferReceived ?? false,
+          isPeriodStartDay(currentBudget?.periodStart ?? `${currentMonthId}-25`)
+        ) === "transfer"
+      : false
+  );
+  const currentTransferAmount = $derived(
+    currentTotals ? Math.abs(currentTotals.equalSplitTransfer) : 0
+  );
+  const currentTransferDirection = $derived(
+    (currentTotals?.equalSplitTransfer ?? 0) >= 0
+      ? `${t("common.husband")} → ${t("common.wife")}`
+      : `${t("common.wife")} → ${t("common.husband")}`
+  );
+
   // Per-spouse splits for the income and fixed-expense cards.
   const currentIncomeHusband = $derived(currentBudget ? currentBudget.husbandIncome : 0);
   const currentIncomeWife = $derived(currentBudget ? currentBudget.wifeIncome : 0);
@@ -284,9 +306,17 @@
         <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentIncomeHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentIncomeWife)}</span>
       </div>
       <div class="overview-item">
-        <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
-        <CountUp value={currentPerPerson} class="overview-value teal" />
-        <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
+        {#if currentShowTransfer}
+          <span class="overview-label">{t("month.equalSplitTransfer")}</span>
+          <CountUp value={currentTransferAmount} class="overview-value expense" />
+          <span class="overview-sub">
+            {currentTransferDirection} · {t("month.eachHolds", { amount: formatCurrency(currentPerPerson) })}
+          </span>
+        {:else}
+          <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
+          <CountUp value={currentPerPerson} class="overview-value teal" />
+          <span class="overview-sub">{t("dashboard.afterFixedSplit")}</span>
+        {/if}
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalExpense")}</span>

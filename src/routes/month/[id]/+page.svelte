@@ -18,6 +18,7 @@
   import { currentPeriodId } from "#lib/period";
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
+  import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
   import { t, lang } from "#lib/i18n.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import Seo from "#lib/components/Seo.svelte";
@@ -186,6 +187,24 @@
   );
   const husbandSalaryPlan = $derived(totals.equalSplitAmount - husbandPlanReduction);
   const husbandSalaryRemaining = $derived(husbandSalaryPlan - totals.husbandDailyFromSalaryTotal);
+
+  // ── Equal-split card: pending transfer vs. planned budget ───────────────
+  // Wife → Husband keeps showing the transfer until section 5 marks it
+  // received. Husband → Wife only shows it on the period's first day (the
+  // 25th); from the 26th on he has certainly sent it, so the card falls back
+  // to the planned per-person budget.
+  const showEqualSplitTransfer = $derived(
+    equalSplitCardKind(
+      totals.equalSplitTransfer,
+      budget.transferReceived ?? false,
+      isActiveMonth && isPeriodStartDay(budget.periodStart ?? `${monthId}-25`)
+    ) === "transfer"
+  );
+  const transferDirection = $derived(
+    totals.equalSplitTransfer >= 0
+      ? `${t("common.husband")} → ${t("common.wife")}`
+      : `${t("common.wife")} → ${t("common.husband")}`
+  );
 
   // Combined daily totals (husband + wife).
   const dailyFromSalaryTotal = $derived(
@@ -572,13 +591,19 @@
         {t("common.husband")} {formatCurrency(totals.husbandDailyFromSavingsTotal)} · {t("common.wife")} {formatCurrency(totals.wifeDailyFromSavingsTotal)}
       </span>
     </div>
-    <div class="stat-card split" class:negative={totals.equalSplitTransfer < 0}>
-      <span class="stat-label">{t("month.equalSplitTransfer")}</span>
-      <CountUp value={Math.abs(totals.equalSplitTransfer)} class="stat-value" />
-      <span class="stat-sub">
-        {#if totals.equalSplitTransfer >= 0}{t("common.husband")} → {t("common.wife")}{:else}{t("common.wife")} → {t("common.husband")}{/if}
-        · {t("month.eachHolds", { amount: formatCurrency(totals.equalSplitAmount) })}
-      </span>
+    <div class="stat-card split" class:negative={showEqualSplitTransfer && totals.equalSplitTransfer < 0}>
+      {#if showEqualSplitTransfer}
+        <span class="stat-label">{t("month.equalSplitTransfer")}</span>
+        <CountUp value={Math.abs(totals.equalSplitTransfer)} class="stat-value" />
+        <span class="stat-sub">
+          {transferDirection}
+          · {t("month.eachHolds", { amount: formatCurrency(totals.equalSplitAmount) })}
+        </span>
+      {:else}
+        <span class="stat-label">{t("dashboard.maxPlannedPerPerson")}</span>
+        <CountUp value={totals.equalSplitAmount} class="stat-value" />
+        <span class="stat-sub">{t("dashboard.afterFixedSplit")}</span>
+      {/if}
     </div>
   </div>
 
