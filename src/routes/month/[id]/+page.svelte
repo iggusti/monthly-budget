@@ -1518,13 +1518,15 @@
   .section-nav-icon { width: 1.35rem; height: 1.35rem; transition: transform var(--dur-base) var(--ease-spring); }
   .section-nav-fab:hover .section-nav-icon { transform: rotate(90deg); }
 
-  /* Month-to-month navigation bar at the bottom of the month page. */
+  /* Month-to-month navigation bar at the bottom of the month page.
+     Spacing below is left to `.main-content` so the gap to the footer matches
+     the other pages instead of stacking a second margin. */
   .month-nav {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin: 2rem 0;
+    margin: 2rem 0 0;
     padding: 0.75rem 1rem;
     border-top: 1px solid var(--surface-border);
   }
