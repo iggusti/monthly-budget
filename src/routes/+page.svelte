@@ -246,6 +246,9 @@
 <Seo title={t("dashboard.pageTitle")} description={t("seo.dashboardDescription")} path="/" />
 
 <div class="page">
+  {#if loading}
+    <span class="sr-only" role="status">{t("common.loading")}</span>
+  {/if}
   <div in:fade={{ duration: 500 }} class="hero">
     <p class="hero-eyebrow animate-rise">{t("dashboard.heroEyebrow")}</p>
     <h1 class="hero-title animate-rise" style="--anim-delay: 0.08s">{t("dashboard.heroTitleLine1")}<br />{t("dashboard.heroTitleLine2")}</h1>
@@ -261,7 +264,7 @@
         <Skeleton width="90px" height="0.9rem" />
         <Skeleton width="120px" height="0.78rem" />
       </div>
-      {#each Array(6) as _}
+      {#each Array(8) as _}
         <div class="overview-item">
           <Skeleton width="60%" height="0.68rem" />
           <Skeleton width="80%" height="1.35rem" />
@@ -330,6 +333,11 @@
         onClear={() => (searchQuery = "")}
         placeholderKey="dashboard.searchPlaceholder"
       />
+    </div>
+  {:else}
+    <!-- Search skeleton keeps the grid from jumping when the real bar appears. -->
+    <div class="search-row" aria-hidden="true">
+      <Skeleton width="100%" height="3.5rem" radius="var(--radius-md)" style="max-width:420px;" />
     </div>
   {/if}
 

@@ -35,24 +35,35 @@
 
 <style>
   .skeleton {
+    position: relative;
     display: block;
     flex-shrink: 0;
+    overflow: hidden;
+    background: var(--bg-muted);
+  }
+
+  /* A single soft highlight sweeps across the block. Doing this on a pseudo
+     element (instead of sliding a 200%-wide gradient) keeps the shimmer calm
+     and clips cleanly inside rounded/circular skeletons. */
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     background: linear-gradient(
       90deg,
-      var(--bg-muted) 0%,
-      color-mix(in srgb, var(--bg-muted) 55%, var(--surface)) 50%,
-      var(--bg-muted) 100%
+      transparent 0%,
+      color-mix(in srgb, var(--text-primary) 5%, transparent) 50%,
+      transparent 100%
     );
-    background-size: 200% 100%;
-    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    transform: translateX(-100%);
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
   }
 
   @keyframes skeleton-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    100% { transform: translateX(100%); }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .skeleton { animation: none; }
+    .skeleton::after { animation: none; opacity: 0; }
   }
 </style>

@@ -413,7 +413,7 @@
           onQueryChange={(q: string) => (searchQuery = q)}
           onClear={() => (searchQuery = "")}
         />
-        <span class="save-state" class:saving>
+        <span class="save-state" class:saving aria-live="polite">
           {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{/if}
         </span>
       </div>
@@ -421,7 +421,8 @@
     <div class="header-meta">
       {#if loading}
         <Skeleton width="220px" height="1.7rem" />
-        <Skeleton width="160px" height="0.85rem" />
+        <Skeleton width="160px" height="0.85rem" style="margin-top:0.35rem;" />
+        <Skeleton width="118px" height="2rem" radius="var(--radius-sm)" style="margin-top:0.75rem;" />
       {:else}
         <h1 class="page-title">{budget.title}</h1>
         <p class="page-subtitle">{budget.period}</p>
@@ -449,8 +450,10 @@
 
     <!-- Chart skeleton -->
     <div class="chart-section" aria-hidden="true">
-      <Skeleton width="200px" height="0.9rem" />
-      <div class="charts-grid" style="margin-top:1.1rem">
+      <div class="chart-header">
+        <Skeleton width="200px" height="0.9rem" />
+      </div>
+      <div class="charts-grid">
         <!-- Mirror the two real charts: 3 income bars, 5 expense bars. -->
         {#each [{ bars: 3, h: [95, 60, 40] }, { bars: 5, h: [90, 72, 55, 38, 24] }] as chart}
           <div class="bar-chart">
@@ -484,18 +487,28 @@
           </div>
         {/each}
       </div>
+      <!-- Takeaway note under the charts. -->
+      <div class="chart-note">
+        <Skeleton circle size={18} />
+        <div class="chart-note-body" style="flex:1;">
+          <Skeleton width="100%" height="0.78rem" />
+          <Skeleton width="82%" height="0.78rem" />
+        </div>
+      </div>
     </div>
 
     <!-- Sections skeleton (mirrors the 8 real expense sections) -->
     <div class="sections" aria-hidden="true">
-      {#each Array(8) as _}
+      <!-- Income sections hold one row; fixed sections are the longest. -->
+      {#each [1, 1, 4, 4, 3, 3, 2, 2] as rowCount}
         <div class="section-skeleton">
           <div class="section-skeleton-head">
             <Skeleton circle size={28} />
             <Skeleton width="55%" height="0.88rem" style="flex:1;" />
             <Skeleton width="76px" height="0.9rem" />
+            <Skeleton width="28px" height="28px" radius="var(--radius-sm)" />
           </div>
-          {#each Array(3) as _}
+          {#each Array(rowCount) as _}
             <div class="section-skeleton-row">
               <Skeleton width="48%" height="0.86rem" />
               <Skeleton width="68px" height="0.86rem" />
