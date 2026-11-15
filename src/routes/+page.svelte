@@ -158,6 +158,12 @@
 
   // Total expenses = fixed + daily from salary + daily from savings.
   const currentTotalExpense = $derived(currentFixedExpense + currentSalary + currentSavings);
+  const currentTotalExpenseHusband = $derived(
+    currentFixedHusband + currentSalaryHusband + currentSavingsHusband
+  );
+  const currentTotalExpenseWife = $derived(
+    currentFixedWife + currentSalaryWife + currentSavingsWife
+  );
 
   const locale = $derived(lang.value === "id" ? "id-ID" : "en-US");
 
@@ -255,6 +261,16 @@
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalExpense")}</span>
         <CountUp value={currentTotalExpense} class="overview-value expense" />
+        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">{t("dashboard.totalExpenseHusband")}</span>
+        <CountUp value={currentTotalExpenseHusband} class="overview-value blue" />
+        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
+      </div>
+      <div class="overview-item">
+        <span class="overview-label">{t("dashboard.totalExpenseWife")}</span>
+        <CountUp value={currentTotalExpenseWife} class="overview-value rose" />
         <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
       </div>
       <div class="overview-item">
