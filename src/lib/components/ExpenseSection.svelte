@@ -192,6 +192,11 @@
   } from "#lib/types";
   import { t, lang } from "#lib/i18n.svelte";
   import {
+    allExpensesChecked,
+    showsViewMoreToggle,
+    visibleExpenseItems
+  } from "#lib/expense-list";
+  import {
     channelsFor,
     isMethodBase,
     joinMethod,
@@ -484,18 +489,43 @@
     checkboxable ? [...items].sort((a, b) => Number(a.checked ?? false) - Number(b.checked ?? false)) : items
   );
 
+  // Every fixed expense is paid: fold the whole list away until the user
+  // expands it again with "View more". Skipped while searching, so matching
+  // rows stay visible.
+  const allChecked = $derived(
+    highlightedQuery.trim() === "" && allExpensesChecked(items, checkboxable)
+  );
+
   function computeVisible(): ExpenseItem[] {
-    if (!collapsible || showAll) return orderedItems;
-    const unchecked = orderedItems.filter((i) => !i.checked);
-    const checked = orderedItems.filter((i) => i.checked);
-    if (unchecked.length >= collapseLimit) return unchecked.slice(-collapseLimit);
-    return [...unchecked, ...checked.slice(-(collapseLimit - unchecked.length))];
+    return visibleExpenseItems(orderedItems, {
+      collapsible,
+      showAll,
+      collapseLimit,
+      allChecked
+    });
   }
 
   const visibleItems = $derived(computeVisible());
-  // Show the toggle whenever there is more to reveal OR everything is visible
-  // (so the user can collapse back to "View less").
-  const hasMore = $derived(collapsible && items.length > collapseLimit);
+  // Show the toggle whenever there is more to reveal, everything is paid (so the
+  // folded list can be reopened), or everything is visible (so the user can
+  // collapse back to "View less").
+  const hasMore = $derived(
+    showsViewMoreToggle({
+      collapsible,
+      showAll,
+      itemCount: items.length,
+      collapseLimit,
+      allChecked
+    })
+  );
+
+  // Fold the list as soon as the last item gets checked, even when it was
+  // expanded at that moment. "View more" still reopens it afterwards.
+  let wasAllChecked = false;
+  $effect(() => {
+    if (allChecked && !wasAllChecked) showAll = false;
+    wasAllChecked = allChecked;
+  });
   const hiddenCount = $derived(showAll ? 0 : Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
