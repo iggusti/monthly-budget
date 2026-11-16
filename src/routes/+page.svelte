@@ -18,7 +18,7 @@
     type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { allMonthsTo, currentPeriodId, monthLabel, previousMonthId } from "#lib/period";
+  import { allMonthsTo, currentPeriodId, latestPeriodId, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -74,11 +74,14 @@
     };
   });
 
-  // The current period is the one containing today, based on the 25th cycle.
+  // The active period contains today (25th cycle). The dashboard lists one
+  // period further ahead from the 21st, so the upcoming card can be prepared
+  // early without moving the cycle itself.
   const currentMonthId = $derived(currentPeriodId());
-  // All months from the earliest budget year (or this year) through the current
-  // period, newest first.
-  const orderedMonths = $derived(allMonthsTo(currentMonthId, thisYear).reverse());
+  const latestMonthId = $derived(latestPeriodId());
+  // All months from the earliest budget year (or this year) through the newest
+  // listed period, newest first.
+  const orderedMonths = $derived(allMonthsTo(latestMonthId, thisYear).reverse());
 
   // The month grid is responsive, so the first page fills complete rows instead
   // of always showing 8 cards (which meant 8 tall rows on a phone).

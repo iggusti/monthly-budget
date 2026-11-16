@@ -66,6 +66,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Period dates are editable: `periodStart` / `periodEnd` hold `YYYY-MM-DD`. The
   readable `period` label is derived from them with `formatPeriod()` in
   `types.ts` — never hand-write the label when those dates change.
+- Periods roll on the 25th → 24th cycle (`currentPeriodId` in `period.ts`), but
+  the dashboard lists one period ahead from the 21st (`latestPeriodId`,
+  `PERIOD_CARD_DAY`) so the upcoming card appears early. Between the 21st and the
+  24th the new card is listed yet not yet active.
 - Daily items also carry an optional `date` (`YYYY-MM-DD`, local calendar day;
   use the `todayISO()` / `parseISODate()` / `daysBetween()` helpers, not raw
   `Date` math). Documents created before the field existed have none.

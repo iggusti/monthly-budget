@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allMonthsTo, currentPeriodId, monthLabel, previousMonthId } from "./period";
+import { allMonthsTo, currentPeriodId, latestPeriodId, monthLabel, previousMonthId } from "./period";
 
 describe("currentPeriodId", () => {
   it("is already in this month's period on the 25th", () => {
@@ -17,6 +17,32 @@ describe("currentPeriodId", () => {
 
   it("uses today when no date is given", () => {
     expect(currentPeriodId()).toMatch(/^\d{4}-\d{2}$/);
+  });
+});
+
+describe("latestPeriodId", () => {
+  it("lists the upcoming period from the 21st", () => {
+    expect(latestPeriodId(new Date(2026, 9, 21))).toBe("2026-10");
+    expect(latestPeriodId(new Date(2026, 9, 24))).toBe("2026-10");
+  });
+
+  it("is still in the previous period on the 20th", () => {
+    expect(latestPeriodId(new Date(2026, 9, 20))).toBe("2026-09");
+  });
+
+  it("stays one period ahead of the active period between the 21st and 24th", () => {
+    const day = new Date(2026, 9, 22);
+    expect(latestPeriodId(day)).toBe("2026-10");
+    expect(currentPeriodId(day)).toBe("2026-09");
+  });
+
+  it("rolls the year over in early January", () => {
+    expect(latestPeriodId(new Date(2026, 0, 5))).toBe("2025-12");
+    expect(latestPeriodId(new Date(2026, 0, 21))).toBe("2026-01");
+  });
+
+  it("uses today when no date is given", () => {
+    expect(latestPeriodId()).toMatch(/^\d{4}-\d{2}$/);
   });
 });
 

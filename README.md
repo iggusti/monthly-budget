@@ -66,6 +66,11 @@ header. The stored `periodStart` / `periodEnd` (`YYYY-MM-DD`) feed the readable
 titled "February 2026"). Each period is stored as one Firestore document (id
 `YYYY-MM`) in the `budget` collection.
 
+The dashboard lists a period from the **21st** — four days before it starts on
+the 25th — so the upcoming card can be prepared early. The cycle itself is
+unchanged: a period only becomes the *active* one (badge, overview, month page)
+on the 25th.
+
 ## Features
 
 - **Real-time sync** — edits made on one device (e.g. the husband) appear
