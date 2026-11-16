@@ -59,6 +59,14 @@ export function latestPeriodId(now: Date = new Date()): string {
   return periodIdFromDay(now, PERIOD_CARD_DAY);
 }
 
+/**
+ * True when `id` is the upcoming period: the one the dashboard lists from the
+ * 21st, before it becomes the active period on the 25th.
+ */
+export function isUpcomingPeriod(id: string, now: Date = new Date()): boolean {
+  return id === latestPeriodId(now) && id !== currentPeriodId(now);
+}
+
 /** ID of the calendar month before `id` (`YYYY-MM`). */
 export function previousMonthId(id: string): string {
   const [year, month] = id.split("-").map(Number);

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { allMonthsTo, currentPeriodId, latestPeriodId, monthLabel, previousMonthId } from "./period";
+import {
+  allMonthsTo,
+  currentPeriodId,
+  isUpcomingPeriod,
+  latestPeriodId,
+  monthLabel,
+  previousMonthId
+} from "./period";
 
 describe("currentPeriodId", () => {
   it("is already in this month's period on the 25th", () => {
@@ -43,6 +50,25 @@ describe("latestPeriodId", () => {
 
   it("uses today when no date is given", () => {
     expect(latestPeriodId()).toMatch(/^\d{4}-\d{2}$/);
+  });
+});
+
+describe("isUpcomingPeriod", () => {
+  it("is true for the period listed between the 21st and the 24th", () => {
+    expect(isUpcomingPeriod("2026-10", new Date(2026, 9, 22))).toBe(true);
+    expect(isUpcomingPeriod("2026-09", new Date(2026, 9, 22))).toBe(false);
+  });
+
+  it("is false once the period becomes active on the 25th", () => {
+    expect(isUpcomingPeriod("2026-10", new Date(2026, 9, 25))).toBe(false);
+  });
+
+  it("is false for the active period before the 21st", () => {
+    expect(isUpcomingPeriod("2026-09", new Date(2026, 9, 10))).toBe(false);
+  });
+
+  it("is false for the previous period", () => {
+    expect(isUpcomingPeriod("2026-08", new Date(2026, 9, 22))).toBe(false);
   });
 });
 

@@ -15,7 +15,7 @@
     type ExpenseItem
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { currentPeriodId, monthLabel } from "#lib/period";
+  import { currentPeriodId, isUpcomingPeriod, monthLabel } from "#lib/period";
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -29,6 +29,15 @@
 
   /** Month pages outside the active period require confirmation before edits. */
   const isActiveMonth = $derived(monthId === currentPeriodId());
+  /**
+   * The upcoming period is listed on the dashboard from the 21st but only
+   * becomes active on the 25th. Its fixed expenses are carried over from the
+   * previous period, so they can be prepared early — edited, moved between the
+   * spouses and deleted — without the inactive-month confirmation.
+   */
+  const isUpcomingMonth = $derived(isUpcomingPeriod(monthId));
+  /** Fixed sections skip the confirmation for the upcoming period only. */
+  const confirmFixedChanges = $derived(!isActiveMonth && !isUpcomingMonth);
 
   /** All stored month ids, sorted chronologically (oldest first). */
   let allMonthIds = $state<string[]>([]);
@@ -815,7 +824,7 @@
     {#if !searchActive || matchedSections[2]}
     <ExpenseSection
       sectionId="section-3"
-      confirmChanges={!isActiveMonth}
+      confirmChanges={confirmFixedChanges}
       title={t("month.section3")}
       sectionIndex={2}
       highlightedQuery={searchQuery}
@@ -835,7 +844,7 @@
     {#if !searchActive || matchedSections[3]}
     <ExpenseSection
       sectionId="section-4"
-      confirmChanges={!isActiveMonth}
+      confirmChanges={confirmFixedChanges}
       title={t("month.section4")}
       sectionIndex={3}
       highlightedQuery={searchQuery}

@@ -69,7 +69,11 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Periods roll on the 25th → 24th cycle (`currentPeriodId` in `period.ts`), but
   the dashboard lists one period ahead from the 21st (`latestPeriodId`,
   `PERIOD_CARD_DAY`) so the upcoming card appears early. Between the 21st and the
-  24th the new card is listed yet not yet active.
+  24th the new card is listed yet not yet active (`isUpcomingPeriod`).
+- On the month page, the upcoming period's fixed sections (3–4) skip the
+  inactive-month confirmation (`confirmFixedChanges`) so their carried-over
+  fixed expenses can be edited, moved and deleted before the period starts;
+  every other section still uses `confirmChanges={!isActiveMonth}`.
 - Daily items also carry an optional `date` (`YYYY-MM-DD`, local calendar day;
   use the `todayISO()` / `parseISODate()` / `daysBetween()` helpers, not raw
   `Date` math). Documents created before the field existed have none.

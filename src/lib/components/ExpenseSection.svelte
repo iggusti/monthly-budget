@@ -952,7 +952,7 @@
         {#if confirmChanges}
           <p class="modal-warning">⚠️ {t("expense.inactiveText")}</p>
         {:else}
-          <p class="modal-note">⚠️ Menghapus pengeluaran di bulan aktif ini akan menghapus catatan secara permanen.</p>
+          <p class="modal-note">⚠️ {t("expense.deleteNote")}</p>
         {/if}
         <div class="modal-actions">
           <button class="btn-cancel" onclick={cancelDelete}>{t("expense.cancel")}</button>

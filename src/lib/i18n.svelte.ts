@@ -225,6 +225,7 @@ const en: Dict = {
   "expense.paid": "paid",
   "expense.deleteTitle": "Delete this expense?",
   "expense.deleteText": "{name} ({amount}) will be removed permanently.",
+  "expense.deleteNote": "This permanently removes the record.",
   "expense.thisItem": "This expense",
   "expense.inactiveTitle": "Inactive month",
   "expense.inactiveText":
@@ -437,6 +438,7 @@ const id: Dict = {
   "expense.paid": "terbayar",
   "expense.deleteTitle": "Hapus pengeluaran ini?",
   "expense.deleteText": "{name} ({amount}) akan dihapus permanen.",
+  "expense.deleteNote": "Catatan ini akan dihapus permanen.",
   "expense.thisItem": "Pengeluaran ini",
   "expense.inactiveTitle": "Bulan tidak aktif",
   "expense.inactiveText":
