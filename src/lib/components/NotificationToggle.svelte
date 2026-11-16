@@ -107,7 +107,7 @@
 
   .notify-toast {
     position: absolute; top: calc(100% + 0.55rem); right: 0;
-    z-index: 300;
+    z-index: var(--z-raised);
     width: max-content; max-width: min(260px, 70vw);
     padding: 0.6rem 0.8rem;
     background: var(--surface);

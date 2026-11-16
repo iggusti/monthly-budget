@@ -136,12 +136,21 @@ every push to `main`; that workflow does **not** touch functions or rules.
   only work client-side; direct visits are rewritten to the SPA.
 - `.topbar` uses `backdrop-filter`, which makes it the containing block for
   `position: fixed` descendants — position popovers inside it with `absolute`.
+- **Layering:** every overlapping layer uses the z-index scale in `app.css`
+  (`--z-behind`, `--z-raised`, `--z-sticky`, `--z-overlay`, `--z-modal`,
+  `--z-drag`). Do not add bare `z-index` values; pick the token matching the
+  element's role. Anything with a `transform` (including one left behind by an
+  animation) is a stacking context *and* the containing block for its
+  `position: fixed` descendants, so a modal inside it is trapped.
 - **Animation compatibility:** animate `transform`/`opacity`, not `height` and
   never percentage values inside a flex item (WebKit may resolve those as
   `auto` and silently skip the animation). Spell out both keyframes, and make
-  sure the element still renders correctly if the animation never runs. The
-  bar-chart rise is `scaleY` on `.bar-fill`; `prefers-reduced-motion` turns it
-  off in both `app.css` and the component.
+  sure the element still renders correctly if the animation never runs. Entrance
+  animations use `animation-fill-mode: backwards`, never `both`/`forwards`: a
+  forwards fill keeps the final keyframe's `transform` applied forever, which
+  traps fixed descendants and outranks `:hover` transforms. The bar-chart rise
+  is `scaleY` on `.bar-fill`; `prefers-reduced-motion` turns it off in both
+  `app.css` and the component.
 - Clearing browser storage creates a new anonymous uid; device documents are
   refreshed with the current uid on app start, and dead FCM tokens are pruned
   server-side.

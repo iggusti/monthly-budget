@@ -89,7 +89,7 @@
   .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
 
   .topbar {
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: 0; z-index: var(--z-sticky);
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--surface-border);

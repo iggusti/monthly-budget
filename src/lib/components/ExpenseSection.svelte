@@ -87,7 +87,6 @@
     ghost.style.left = `${dragState.startX}px`;
     ghost.style.top = `${dragState.startY}px`;
     ghost.style.pointerEvents = "none";
-    ghost.style.zIndex = "9999";
     ghost.style.width = `${dragState.sourceRowEl.offsetWidth}px`;
     document.body.appendChild(ghost);
     dragState.ghostEl = ghost;
@@ -1249,7 +1248,7 @@
   .teal .section-footer { --footer-accent: var(--accent-teal); --footer-bg: rgba(91, 138, 138, 0.08); }
 
   .modal-overlay {
-    position: fixed; inset: 0; z-index: 1000;
+    position: fixed; inset: 0; z-index: var(--z-modal);
     display: flex; align-items: center; justify-content: center;
     background: rgba(26, 23, 20, 0.45);
     backdrop-filter: blur(3px);
@@ -1295,6 +1294,7 @@
   :global(body.drag-in-progress *) { cursor: grabbing; }
 
   :global(.drag-ghost) {
+    z-index: var(--z-drag);
     opacity: 0.7; box-shadow: var(--shadow-lg);
     border-radius: var(--radius-md);
     background: var(--surface);

@@ -51,6 +51,19 @@
    * `color-mix()`) so the shimmer also paints on older browsers. */
   --skeleton-base: #eeece8;
   --skeleton-sheen: rgba(255, 255, 255, 0.75);
+
+  /* ── Layering ────────────────────────────────────────────────────────────
+   * One ordered scale for every positioned element that overlaps another.
+   * Pick the token that matches the element's role instead of a magic number,
+   * and keep the gaps so a new layer can be slotted in without renumbering.
+   * Higher number = painted closer to the viewer. Values are compared across
+   * the whole page unless an ancestor creates its own stacking context. */
+  --z-behind: 0;    /* under a positioned sibling (a backdrop behind a menu) */
+  --z-raised: 1;    /* raised above its local siblings inside a stacking context */
+  --z-sticky: 100;  /* the sticky top bar */
+  --z-overlay: 200; /* floating page UI: the mobile section nav + its backdrop */
+  --z-modal: 1000;  /* modal dialogs and their backdrop */
+  --z-drag: 1100;   /* the drag ghost, above everything else */
 }
 
 /* ── Dark theme ─────────────────────────────────────────────────────────────
@@ -158,12 +171,20 @@ input, select, textarea {
   100% { background-position: 200% 0; }
 }
 
-.animate-in { animation: fadeIn 0.5s ease forwards; }
+.animate-in { animation: fadeIn 0.5s ease backwards; }
 
 /* ── Motion utilities ───────────────────────────────────────────────────────
  * Reusable entrance animations. `.animate-rise`/`.animate-pop` animate a single
  * element (with an optional `--anim-delay`), while `.animate-stagger` reveals a
- * container's children one after another. */
+ * container's children one after another.
+ *
+ * Fill mode is `backwards`, never `both`/`forwards`: a forwards fill keeps the
+ * final keyframe applied after the animation ends, and these keyframes end on a
+ * `transform`. A lingering `transform` makes the element its own stacking
+ * context and the containing block for any `position: fixed` descendant (so a
+ * modal opened inside it would be trapped and painted under the top bar), and
+ * it outranks `:hover` transforms. `backwards` still hides the element during
+ * its delay, then hands it back to its normal styles once it has played. */
 
 @keyframes riseIn {
   from { opacity: 0; transform: translateY(14px); }
@@ -195,11 +216,11 @@ input, select, textarea {
 }
 
 /* Element animates in, honouring an optional stagger delay via --anim-delay. */
-.animate-rise { animation: riseIn var(--dur-slow) var(--ease-out) both; animation-delay: var(--anim-delay, 0s); }
-.animate-pop { animation: popIn var(--dur-slow) var(--ease-spring) both; animation-delay: var(--anim-delay, 0s); }
+.animate-rise { animation: riseIn var(--dur-slow) var(--ease-out) backwards; animation-delay: var(--anim-delay, 0s); }
+.animate-pop { animation: popIn var(--dur-slow) var(--ease-spring) backwards; animation-delay: var(--anim-delay, 0s); }
 
 /* A container that reveals its direct children one after another. */
-.animate-stagger > * { animation: riseIn var(--dur-slow) var(--ease-out) both; }
+.animate-stagger > * { animation: riseIn var(--dur-slow) var(--ease-out) backwards; }
 .animate-stagger > :nth-child(1) { animation-delay: 0.02s; }
 .animate-stagger > :nth-child(2) { animation-delay: 0.06s; }
 .animate-stagger > :nth-child(3) { animation-delay: 0.1s; }

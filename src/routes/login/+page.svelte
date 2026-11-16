@@ -136,7 +136,7 @@
   .blob2 { width: 280px; height: 280px; background: #c47070; bottom: -70px; right: -60px; animation-delay: -5s; }
   .blob3 { width: 220px; height: 220px; background: #5b8a8a; bottom: 20%; left: -60px; opacity: 0.35; animation-delay: -9s; }
 
-  .lang-corner { position: absolute; top: 1.25rem; right: 1.25rem; z-index: 2; display: flex; align-items: center; gap: 0.5rem; }
+  .lang-corner { position: absolute; top: 1.25rem; right: 1.25rem; z-index: var(--z-raised); display: flex; align-items: center; gap: 0.5rem; }
 
   /* Keep the decorative blobs from creating horizontal overflow on small screens. */
   @media (max-width: 640px) {

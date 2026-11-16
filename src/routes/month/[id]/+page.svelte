@@ -1421,12 +1421,12 @@
   .clear-filter-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
 
   /* ── Mobile quick section navigation ──────────────────────────────────── */
-  .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: 200; }
+  .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: var(--z-overlay); }
 
   .section-nav-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: var(--z-behind);
     background: rgba(26, 23, 20, 0.22);
     backdrop-filter: blur(2px);
     border: none;
@@ -1439,7 +1439,7 @@
     position: absolute;
     right: 0;
     bottom: calc(100% + 0.75rem);
-    z-index: 2;
+    z-index: var(--z-raised);
     width: min(19rem, calc(100vw - 2rem));
     max-height: min(68vh, 32rem);
     overflow-y: auto;
@@ -1507,7 +1507,7 @@
 
   .section-nav-fab {
     position: relative;
-    z-index: 2;
+    z-index: var(--z-raised);
     display: grid;
     place-items: center;
     width: 3.4rem;
