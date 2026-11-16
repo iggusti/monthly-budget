@@ -1100,11 +1100,11 @@
   </div>
 
   <!-- Month-to-month navigation: left → next month, right → previous month. -->
-  <nav class="month-nav" aria-label="Month navigation">
+  <nav class="month-nav" aria-label={t("month.navAria")}>
     <button
       class="month-nav-btn"
       type="button"
-      aria-label="Next month"
+      aria-label={t("month.nextMonth")}
       disabled={!canGoNext}
       onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
     >
@@ -1124,7 +1124,7 @@
     <button
       class="month-nav-btn"
       type="button"
-      aria-label="Previous month"
+      aria-label={t("month.prevMonth")}
       disabled={!canGoPrevious}
       onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
     >

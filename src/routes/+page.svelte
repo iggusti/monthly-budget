@@ -303,7 +303,7 @@
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalIncome")}</span>
         <CountUp value={currentIncome} class="overview-value income" />
-        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentIncomeHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentIncomeWife)}</span>
+        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentIncomeHusband)} · {t("common.wife")} {formatCurrency(currentIncomeWife)}</span>
       </div>
       <div class="overview-item">
         {#if currentShowTransfer}
@@ -344,17 +344,17 @@
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.totalFixed")}</span>
         <CountUp value={currentFixedExpense} class="overview-value violet" />
-        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentFixedHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentFixedWife)}</span>
+        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentFixedHusband)} · {t("common.wife")} {formatCurrency(currentFixedWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
         <CountUp value={currentSalary} class="overview-value indigo" />
-        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSalaryHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSalaryWife)}</span>
+        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSalaryHusband)} · {t("common.wife")} {formatCurrency(currentSalaryWife)}</span>
       </div>
       <div class="overview-item">
         <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
         <CountUp value={currentSavings} class="overview-value olive" />
-        <span class="overview-sub">{t("common.husband").toLowerCase()} {formatCurrency(currentSavingsHusband)} · {t("common.wife").toLowerCase()} {formatCurrency(currentSavingsWife)}</span>
+        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSavingsHusband)} · {t("common.wife")} {formatCurrency(currentSavingsWife)}</span>
       </div>
     </div>
   {/if}
