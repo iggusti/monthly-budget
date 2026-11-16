@@ -34,7 +34,7 @@
   let showAllMonths = $state(false);
   let searchQuery = $state("");
 
-  // ── "This month" overview: open on the first visit of the day ──────────────
+  // ── Overview summary: open on the first visit of the day ───────────────────
   const LAST_OPEN_KEY = "fhb-last-open";
 
   /** Open the summary on the first visit today, folded on every later visit. */
@@ -322,7 +322,7 @@
   {:else if budgets.length}
     <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
       <div class="overview-head">
-        <span class="overview-head-title">{t("dashboard.thisMonth")}</span>
+        <span class="overview-head-title">{t("dashboard.overviewTitle")}</span>
         <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
         <button
           class="overview-toggle"
