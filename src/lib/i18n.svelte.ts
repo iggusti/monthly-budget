@@ -82,6 +82,8 @@ const en: Dict = {
   "dashboard.heroSub":
     "Track husband and wife income, fixed expenses, daily spending and savings withdrawals — one budget period at a time.",
   "dashboard.thisMonth": "This month",
+  "dashboard.expandOverview": "Expand this month details",
+  "dashboard.collapseOverview": "Collapse this month details",
   "dashboard.totalIncome": "Total income",
   "dashboard.totalFixed": "Total fixed expenses",
   "dashboard.totalExpense": "Total expenses",
@@ -291,6 +293,8 @@ const id: Dict = {
   "dashboard.heroSub":
     "Lacak penghasilan suami dan istri, pengeluaran tetap, belanja harian, dan penarikan tabungan — satu periode anggaran sekaligus.",
   "dashboard.thisMonth": "Bulan ini",
+  "dashboard.expandOverview": "Buka rincian bulan ini",
+  "dashboard.collapseOverview": "Tutup rincian bulan ini",
   "dashboard.totalIncome": "Total penghasilan",
   "dashboard.totalFixed": "Total pengeluaran tetap",
   "dashboard.totalExpense": "Total pengeluaran",

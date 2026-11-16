@@ -12,6 +12,7 @@
     createEmptyBudget,
     formatCurrency,
     makeId,
+    todayISO,
     totalExpenses,
     type MonthBudget,
     type FixedExpense
@@ -33,6 +34,21 @@
   let showAllMonths = $state(false);
   let searchQuery = $state("");
 
+  // ── "This month" overview: open on the first visit of the day ──────────────
+  const LAST_OPEN_KEY = "fhb-last-open";
+
+  /** Open the summary on the first visit today, folded on every later visit. */
+  function initialOverviewExpanded(): boolean {
+    if (typeof localStorage === "undefined") return true;
+    return localStorage.getItem(LAST_OPEN_KEY) !== todayISO();
+  }
+
+  let overviewExpanded = $state(initialOverviewExpanded());
+
+  function toggleOverview() {
+    overviewExpanded = !overviewExpanded;
+  }
+
   const thisYear = new Date().getFullYear();
 
   // Redirect to login when not authenticated.
@@ -41,6 +57,10 @@
       location.href = "/login";
       return;
     }
+
+    // Stamp today so the next visit (still today) starts with the summary
+    // folded; tomorrow it opens again.
+    if (typeof localStorage !== "undefined") localStorage.setItem(LAST_OPEN_KEY, todayISO());
 
     // Live-sync the dashboard: new/edited/deleted months appear immediately
     // without a reload.
@@ -285,76 +305,98 @@
       <div class="overview-head">
         <Skeleton width="90px" height="1rem" />
         <Skeleton width="120px" height="0.88rem" />
+        <Skeleton circle size={28} style="margin-left:auto;" />
       </div>
-      {#each Array(8) as _}
-        <div class="overview-item">
-          <Skeleton width="60%" height="1.05rem" />
-          <Skeleton width="80%" height="1.7rem" />
-          <Skeleton width="70%" height="1.1rem" />
+      <div class="overview-body" class:collapsed={!overviewExpanded}>
+        <div class="overview-body-clip">
+          {#each Array(8) as _}
+            <div class="overview-item">
+              <Skeleton width="60%" height="1.05rem" />
+              <Skeleton width="80%" height="1.7rem" />
+              <Skeleton width="70%" height="1.1rem" />
+            </div>
+          {/each}
         </div>
-      {/each}
+      </div>
     </div>
   {:else if budgets.length}
     <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
       <div class="overview-head">
         <span class="overview-head-title">{t("dashboard.thisMonth")}</span>
         <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
+        <button
+          class="overview-toggle"
+          type="button"
+          aria-expanded={overviewExpanded}
+          aria-controls="overview-details"
+          aria-label={overviewExpanded ? t("dashboard.collapseOverview") : t("dashboard.expandOverview")}
+          title={overviewExpanded ? t("dashboard.collapseOverview") : t("dashboard.expandOverview")}
+          onclick={toggleOverview}
+        >
+          <svg class="overview-chevron" class:open={overviewExpanded} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
       </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalIncome")}</span>
-        <CountUp value={currentIncome} class="overview-value income" />
-        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentIncomeHusband)} · {t("common.wife")} {formatCurrency(currentIncomeWife)}</span>
-      </div>
-      <div class="overview-item">
-        {#if currentShowTransfer}
-          <span class="overview-label">{t("month.equalSplitTransfer")}</span>
-          <CountUp value={currentTransferAmount} class="overview-value expense" />
-          <span class="overview-sub">
-            {currentTransferDirection} · {t("month.eachHolds", { amount: formatCurrency(currentPerPerson) })}
-          </span>
-        {:else}
-          <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
-          <CountUp value={currentPerPerson} class="overview-value teal" />
-          <span class="overview-sub">
-            {#if currentTransferAmount > 0}
-              {t("month.splitTransferNote")}
-              <strong class="split-amount">{formatCurrency(currentTransferAmount)}</strong>
-              · {currentTransferDirection}
+      <div class="overview-body" class:collapsed={!overviewExpanded} id="overview-details" inert={!overviewExpanded}>
+        <div class="overview-body-clip">
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.totalIncome")}</span>
+            <CountUp value={currentIncome} class="overview-value income" />
+            <span class="overview-sub">{t("common.husband")} {formatCurrency(currentIncomeHusband)} · {t("common.wife")} {formatCurrency(currentIncomeWife)}</span>
+          </div>
+          <div class="overview-item">
+            {#if currentShowTransfer}
+              <span class="overview-label">{t("month.equalSplitTransfer")}</span>
+              <CountUp value={currentTransferAmount} class="overview-value expense" />
+              <span class="overview-sub">
+                {currentTransferDirection} · {t("month.eachHolds", { amount: formatCurrency(currentPerPerson) })}
+              </span>
             {:else}
-              {t("month.splitTransferNone")}
+              <span class="overview-label">{t("dashboard.maxPlannedPerPerson")}</span>
+              <CountUp value={currentPerPerson} class="overview-value teal" />
+              <span class="overview-sub">
+                {#if currentTransferAmount > 0}
+                  {t("month.splitTransferNote")}
+                  <strong class="split-amount">{formatCurrency(currentTransferAmount)}</strong>
+                  · {currentTransferDirection}
+                {:else}
+                  {t("month.splitTransferNone")}
+                {/if}
+              </span>
             {/if}
-          </span>
-        {/if}
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalExpense")}</span>
-        <CountUp value={currentTotalExpense} class="overview-value expense" />
-        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalExpenseHusband")}</span>
-        <CountUp value={currentTotalExpenseHusband} class="overview-value blue" />
-        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalExpenseWife")}</span>
-        <CountUp value={currentTotalExpenseWife} class="overview-value rose" />
-        <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.totalFixed")}</span>
-        <CountUp value={currentFixedExpense} class="overview-value violet" />
-        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentFixedHusband)} · {t("common.wife")} {formatCurrency(currentFixedWife)}</span>
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
-        <CountUp value={currentSalary} class="overview-value indigo" />
-        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSalaryHusband)} · {t("common.wife")} {formatCurrency(currentSalaryWife)}</span>
-      </div>
-      <div class="overview-item">
-        <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
-        <CountUp value={currentSavings} class="overview-value olive" />
-        <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSavingsHusband)} · {t("common.wife")} {formatCurrency(currentSavingsWife)}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.totalExpense")}</span>
+            <CountUp value={currentTotalExpense} class="overview-value expense" />
+            <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.totalExpenseHusband")}</span>
+            <CountUp value={currentTotalExpenseHusband} class="overview-value blue" />
+            <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.totalExpenseWife")}</span>
+            <CountUp value={currentTotalExpenseWife} class="overview-value rose" />
+            <span class="overview-sub">{t("dashboard.expenseBreakdown")}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.totalFixed")}</span>
+            <CountUp value={currentFixedExpense} class="overview-value violet" />
+            <span class="overview-sub">{t("common.husband")} {formatCurrency(currentFixedHusband)} · {t("common.wife")} {formatCurrency(currentFixedWife)}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.dailyFromSalary")}</span>
+            <CountUp value={currentSalary} class="overview-value indigo" />
+            <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSalaryHusband)} · {t("common.wife")} {formatCurrency(currentSalaryWife)}</span>
+          </div>
+          <div class="overview-item">
+            <span class="overview-label">{t("dashboard.dailyFromSavings")}</span>
+            <CountUp value={currentSavings} class="overview-value olive" />
+            <span class="overview-sub">{t("common.husband")} {formatCurrency(currentSavingsHusband)} · {t("common.wife")} {formatCurrency(currentSavingsWife)}</span>
+          </div>
+        </div>
       </div>
     </div>
   {/if}
@@ -545,13 +587,35 @@
   .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
   .overview {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
     background: var(--surface); border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);
   }
-  .overview-head { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
+  .overview-head { display: flex; align-items: center; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
   .overview-head-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
   .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
+  /* Fold the eight summary values: open on the first visit of the day, closed
+     on later visits (see `initialOverviewExpanded`). */
+  .overview-toggle {
+    margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
+    width: 1.9rem; height: 1.9rem; flex-shrink: 0; padding: 0;
+    border: 1px solid var(--surface-border); border-radius: 50%; background: transparent;
+    color: var(--text-secondary); cursor: pointer;
+    transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
+  }
+  .overview-toggle:hover { background: var(--bg-muted); color: var(--text-primary); }
+  .overview-toggle:focus-visible { outline: 2px solid var(--accent-teal); outline-offset: 2px; }
+  /* Chevron points down when open and right when folded. */
+  .overview-chevron { width: 1.05rem; height: 1.05rem; transition: transform 0.28s var(--ease-out); }
+  .overview-chevron:not(.open) { transform: rotate(-90deg); }
+  /* Collapse the row height instead of animating `height` itself; the clip
+     child keeps the overflow hidden so it shrinks in one smooth motion. */
+  .overview-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.34s var(--ease-out), opacity 0.34s var(--ease-out); }
+  .overview-body.collapsed { grid-template-rows: 0fr; opacity: 0; }
+  .overview-body-clip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding-top: 1rem;
+    overflow: hidden; transition: padding-top 0.34s var(--ease-out);
+  }
+  .overview-body.collapsed .overview-body-clip { padding-top: 0; }
   .overview-item { display: flex; flex-direction: column; gap: 0.25rem; }
   .overview-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
   .overview-sub { font-size: 0.7rem; color: var(--text-tertiary); }
@@ -684,12 +748,16 @@
   .info-dot.gold { background: var(--accent-gold); }
 
   @media (max-width: 1000px) {
-    .overview { grid-template-columns: repeat(2, 1fr); }
+    .overview-body-clip { grid-template-columns: repeat(2, 1fr); }
   }
 
   @media (max-width: 640px) {
-    .overview { grid-template-columns: 1fr; }
+    .overview-body-clip { grid-template-columns: 1fr; }
     .months-grid { grid-template-columns: 1fr; }
     .hero { padding: 2rem 0 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .overview-body, .overview-body-clip, .overview-chevron { transition: none; }
   }
 </style>
