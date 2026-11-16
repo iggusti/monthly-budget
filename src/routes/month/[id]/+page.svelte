@@ -464,7 +464,7 @@
     <!-- Summary skeleton: same card tones (4th is the tinted split card) and
          line heights as the real stats, so nothing jumps when data lands. -->
     <div class="summary-row" aria-hidden="true">
-      {#each ["income", "expense", "savings", "split"] as tone}
+      {#each ["income", "split", "expense", "savings"] as tone}
         <div class="stat-card {tone}">
           <Skeleton width="65%" height="1.1rem" style="margin-bottom:0.5rem;" />
           <Skeleton width="85%" height="1.7rem" style="margin-bottom:0.4rem;" />
@@ -614,20 +614,6 @@
         {t("common.husband")} {formatCurrency(budget.husbandIncome)} · {t("common.wife")} {formatCurrency(budget.wifeIncome)}
       </span>
     </div>
-    <div class="stat-card expense">
-      <span class="stat-label">{t("month.totalExpense")}</span>
-      <CountUp value={totalExpense} class="stat-value" />
-      <span class="stat-sub">
-        {t("common.husband")} {formatCurrency(husbandTotalExpense)} · {t("common.wife")} {formatCurrency(wifeTotalExpense)}
-      </span>
-    </div>
-    <div class="stat-card savings">
-      <span class="stat-label">{t("month.totalDailyFromSavings")}</span>
-      <CountUp value={dailyFromSavingsTotal} class="stat-value" />
-      <span class="stat-sub">
-        {t("common.husband")} {formatCurrency(totals.husbandDailyFromSavingsTotal)} · {t("common.wife")} {formatCurrency(totals.wifeDailyFromSavingsTotal)}
-      </span>
-    </div>
     <div class="stat-card split" class:negative={showEqualSplitTransfer && totals.equalSplitTransfer < 0}>
       {#if showEqualSplitTransfer}
         <span class="stat-label">{t("month.equalSplitTransfer")}</span>
@@ -649,6 +635,20 @@
           {/if}
         </span>
       {/if}
+    </div>
+    <div class="stat-card expense">
+      <span class="stat-label">{t("month.totalExpense")}</span>
+      <CountUp value={totalExpense} class="stat-value" />
+      <span class="stat-sub">
+        {t("common.husband")} {formatCurrency(husbandTotalExpense)} · {t("common.wife")} {formatCurrency(wifeTotalExpense)}
+      </span>
+    </div>
+    <div class="stat-card savings">
+      <span class="stat-label">{t("month.totalDailyFromSavings")}</span>
+      <CountUp value={dailyFromSavingsTotal} class="stat-value" />
+      <span class="stat-sub">
+        {t("common.husband")} {formatCurrency(totals.husbandDailyFromSavingsTotal)} · {t("common.wife")} {formatCurrency(totals.wifeDailyFromSavingsTotal)}
+      </span>
     </div>
   </div>
 
