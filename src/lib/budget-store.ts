@@ -25,6 +25,25 @@ export async function fetchBudget(id: string): Promise<MonthBudget> {
   return normalizeBudget(id, undefined);
 }
 
+/**
+ * Whether a budget document exists for `id`.
+ *
+ * Used to gate the month page: a past period that was never created has no
+ * page. Waits for the anonymous session to be restored first so the read is
+ * not rejected before auth is ready. On any error it reports `true` (fail
+ * open) rather than hiding a page that may well hold data.
+ */
+export async function budgetExists(id: string): Promise<boolean> {
+  try {
+    await auth.authStateReady();
+    const snapshot = await getDoc(doc(db, BUDGET_COLLECTION, id));
+    return snapshot.exists();
+  } catch (error) {
+    console.error(`Failed to check budget ${id}:`, error);
+    return true;
+  }
+}
+
 /** Fetch every stored budget, newest first. */
 export async function fetchAllBudgets(): Promise<MonthBudget[]> {
   try {

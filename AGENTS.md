@@ -70,6 +70,11 @@ every push to `main`; that workflow does **not** touch functions or rules.
   the dashboard lists one period ahead from the 21st (`latestPeriodId`,
   `PERIOD_CARD_DAY`) so the upcoming card appears early. Between the 21st and the
   24th the new card is listed yet not yet active (`isUpcomingPeriod`).
+- **The month page only opens real periods.** `month/[id]/+page.ts` gates the
+  route: a malformed id, a future period (`isFuturePeriodId`) or a past period
+  with no stored budget (`isPastPeriodId` + `budgetExists`) throws a 404 and
+  renders `+error.svelte`. The current and upcoming periods stay reachable before
+  they exist because their dashboard card creates the budget first.
 - On the month page, the upcoming period's fixed sections (3–4) skip the
   inactive-month confirmation (`confirmFixedChanges`) so their carried-over
   fixed expenses can be edited, moved and deleted before the period starts;

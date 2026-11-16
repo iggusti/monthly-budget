@@ -67,6 +67,25 @@ export function isUpcomingPeriod(id: string, now: Date = new Date()): boolean {
   return id === latestPeriodId(now) && id !== currentPeriodId(now);
 }
 
+/**
+ * True when `id` is a future period the dashboard has not listed yet —
+ * `latestPeriodId` is the newest one on the board. The month page rejects
+ * hand-typed ids like this so a guessed URL cannot open a blank budget.
+ */
+export function isFuturePeriodId(id: string, now: Date = new Date()): boolean {
+  return id > latestPeriodId(now);
+}
+
+/**
+ * True when `id`'s cycle has already ended (it is older than the active
+ * period). Such a period has a page only when it was actually created: the
+ * dashboard's empty "new" card points at the active/upcoming period, so a past
+ * month is either stored data or not a page at all.
+ */
+export function isPastPeriodId(id: string, now: Date = new Date()): boolean {
+  return id < currentPeriodId(now);
+}
+
 /** ID of the calendar month before `id` (`YYYY-MM`). */
 export function previousMonthId(id: string): string {
   const [year, month] = id.split("-").map(Number);
@@ -88,4 +107,13 @@ export function allMonthsTo(end: string, thisYear: number): string[] {
     }
   }
   return result;
+}
+
+/**
+ * Every period id the dashboard lists for `now`, oldest first: the months of
+ * the earliest relevant year through `latestPeriodId`. The dashboard renders
+ * exactly this set, so it lives here to keep both in step.
+ */
+export function listedPeriodIds(now: Date = new Date()): string[] {
+  return allMonthsTo(latestPeriodId(now), now.getFullYear());
 }

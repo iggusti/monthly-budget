@@ -18,7 +18,7 @@
     type FixedExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { allMonthsTo, currentPeriodId, latestPeriodId, monthLabel, previousMonthId } from "#lib/period";
+  import { currentPeriodId, listedPeriodIds, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -49,8 +49,6 @@
     overviewExpanded = !overviewExpanded;
   }
 
-  const thisYear = new Date().getFullYear();
-
   // Redirect to login when not authenticated.
   onMount(() => {
     if (!isAuthenticated()) {
@@ -78,10 +76,9 @@
   // period further ahead from the 21st, so the upcoming card can be prepared
   // early without moving the cycle itself.
   const currentMonthId = $derived(currentPeriodId());
-  const latestMonthId = $derived(latestPeriodId());
   // All months from the earliest budget year (or this year) through the newest
-  // listed period, newest first.
-  const orderedMonths = $derived(allMonthsTo(latestMonthId, thisYear).reverse());
+  // listed period, newest first. Shared with the month page's URL gate.
+  const orderedMonths = $derived(listedPeriodIds().reverse());
 
   // The month grid is responsive, so the first page fills complete rows instead
   // of always showing 8 cards (which meant 8 tall rows on a phone).

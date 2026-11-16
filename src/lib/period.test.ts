@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   allMonthsTo,
   currentPeriodId,
+  isFuturePeriodId,
+  isPastPeriodId,
   isUpcomingPeriod,
   latestPeriodId,
+  listedPeriodIds,
   monthLabel,
   previousMonthId
 } from "./period";
@@ -69,6 +72,55 @@ describe("isUpcomingPeriod", () => {
 
   it("is false for the previous period", () => {
     expect(isUpcomingPeriod("2026-08", new Date(2026, 9, 22))).toBe(false);
+  });
+});
+
+describe("isFuturePeriodId", () => {
+  it("is true for a period past the newest listed one", () => {
+    // On 16 Nov 2026 the newest listed period is 2026-10.
+    const day = new Date(2026, 10, 16);
+    expect(isFuturePeriodId("2026-11", day)).toBe(true);
+    expect(isFuturePeriodId("2027-01", day)).toBe(true);
+  });
+
+  it("is false for the active and older listed periods", () => {
+    const day = new Date(2026, 10, 16);
+    expect(isFuturePeriodId("2026-10", day)).toBe(false);
+    expect(isFuturePeriodId("2026-05", day)).toBe(false);
+  });
+
+  it("allows the upcoming period once the dashboard lists it on the 21st", () => {
+    expect(isFuturePeriodId("2026-10", new Date(2026, 9, 22))).toBe(false);
+  });
+});
+
+describe("isPastPeriodId", () => {
+  it("is true for a period older than the active one", () => {
+    const day = new Date(2026, 10, 16);
+    expect(isPastPeriodId("2026-09", day)).toBe(true);
+    expect(isPastPeriodId("2025-12", day)).toBe(true);
+  });
+
+  it("is false for the active and upcoming periods", () => {
+    const day = new Date(2026, 10, 16);
+    expect(isPastPeriodId("2026-10", day)).toBe(false);
+    expect(isPastPeriodId("2026-11", day)).toBe(false);
+  });
+});
+
+describe("listedPeriodIds", () => {
+  it("lists the current year's months up to the newest listed period", () => {
+    const ids = listedPeriodIds(new Date(2026, 10, 16));
+    expect(ids).toHaveLength(10);
+    expect(ids[0]).toBe("2026-01");
+    expect(ids[9]).toBe("2026-10");
+  });
+
+  it("covers the previous year while the cycle is still in December", () => {
+    const ids = listedPeriodIds(new Date(2026, 0, 5));
+    expect(ids).toHaveLength(12);
+    expect(ids[0]).toBe("2025-01");
+    expect(ids[11]).toBe("2025-12");
   });
 });
 

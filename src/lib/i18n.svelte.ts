@@ -74,6 +74,14 @@ const en: Dict = {
   "seo.monthDescription":
     "Edit one budget period: income, fixed expenses, daily spending from salary and savings, plus the money-flow overview.",
 
+  // ── Errors ────────────────────────────────────────────────────────────────
+  "error.title": "Something went wrong",
+  "error.text": "This page could not be loaded. Please try again.",
+  "error.notFoundTitle": "Page not found",
+  "error.notFoundText":
+    "This budget period does not exist. It may be a future month, or a past month that was never created.",
+  "error.backHome": "Back to dashboard",
+
   // ── Dashboard ─────────────────────────────────────────────────────────────
   "dashboard.pageTitle": "Monthly Budget Nia Ilham",
   "dashboard.heroEyebrow": "Family finance tracker",
@@ -285,6 +293,14 @@ const id: Dict = {
     "Masuk ke perencana anggaran keluarga untuk melacak penghasilan, pengeluaran tetap, belanja harian, dan tabungan bersama.",
   "seo.monthDescription":
     "Ubah satu periode anggaran: penghasilan, pengeluaran tetap, belanja harian dari gaji dan tabungan, beserta ringkasan alur uang.",
+
+  // ── Errors ────────────────────────────────────────────────────────────────
+  "error.title": "Terjadi kesalahan",
+  "error.text": "Halaman ini tidak dapat dimuat. Coba lagi.",
+  "error.notFoundTitle": "Halaman tidak ditemukan",
+  "error.notFoundText":
+    "Periode anggaran ini tidak ada. Mungkin bulan yang belum datang, atau bulan lampau yang belum pernah dibuat.",
+  "error.backHome": "Kembali ke beranda",
 
   // ── Dashboard ─────────────────────────────────────────────────────────────
   "dashboard.pageTitle": "Anggaran Bulanan Nia Ilham",
