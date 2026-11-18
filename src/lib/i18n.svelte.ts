@@ -55,6 +55,13 @@ const en: Dict = {
   "notify.disabled": "Notifications turned off for this device.",
   "footer.tagline": "Monthly Budget Nia Ilham · Stay balanced, save together",
 
+  // ── Toasts ────────────────────────────────────────────────────────────────
+  "toast.added": "Entry added",
+  "toast.updated": "Entry updated",
+  "toast.deleted": "Entry deleted",
+  "toast.saveFailed": "Couldn't save. Please try again.",
+  "toast.dismiss": "Dismiss",
+
   // ── Login ─────────────────────────────────────────────────────────────────
   "login.title": "Monthly Budget Nia Ilham",
   "login.subtitle": "Plan together, save beautifully.",
@@ -274,6 +281,13 @@ const id: Dict = {
   "notify.disabled": "Notifikasi dimatikan untuk perangkat ini.",
   "footer.tagline":
     "Anggaran Bulanan Nia Ilham · Tetap seimbang, menabung bersama",
+
+  // ── Toasts ────────────────────────────────────────────────────────────────
+  "toast.added": "Entri ditambahkan",
+  "toast.updated": "Entri diperbarui",
+  "toast.deleted": "Entri dihapus",
+  "toast.saveFailed": "Gagal menyimpan. Coba lagi.",
+  "toast.dismiss": "Tutup",
 
   // ── Login ─────────────────────────────────────────────────────────────────
   "login.title": "Anggaran Bulanan Nia Ilham",

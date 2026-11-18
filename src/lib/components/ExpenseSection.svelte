@@ -202,6 +202,7 @@
     parseMethod
   } from "#lib/expense-methods";
   import BadgeIcon from "./BadgeIcon.svelte";
+  import { toastError, toastSuccess } from "#lib/toast.svelte";
 
   interface Props {
     /** Section title, e.g. "Husband Fixed Expenses". */
@@ -248,8 +249,13 @@
       /** Optional toggle shown on the plan row (e.g. "transfer received"). */
       toggle?: { checked: boolean; label: string; hint?: string; onChange: (checked: boolean) => void };
     };
-    /** Called with the updated list whenever the user changes anything. */
-    onChange: (items: ExpenseItem[]) => void;
+    /**
+     * Called with the updated list whenever the user changes anything.
+     *
+     * May return the write's promise; the editor reports add/edit/delete with
+     * a toast once it settles (`false` means the save failed).
+     */
+    onChange: (items: ExpenseItem[]) => unknown;
     /** Unique key identifying this section's budget array (used for drag & drop). */
     sectionKey?: string;
     /** Drag group name — items can only be dropped into sections with the same group. */
@@ -661,6 +667,45 @@
     return stopKeyboardWatch;
   });
 
+  // ── Change reporting ──────────────────────────────────────────────────────
+  /** Toast key for each kind of change the editor makes. */
+  const TOAST_KEY: Record<"add" | "edit" | "delete", string> = {
+    add: "toast.added",
+    edit: "toast.updated",
+    delete: "toast.deleted"
+  };
+
+  /**
+   * Push a change to the parent and confirm it with a toast.
+   *
+   * The editor closes straight away; the parent's `onChange` may return the
+   * write's promise, and a `false` result (or a rejection) reports a failure
+   * instead. Checkbox toggles call `onChange` directly — they are not changes
+   * worth announcing.
+   */
+  function applyChange(nextItems: ExpenseItem[], action: "add" | "edit" | "delete") {
+    let result: unknown;
+    try {
+      result = onChange(nextItems);
+    } catch (error) {
+      console.error("Failed to update expenses:", error);
+      toastError(t("toast.saveFailed"));
+      return;
+    }
+    void reportChange(result, action);
+  }
+
+  async function reportChange(result: unknown, action: "add" | "edit" | "delete") {
+    try {
+      const saved = await result;
+      if (saved === false) toastError(t("toast.saveFailed"));
+      else toastSuccess(t(TOAST_KEY[action]));
+    } catch (error) {
+      console.error("Failed to update expenses:", error);
+      toastError(t("toast.saveFailed"));
+    }
+  }
+
   function commit() {
     if (!canCommit) return;
     const existingItem = items.find((item) => item.id === draft.id);
@@ -684,7 +729,7 @@
       return;
     }
 
-    onChange(nextItems);
+    applyChange(nextItems, exists ? "edit" : "add");
     adding = false;
     editingId = null;
   }
@@ -692,7 +737,7 @@
   /** Apply the pending add/edit after the user confirms. */
   function confirmPending() {
     if (!pendingChange) return;
-    onChange(pendingChange.items);
+    applyChange(pendingChange.items, pendingChange.action);
     pendingChange = null;
     adding = false;
     editingId = null;
@@ -708,7 +753,7 @@
   }
 
   function remove(id: string) {
-    onChange(items.filter((item) => item.id !== id));
+    applyChange(items.filter((item) => item.id !== id), "delete");
     if (editingId === id) editingId = null;
     confirmDeleteId = null;
   }

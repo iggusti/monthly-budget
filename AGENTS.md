@@ -52,6 +52,11 @@ every push to `main`; that workflow does **not** touch functions or rules.
   replaces (e.g. a `0.9rem` value is ~`1.44rem` tall) so the page does not jump
   when data lands. Shimmer colours are the `--skeleton-base` / `--skeleton-sheen`
   tokens — keep them plain rgba, `color-mix()` is not supported everywhere.
+- Transient success/failure feedback goes through the toast stack:
+  `Toasts.svelte` is mounted once in `+layout.svelte` and fed by
+  `toastSuccess()` / `toastError()` from `#lib/toast.svelte` (pure queue logic in
+  `toast.ts`). `ExpenseSection` confirms add/edit/delete once the parent's
+  `onChange` promise settles — it resolves `false` when the save failed.
 - Keep changes small and consistent with the surrounding code; run
   `npm run verify` before finishing.
 - Logic worth testing belongs in `src/lib/*.ts` (no Svelte imports) so it stays
@@ -145,8 +150,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   `position: fixed` descendants — position popovers inside it with `absolute`.
 - **Layering:** every overlapping layer uses the z-index scale in `app.css`
   (`--z-behind`, `--z-raised`, `--z-sticky`, `--z-overlay`, `--z-modal`,
-  `--z-drag`). Do not add bare `z-index` values; pick the token matching the
-  element's role. Anything with a `transform` (including one left behind by an
+  `--z-toast`, `--z-drag`). Do not add bare `z-index` values; pick the token
+  matching the element's role. Anything with a `transform` (including one left behind by an
   animation) is a stacking context *and* the containing block for its
   `position: fixed` descendants, so a modal inside it is trapped.
 - **Animation compatibility:** animate `transform`/`opacity`, not `height` and

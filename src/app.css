@@ -63,6 +63,7 @@
   --z-sticky: 100;  /* the sticky top bar */
   --z-overlay: 200; /* floating page UI: the mobile section nav + its backdrop */
   --z-modal: 1000;  /* modal dialogs and their backdrop */
+  --z-toast: 1050;  /* transient toasts, so they stay readable over a modal */
   --z-drag: 1100;   /* the drag ghost, above everything else */
 }
 

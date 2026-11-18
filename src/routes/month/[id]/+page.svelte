@@ -340,21 +340,29 @@
     };
   });
 
-  async function persist(next: MonthBudget) {
+  /**
+   * Write the budget optimistically and report the outcome.
+   *
+   * Returns `true` when the save landed and `false` when it failed, so callers
+   * (the expense sections) can confirm the change with a toast.
+   */
+  async function persist(next: MonthBudget): Promise<boolean> {
     budget = next;
     saving = true;
     try {
       await saveBudget(next);
       savedAt = new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      return true;
     } catch (error) {
       console.error("Save failed:", error);
+      return false;
     } finally {
       saving = false;
     }
   }
 
-  function update<K extends keyof MonthBudget>(key: K, value: MonthBudget[K]) {
-    persist({ ...budget, [key]: value });
+  function update<K extends keyof MonthBudget>(key: K, value: MonthBudget[K]): Promise<boolean> {
+    return persist({ ...budget, [key]: value });
   }
 
   /** Record whether the wife-to-husband equal-split transfer has arrived. */

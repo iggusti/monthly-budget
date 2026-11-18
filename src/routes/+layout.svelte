@@ -9,6 +9,7 @@
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";
   import NotificationToggle from "#lib/components/NotificationToggle.svelte";
   import ThemeToggle from "#lib/components/ThemeToggle.svelte";
+  import Toasts from "#lib/components/Toasts.svelte";
 
   /**
    * Push notifications are hidden until the sender Cloud Function can be
@@ -84,6 +85,9 @@
     </footer>
   </div>
 {/if}
+
+<!-- Transient success/failure feedback, above every page. -->
+<Toasts />
 
 <style>
   .page-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
