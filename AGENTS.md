@@ -178,8 +178,14 @@ every push to `main`; that workflow does **not** touch functions or rules.
   reads `displayed` via `untrack()` and only tweens when its target changes.
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).
 - **Mobile keyboard:** `ExpenseSection`'s inline editor focuses its name field
-  with `preventScroll` (so the `slide` transition is not disturbed) and then
-  watches `window.visualViewport` while open, scrolling the editor above the
-  keyboard and padding the page via `--keyboard-inset` (see `app.css`). Do not
-  rely on the browser's own focus reveal or on a single `scrollIntoView`: both
-  run before the keyboard animates in, so the form ends up hidden behind it.
+  through the `focusEditor` action (an action, not a `bind:this` ref: swapping
+  editors in one flush would let the unmounting editor null the shared ref) with
+  `preventScroll`, then watches `window.visualViewport` *and* resizes of the
+  section (`ResizeObserver`) while open, scrolling the editor above the keyboard
+  and padding the page via `--keyboard-inset` (see `app.css`). The section
+  observer is what re-triggers the reveal when another editor is opened while
+  the keyboard is already up (the visual viewport does not change then). An
+  editor taller than the space left by the keyboard is pinned just under the top
+  bar. Do not rely on the browser's own focus reveal or on a single
+  `scrollIntoView`: both run before the keyboard animates in, so the form ends
+  up hidden behind it.

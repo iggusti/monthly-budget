@@ -178,7 +178,6 @@
 </script>
 
 <script lang="ts">
-  import { tick } from "svelte";
   import { slide } from "svelte/transition";
   import {
     formatCurrency,
@@ -550,7 +549,6 @@
     methodLegacy = "";
     editingId = null;
     adding = true;
-    void focusNameField("add");
   }
 
   function startEdit(item: ExpenseItem) {
@@ -562,32 +560,28 @@
     methodLegacy = methodBase ? "" : baseLabel;
     adding = false;
     editingId = item.id;
-    void focusNameField("edit");
   }
 
-  // Focus the name field whenever an editor opens (add or edit).
-  // Each editor keeps its own ref: sharing one `bind:this` between the add and
-  // edit editors lets the unmounting editor's cleanup null the ref that the
-  // mounting one just set, so the focus call silently targets nothing.
-  let addNameEl = $state<HTMLInputElement | null>(null);
-  let editNameEl = $state<HTMLInputElement | null>(null);
-
   /**
-   * Focus the name input and keep the editor visible.
+   * Focus the name field as soon as an editor mounts and keep it visible.
    *
-   * Called explicitly from `startAdd()` / `startEdit()` after `tick()` instead
-   * of from an `$effect`: an effect can run while the `slide` transition is
-   * still measuring the editor, so the reveal would target the wrong height.
+   * An action is used instead of a `bind:this` ref: opening one editor while
+   * another closes mounts and unmounts in the same flush, so a ref shared by
+   * the two editors is nulled by whichever cleanup runs last and the focus call
+   * silently targets nothing (which also skips the reveal, leaving the new
+   * editor behind the keyboard).
    */
-  async function focusNameField(which: "add" | "edit") {
-    await tick();
-    const el = which === "add" ? addNameEl : editNameEl;
-    if (!el) return;
-    el.focus({ preventScroll: true });
+  function focusEditor(node: HTMLInputElement) {
+    node.focus({ preventScroll: true });
     revealAboveKeyboard();
-    // The editor is still sliding open, so its height is not final yet; measure
-    // again once it has settled (a no-op if the field has already lost focus).
-    setTimeout(revealAboveKeyboard, 240);
+    // The `slide` transition grows the editor over ~200ms, so measure again once
+    // it has settled; a no-op if the field has already lost focus.
+    const timer = window.setTimeout(revealAboveKeyboard, 240);
+    return {
+      destroy() {
+        clearTimeout(timer);
+      }
+    };
   }
 
   /** Sticky top bar height (60px) plus a little breathing room. */
@@ -605,6 +599,7 @@
    * page bottom so an editor in the last section can still be lifted.
    */
   let watchingKeyboard = false;
+  let editorResize: ResizeObserver | null = null;
 
   /** Height the keyboard hides at the bottom of the layout viewport. */
   function keyboardInset(): number {
@@ -630,9 +625,12 @@
     const fits = rect.height <= viewport.height - TOPBAR_INSET - 16;
 
     let delta = 0;
-    if (fits) {
-      if (rect.bottom > bottomLimit) delta = rect.bottom - bottomLimit;
-      else if (rect.top < topLimit) delta = rect.top - topLimit;
+    if (rect.bottom > bottomLimit) {
+      // The bottom is hidden behind the keyboard: lift the editor fully into
+      // view, or — when it is taller than the space the keyboard leaves — pin
+      // its top under the bar so its fields and Save can be reached by
+      // scrolling instead of opening out of sight.
+      delta = fits ? rect.bottom - bottomLimit : rect.top - topLimit;
     } else if (rect.top < topLimit) {
       delta = rect.top - topLimit;
     }
@@ -650,12 +648,23 @@
   function startKeyboardWatch() {
     if (watchingKeyboard) return;
     window.visualViewport?.addEventListener("resize", revealAboveKeyboard);
+    // With the keyboard already up, opening another editor does not resize the
+    // visual viewport, so nothing re-triggers the reveal. Watch the section box
+    // instead: it fires as the editor slides open (and as a closing one shifts
+    // the layout), which also covers the settle after `focusEditor`'s first
+    // measurement.
+    if (typeof ResizeObserver !== "undefined" && rootEl) {
+      editorResize = new ResizeObserver(() => revealAboveKeyboard());
+      editorResize.observe(rootEl);
+    }
     watchingKeyboard = true;
   }
 
   function stopKeyboardWatch() {
     if (!watchingKeyboard) return;
     window.visualViewport?.removeEventListener("resize", revealAboveKeyboard);
+    editorResize?.disconnect();
+    editorResize = null;
     watchingKeyboard = false;
     document.documentElement.style.removeProperty("--keyboard-inset");
   }
@@ -794,7 +803,7 @@
           <span>{nameText}</span>
           <input
             type="text"
-            bind:this={addNameEl}
+            use:focusEditor
             bind:value={draft.name}
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
@@ -924,7 +933,7 @@
               <div class="editor-fields">
                 <label class="field">
                   <span>{nameText}</span>
-                  <input type="text" bind:this={editNameEl} bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <input type="text" use:focusEditor bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
