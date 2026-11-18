@@ -515,6 +515,43 @@
           </svg>
           {t("month.editHeader")}
         </button>
+
+        <!-- Header editor: inside the header block so it reads as the header
+             opening up, not as a card floating between the header and the
+             summary. It sits under the edit button rather than as a direct
+             child of `.page-header`, whose `.animate-stagger` would hide it
+             behind a stagger delay. -->
+        {#if showHeaderEditor}
+          <div class="income-panel" in:slide={{ duration: 220 }}>
+            <div class="income-fields">
+              <label class="field">
+                <span>{t("month.fieldTitle")}</span>
+                <input type="text" bind:value={headerDraft.title} />
+              </label>
+              <div class="period-field">
+                <span class="period-label">{t("month.fieldPeriod")}</span>
+                <div class="period-dates">
+                  <label class="period-date">
+                    <span>{t("month.fieldPeriodFrom")}</span>
+                    <input type="date" bind:value={headerDraft.periodStart} />
+                  </label>
+                  <span class="period-arrow" aria-hidden="true">→</span>
+                  <label class="period-date">
+                    <span>{t("month.fieldPeriodTo")}</span>
+                    <input type="date" bind:value={headerDraft.periodEnd} />
+                  </label>
+                </div>
+                <span class="field-hint">
+                  {headerPeriodPreview || t("month.fieldPeriodHint")}
+                </span>
+              </div>
+            </div>
+            <div class="income-actions">
+              <button class="btn-save" onclick={saveHeader}>{t("common.saveChanges")}</button>
+              <button class="btn-cancel" onclick={() => (showHeaderEditor = false)}>{t("common.cancel")}</button>
+            </div>
+          </div>
+        {/if}
       {/if}
     </div>
   </div>
@@ -633,38 +670,6 @@
       <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
     </nav>
   {:else}
-  {#if showHeaderEditor}
-    <div class="income-panel" in:slide={{ duration: 220 }}>
-      <div class="income-fields">
-        <label class="field">
-          <span>{t("month.fieldTitle")}</span>
-          <input type="text" bind:value={headerDraft.title} />
-        </label>
-        <div class="period-field">
-          <span class="period-label">{t("month.fieldPeriod")}</span>
-          <div class="period-dates">
-            <label class="period-date">
-              <span>{t("month.fieldPeriodFrom")}</span>
-              <input type="date" bind:value={headerDraft.periodStart} />
-            </label>
-            <span class="period-arrow" aria-hidden="true">→</span>
-            <label class="period-date">
-              <span>{t("month.fieldPeriodTo")}</span>
-              <input type="date" bind:value={headerDraft.periodEnd} />
-            </label>
-          </div>
-          <span class="field-hint">
-            {headerPeriodPreview || t("month.fieldPeriodHint")}
-          </span>
-        </div>
-      </div>
-      <div class="income-actions">
-        <button class="btn-save" onclick={saveHeader}>{t("common.saveChanges")}</button>
-        <button class="btn-cancel" onclick={() => (showHeaderEditor = false)}>{t("common.cancel")}</button>
-      </div>
-    </div>
-  {/if}
-
   <div class="summary-row animate-stagger" in:fly={{ y: 14, duration: 420, delay: 60 }}>
     <div class="stat-card income">
       <span class="stat-label">{t("month.totalIncome")}</span>
@@ -1213,7 +1218,10 @@
   .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
   .edit-btn:active { transform: translateY(0) scale(0.97); }
 
-  .income-panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }
+  /* Header editor panel (title + period), opened from the "Edit header" button
+     and kept inside the header block. `.header-meta` is a plain block, so the
+     panel carries its own gap from the button. */
+  .income-panel { margin-top: 1rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }
   .income-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
   .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
