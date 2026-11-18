@@ -812,7 +812,7 @@
               <span class="date-custom-label">{t("expense.dateOther")}</span>
               <input type="date" bind:value={draft.date} />
             </label>
-            <span class="date-preview" class:empty={!draft.date}>
+            <span class="date-preview">
               {#if draft.date}
                 🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
               {:else}
@@ -938,7 +938,7 @@
                       <span class="date-custom-label">{t("expense.dateOther")}</span>
                       <input type="date" bind:value={draft.date} />
                     </label>
-                    <span class="date-preview" class:empty={!draft.date}>
+                    <span class="date-preview">
                       {#if draft.date}
                         🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
                       {:else}
@@ -1136,11 +1136,18 @@
   .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
   .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  /* Reads as a hint, the same as the name-required one (.editor-hint): accent
+     gold, semi-bold, and fading in with the editor. "No date" and a picked
+     date share the style; only the text and the icon tell them apart. */
   .date-preview {
-    margin-top: 0.45rem; font-size: 0.75rem; font-weight: 600;
+    margin-top: 0.45rem; font-size: 0.72rem; font-weight: 600;
     color: var(--accent-gold);
+    animation: date-preview-in 0.2s var(--ease-out) backwards;
   }
-  .date-preview.empty { color: var(--text-tertiary); font-weight: 500; }
+  @keyframes date-preview-in {
+    from { opacity: 0; transform: translateX(-4px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
   .editor-hint {
     margin-right: auto; font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
