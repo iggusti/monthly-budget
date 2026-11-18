@@ -570,17 +570,93 @@
    * Focus the name input and keep the editor visible.
    *
    * Called explicitly from `startAdd()` / `startEdit()` after `tick()` instead
-   * of from an `$effect`. An effect can run while the `slide` transition is
-   * still measuring the editor, and on mobile the keyboard then covers a form
-   * that never got scrolled into view — the form looks like it failed to open.
+   * of from an `$effect`: an effect can run while the `slide` transition is
+   * still measuring the editor, so the reveal would target the wrong height.
    */
   async function focusNameField(which: "add" | "edit") {
     await tick();
     const el = which === "add" ? addNameEl : editNameEl;
     if (!el) return;
     el.focus({ preventScroll: true });
-    el.scrollIntoView({ block: "nearest" });
+    revealAboveKeyboard();
   }
+
+  /** Sticky top bar height (60px) plus a little breathing room. */
+  const TOPBAR_INSET = 68;
+
+  /**
+   * Keep the open editor above the on-screen keyboard.
+   *
+   * `focus()` uses `preventScroll` so the browser does not jump while the
+   * `slide` transition is still measuring the editor, but that also skips the
+   * browser's own reveal: a single `scrollIntoView` runs before the keyboard
+   * has animated in, so on phones the form ends up hidden behind it. The
+   * keyboard only shows up as a smaller `visualViewport`, so we watch that and
+   * scroll the editor clear of its bottom edge. `--keyboard-inset` pads the
+   * page bottom so an editor in the last section can still be lifted.
+   */
+  let watchingKeyboard = false;
+
+  /** Height the keyboard hides at the bottom of the layout viewport. */
+  function keyboardInset(): number {
+    const viewport = window.visualViewport;
+    if (!viewport) return 0;
+    return Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+  }
+
+  /** Scroll the focused editor above the keyboard (no-op when none is open). */
+  function revealAboveKeyboard() {
+    const viewport = window.visualViewport;
+    const active = document.activeElement;
+    if (!viewport || !(active instanceof HTMLElement) || !rootEl?.contains(active)) return;
+
+    document.documentElement.style.setProperty("--keyboard-inset", `${keyboardInset()}px`);
+
+    // Show the whole editor when it fits, so Save stays reachable; a taller one
+    // is pinned just under the sticky top bar and scrolls from there.
+    const editor = active.closest<HTMLElement>(".editor") ?? active;
+    const rect = editor.getBoundingClientRect();
+    const topLimit = viewport.offsetTop + TOPBAR_INSET;
+    const bottomLimit = viewport.offsetTop + viewport.height - 16;
+    const fits = rect.height <= viewport.height - TOPBAR_INSET - 16;
+
+    let delta = 0;
+    if (fits) {
+      if (rect.bottom > bottomLimit) delta = rect.bottom - bottomLimit;
+      else if (rect.top < topLimit) delta = rect.top - topLimit;
+    } else if (rect.top < topLimit) {
+      delta = rect.top - topLimit;
+    }
+    if (Math.abs(delta) < 1) return;
+
+    // The app scrolls smoothly; bypass that so the reveal tracks the keyboard
+    // instead of animating behind it.
+    const html = document.documentElement;
+    const previous = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
+    window.scrollBy(0, delta);
+    html.style.scrollBehavior = previous;
+  }
+
+  function startKeyboardWatch() {
+    if (watchingKeyboard) return;
+    window.visualViewport?.addEventListener("resize", revealAboveKeyboard);
+    watchingKeyboard = true;
+  }
+
+  function stopKeyboardWatch() {
+    if (!watchingKeyboard) return;
+    window.visualViewport?.removeEventListener("resize", revealAboveKeyboard);
+    watchingKeyboard = false;
+    document.documentElement.style.removeProperty("--keyboard-inset");
+  }
+
+  // Watch the keyboard only while an editor is open, and clean up on unmount.
+  $effect(() => {
+    if (!adding && editingId === null) return;
+    startKeyboardWatch();
+    return stopKeyboardWatch;
+  });
 
   function commit() {
     if (!canCommit) return;

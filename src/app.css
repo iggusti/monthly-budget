@@ -117,6 +117,10 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  /* Set while an inline editor is open on a phone: the keyboard hides the
+     bottom of the layout viewport, so the page is padded to keep enough room
+     to scroll the form above it (see ExpenseSection's keyboard reveal). */
+  padding-bottom: var(--keyboard-inset, 0px);
 }
 
 h1, h2, h3, h4 { font-family: "Playfair Display", serif; font-weight: 700; letter-spacing: -0.01em; }

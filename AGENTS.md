@@ -169,3 +169,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
   endless loop (which also restarts the summary `CountUp`). `CountUp` likewise
   reads `displayed` via `untrack()` and only tweens when its target changes.
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).
+- **Mobile keyboard:** `ExpenseSection`'s inline editor focuses its name field
+  with `preventScroll` (so the `slide` transition is not disturbed) and then
+  watches `window.visualViewport` while open, scrolling the editor above the
+  keyboard and padding the page via `--keyboard-inset` (see `app.css`). Do not
+  rely on the browser's own focus reveal or on a single `scrollIntoView`: both
+  run before the keyboard animates in, so the form ends up hidden behind it.
