@@ -44,6 +44,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   string needs both `en` and `id` entries in `src/lib/i18n.svelte.ts`; use
   `t("namespace.key")`. `svelte-check` does not catch missing translations.
 - Styling is plain CSS per component using the CSS variables in `app.css`.
+  Inline field validation hints (expense name/date, budget period) all share the
+  `.field-hint` class in `app.css`; use it instead of restyling a hint.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
 - Loading states use `src/lib/components/Skeleton.svelte` inside the real
   layout wrappers. Set each placeholder's height to the line box of the text it

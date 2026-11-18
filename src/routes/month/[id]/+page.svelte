@@ -603,7 +603,7 @@
               <input type="date" bind:value={headerDraft.periodEnd} />
             </label>
           </div>
-          <span class="period-preview" class:empty={!headerPeriodPreview}>
+          <span class="field-hint">
             {headerPeriodPreview || t("month.fieldPeriodHint")}
           </span>
         </div>
@@ -1170,7 +1170,8 @@
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
 
-  /* Period input: two date pickers joined by an arrow, plus a live preview. */
+  /* Period input: two date pickers joined by an arrow. The live preview below
+     them uses the shared `.field-hint` look (app.css). */
   .period-field { display: flex; flex-direction: column; gap: 0.3rem; }
   .period-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
   .period-dates { display: flex; align-items: flex-end; gap: 0.5rem; }
@@ -1179,8 +1180,6 @@
   .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
   .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
-  .period-preview { font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); }
-  .period-preview.empty { font-weight: 500; color: var(--text-tertiary); }
   .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
   .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }

@@ -812,7 +812,7 @@
               <span class="date-custom-label">{t("expense.dateOther")}</span>
               <input type="date" bind:value={draft.date} />
             </label>
-            <span class="date-preview">
+            <span class="date-preview field-hint">
               {#if draft.date}
                 🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
               {:else}
@@ -938,7 +938,7 @@
                       <span class="date-custom-label">{t("expense.dateOther")}</span>
                       <input type="date" bind:value={draft.date} />
                     </label>
-                    <span class="date-preview">
+                    <span class="date-preview field-hint">
                       {#if draft.date}
                         🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
                       {:else}
@@ -1136,19 +1136,13 @@
   .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
   .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
-  /* Reads as a hint, the same as the name-required one (.editor-hint): accent
-     gold, semi-bold, and fading in with the editor. "No date" and a picked
-     date share the style; only the text and the icon tell them apart. */
-  .date-preview {
-    margin-top: 0.45rem; font-size: 0.72rem; font-weight: 600;
-    color: var(--accent-gold);
-    animation: date-preview-in 0.2s var(--ease-out) backwards;
-  }
-  @keyframes date-preview-in {
-    from { opacity: 0; transform: translateX(-4px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
+  /* The hint look comes from the shared `.field-hint` (app.css); this only
+     holds the layout. "No date" and a picked date share it, so only the text
+     and the icon tell them apart. */
+  .date-preview { margin-top: 0.45rem; }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
+  /* Same look as `.field-hint`, but toggled rather than mounted, so the hint
+     fades in and out as the name is cleared or filled. */
   .editor-hint {
     margin-right: auto; font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
     opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;

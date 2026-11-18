@@ -237,6 +237,23 @@ input, select, textarea {
 .animate-stagger > :nth-child(10) { animation-delay: 0.38s; }
 .animate-stagger > :nth-child(n + 11) { animation-delay: 0.42s; }
 
+/* Inline validation hint: the single style for the "what's still needed"
+   messages under a field — the expense name and date hints and the budget
+   period hint. Accent gold, semi-bold, fading in. `.editor-hint` in
+   ExpenseSection toggles visibility instead of mounting, so it repeats these
+   values rather than reusing the class. */
+.field-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  animation: field-hint-in var(--dur-fast) var(--ease-out) backwards;
+}
+
+@keyframes field-hint-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* ── Reduced motion ─────────────────────────────────────────────────────────
  * Respect the OS "reduce motion" setting: keep content visible, drop the
  * movement. Only decorative animation is disabled; nothing disappears. */
@@ -249,7 +266,7 @@ input, select, textarea {
     transition-delay: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-in, .animate-rise, .animate-pop, .animate-stagger > * {
+  .animate-in, .animate-rise, .animate-pop, .animate-stagger > *, .field-hint {
     opacity: 1 !important;
     transform: none !important;
   }
