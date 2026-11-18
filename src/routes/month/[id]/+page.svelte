@@ -385,11 +385,30 @@
     wsv: "wifeDailyFromSavings"
   };
 
+  /** Budget fields a dragged item can be dropped into. */
+  type DropField =
+    | "husbandFixed"
+    | "wifeFixed"
+    | "husbandDailyFromSalary"
+    | "husbandDailyFromSavings"
+    | "wifeDailyFromSalary"
+    | "wifeDailyFromSavings";
+
+  /** Whose section each drop target is and which pot it draws from (i18n keys). */
+  const DROP_TARGET: Record<DropField, { person: string; kind: string }> = {
+    husbandFixed: { person: "common.husband", kind: "common.fixed" },
+    wifeFixed: { person: "common.wife", kind: "common.fixed" },
+    husbandDailyFromSalary: { person: "common.husband", kind: "common.salary" },
+    husbandDailyFromSavings: { person: "common.husband", kind: "common.savings" },
+    wifeDailyFromSalary: { person: "common.wife", kind: "common.salary" },
+    wifeDailyFromSavings: { person: "common.wife", kind: "common.savings" }
+  };
+
   /**
    * Move an item dropped into `toField` from its original section.
    * Only valid when the item truly exists in the source section.
    */
-  function moveItem(item: ExpenseItem, fromKey: string, toField: keyof MonthBudget) {
+  function moveItem(item: ExpenseItem, fromKey: string, toField: DropField) {
     const fromField = SECTION_FIELDS[fromKey];
     if (!fromField || fromField === toField) return;
 
@@ -406,12 +425,16 @@
       [toField]: nextDst
     } as MonthBudget;
 
-    void reportMove(next, t("toast.movedTo", { person: ownerOf(toField) }));
+    void reportMove(next, movedMessage(toField));
   }
 
-  /** Whose section a budget field belongs to, for the move toast. */
-  function ownerOf(field: keyof MonthBudget): string {
-    return String(field).startsWith("husband") ? t("common.husband") : t("common.wife");
+  /** "Moved to Wife · Savings" for the section a dragged item landed in. */
+  function movedMessage(field: DropField): string {
+    const target = DROP_TARGET[field];
+    return t("toast.movedTo", {
+      person: t(target.person),
+      kind: t(target.kind)
+    });
   }
 
   /** Persist a drag-and-drop move and confirm it with a toast. */
