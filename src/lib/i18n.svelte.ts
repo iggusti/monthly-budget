@@ -59,6 +59,7 @@ const en: Dict = {
   "toast.added": "Entry added",
   "toast.updated": "Entry updated",
   "toast.deleted": "Entry deleted",
+  "toast.movedTo": "Moved to {person}",
   "toast.saveFailed": "Couldn't save. Please try again.",
   "toast.dismiss": "Dismiss",
 
@@ -286,6 +287,7 @@ const id: Dict = {
   "toast.added": "Entri ditambahkan",
   "toast.updated": "Entri diperbarui",
   "toast.deleted": "Entri dihapus",
+  "toast.movedTo": "Dipindahkan ke {person}",
   "toast.saveFailed": "Gagal menyimpan. Coba lagi.",
   "toast.dismiss": "Tutup",
 

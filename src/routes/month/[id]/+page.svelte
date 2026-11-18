@@ -24,6 +24,7 @@
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
   import CountUp from "#lib/components/CountUp.svelte";
+  import { toastError, toastSuccess } from "#lib/toast.svelte";
 
   const monthId = $derived(page.params.id ?? "");
 
@@ -404,7 +405,25 @@
       [fromField]: nextSrc,
       [toField]: nextDst
     } as MonthBudget;
-    persist(next);
+
+    void reportMove(next, t("toast.movedTo", { person: ownerOf(toField) }));
+  }
+
+  /** Whose section a budget field belongs to, for the move toast. */
+  function ownerOf(field: keyof MonthBudget): string {
+    return String(field).startsWith("husband") ? t("common.husband") : t("common.wife");
+  }
+
+  /** Persist a drag-and-drop move and confirm it with a toast. */
+  async function reportMove(next: MonthBudget, message: string) {
+    try {
+      const saved = await persist(next);
+      if (saved) toastSuccess(message);
+      else toastError(t("toast.saveFailed"));
+    } catch (error) {
+      console.error("Move failed:", error);
+      toastError(t("toast.saveFailed"));
+    }
   }
 
   function openHeaderEditor() {

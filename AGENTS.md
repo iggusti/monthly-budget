@@ -56,7 +56,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   `Toasts.svelte` is mounted once in `+layout.svelte` and fed by
   `toastSuccess()` / `toastError()` from `#lib/toast.svelte` (pure queue logic in
   `toast.ts`). `ExpenseSection` confirms add/edit/delete once the parent's
-  `onChange` promise settles — it resolves `false` when the save failed.
+  `onChange` promise settles — it resolves `false` when the save failed — and the
+  month page confirms a drag-and-drop move between sections the same way.
 - Keep changes small and consistent with the surrounding code; run
   `npm run verify` before finishing.
 - Logic worth testing belongs in `src/lib/*.ts` (no Svelte imports) so it stays
