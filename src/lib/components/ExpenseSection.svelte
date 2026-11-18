@@ -579,6 +579,9 @@
     if (!el) return;
     el.focus({ preventScroll: true });
     revealAboveKeyboard();
+    // The editor is still sliding open, so its height is not final yet; measure
+    // again once it has settled (a no-op if the field has already lost focus).
+    setTimeout(revealAboveKeyboard, 240);
   }
 
   /** Sticky top bar height (60px) plus a little breathing room. */
