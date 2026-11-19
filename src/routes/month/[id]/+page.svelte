@@ -135,6 +135,13 @@
     target.focus({ preventScroll: true });
   }
 
+  /** Close the section menu and open another month. */
+  function goToMonth(id: string | null) {
+    if (!id) return;
+    showSectionNav = false;
+    goto(`/month/${id}`);
+  }
+
   let headerDraft = $state({ title: "", periodStart: "", periodEnd: "" });
 
   /** Locale for date formatting, following the active language. */
@@ -1103,9 +1110,40 @@
         aria-label={t("month.sectionMenu")}
         transition:fly={{ y: 10, duration: 180 }}
       >
+        <!-- Month switcher: the section menu floats over the page, so this is the
+             only month control reachable without scrolling to the bottom nav. -->
+        <div class="section-nav-month" role="group" aria-label={t("month.navAria")}>
+          <button
+            class="section-nav-month-btn"
+            type="button"
+            aria-label={t("month.prevMonth")}
+            disabled={!canGoPrevious}
+            onclick={() => goToMonth(prevMonthId)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span class="section-nav-month-label">
+            {#if isActiveMonth}<span class="section-nav-month-dot" aria-hidden="true"></span>{/if}
+            <span class="section-nav-month-name">{navMonthLabel}</span>
+          </span>
+          <button
+            class="section-nav-month-btn"
+            type="button"
+            aria-label={t("month.nextMonth")}
+            disabled={!canGoNext}
+            onclick={() => goToMonth(nextMonthId)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+
         <span class="section-nav-title">{t("month.sectionMenu")}</span>
         {#each SECTION_NAV_KEYS as key, i (key)}
-          <button class="section-nav-item" type="button" onclick={() => goToSection(i + 1)}>
+          <button class="section-nav-item" type="button" style="--stagger: {i}" onclick={() => goToSection(i + 1)}>
             <span>{t(key)}</span>
             <svg
               viewBox="0 0 24 24"
@@ -1512,6 +1550,58 @@
     transform-origin: bottom right;
   }
 
+  /* Month switcher inside the section menu: a muted segmented row with the two
+     arrows framing the current period. The menu floats over the page, so this
+     is the only month control reachable without scrolling to the bottom nav. */
+  .section-nav-month {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.3rem;
+    padding: 0.3rem;
+    background: var(--bg-muted);
+    border-radius: var(--radius-md);
+  }
+  .section-nav-month-btn {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.15rem;
+    height: 2.15rem;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+    transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
+  }
+  .section-nav-month-btn svg { display: block; width: 1.05rem; height: 1.05rem; }
+  .section-nav-month-btn:hover:not(:disabled) { color: var(--accent-gold); border-color: var(--accent-gold); transform: scale(1.06); }
+  .section-nav-month-btn:active:not(:disabled) { transform: scale(0.94); }
+  .section-nav-month-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .section-nav-month-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+    font-family: "Playfair Display", serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+  .section-nav-month-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .section-nav-month-dot {
+    flex-shrink: 0;
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 2px var(--success-light);
+  }
+
   .section-nav-title {
     padding: 0.35rem 0.65rem 0.45rem;
     font-size: 0.68rem;
@@ -1536,17 +1626,11 @@
     line-height: 1.35;
     text-align: left;
     animation: riseIn var(--dur-base) var(--ease-out) both;
+    /* Delay comes from the item index (`--stagger`), not `nth-child`: the menu
+       also holds the month switcher and the title above the list. */
+    animation-delay: calc(var(--stagger, 0) * 0.03s);
     transition: background var(--dur-fast) ease, color var(--dur-fast) ease, padding-left var(--dur-base) var(--ease-out);
   }
-  .section-nav-item:nth-child(1) { animation-delay: 0.01s; }
-  .section-nav-item:nth-child(2) { animation-delay: 0.04s; }
-  .section-nav-item:nth-child(3) { animation-delay: 0.07s; }
-  .section-nav-item:nth-child(4) { animation-delay: 0.1s; }
-  .section-nav-item:nth-child(5) { animation-delay: 0.13s; }
-  .section-nav-item:nth-child(6) { animation-delay: 0.16s; }
-  .section-nav-item:nth-child(7) { animation-delay: 0.19s; }
-  .section-nav-item:nth-child(8) { animation-delay: 0.22s; }
-  .section-nav-item:nth-child(n + 9) { animation-delay: 0.25s; }
   .section-nav-item:hover,
   .section-nav-item:active {
     background: var(--accent-gold-light);
