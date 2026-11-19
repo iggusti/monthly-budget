@@ -46,9 +46,9 @@
   const currentIndex = $derived(allMonthIds.indexOf(monthId));
   const prevMonthId = $derived(currentIndex > 0 ? allMonthIds[currentIndex - 1] : null);
   const nextMonthId = $derived(currentIndex >= 0 && currentIndex < allMonthIds.length - 1 ? allMonthIds[currentIndex + 1] : null);
-  /** Right arrow goes to the previous month; stop at the earliest month in DB. */
+  /** Left arrow goes to the previous month; stop at the earliest month in DB. */
   const canGoPrevious = $derived(prevMonthId != null);
-  /** Left arrow goes to the next month; stop when on the active month. */
+  /** Right arrow goes to the next month; stop when on the active month. */
   const canGoNext = $derived(nextMonthId != null && !isActiveMonth);
 
   const locale = $derived(lang.value === "id" ? "id-ID" : "en-US");
@@ -1201,14 +1201,14 @@
     </button>
   </div>
 
-  <!-- Month-to-month navigation: left → next month, right → previous month. -->
+  <!-- Month-to-month navigation: left → previous month, right → next month. -->
   <nav class="month-nav" aria-label={t("month.navAria")}>
     <button
       class="month-nav-btn"
       type="button"
-      aria-label={t("month.nextMonth")}
-      disabled={!canGoNext}
-      onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
+      aria-label={t("month.prevMonth")}
+      disabled={!canGoPrevious}
+      onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
     >
       <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M15 18l-6-6 6-6" />
@@ -1226,9 +1226,9 @@
     <button
       class="month-nav-btn"
       type="button"
-      aria-label={t("month.prevMonth")}
-      disabled={!canGoPrevious}
-      onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
+      aria-label={t("month.nextMonth")}
+      disabled={!canGoNext}
+      onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
     >
       <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M9 18l6-6-6-6" />
