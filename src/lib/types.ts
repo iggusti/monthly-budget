@@ -46,6 +46,13 @@ export interface DailyExpense {
   date?: string;
 }
 
+/** Keys of the four daily-expense buckets a budget holds. */
+export type DailySectionKey =
+  | "husbandDailyFromSalary"
+  | "husbandDailyFromSavings"
+  | "wifeDailyFromSalary"
+  | "wifeDailyFromSavings";
+
 /**
  * Generic editable line item used by the reusable expense list component.
  * Fixed expenses use `name`; daily expenses also carry an optional `method`.
@@ -164,6 +171,30 @@ export function createEmptyBudget(id: string): MonthBudget {
     wifeDailyFromSavings: [],
     transferReceived: false
   };
+}
+
+/**
+ * Build a fresh period from the previous one: fixed expenses are copied but
+ * unchecked, income is kept, and the routine sadaqah opens the husband's
+ * salary bucket. Shared by the dashboard's month-card creation and by the
+ * quick-add dialog when the active period does not exist yet.
+ */
+export function createBudgetFromPrevious(id: string, prev: MonthBudget): MonthBudget {
+  const budget = createEmptyBudget(id);
+  const carryHusband = prev.husbandFixed ?? [];
+  const carryWife = prev.wifeFixed ?? [];
+  if (carryHusband.length > 0 || carryWife.length > 0) {
+    const newId = () => makeId();
+    budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
+    budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
+  }
+  if ((prev.husbandIncome ?? 0) > 0) budget.husbandIncome = prev.husbandIncome;
+  if ((prev.wifeIncome ?? 0) > 0) budget.wifeIncome = prev.wifeIncome;
+
+  budget.husbandDailyFromSalary = [
+    { id: makeId(), name: "Sedekah Jariyah", amount: 30000, method: "Auto Donate" }
+  ];
+  return budget;
 }
 
 function formatDay(date: Date): string {

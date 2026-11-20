@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeTotals,
+  createBudgetFromPrevious,
   createEmptyBudget,
   daysBetween,
   formatPeriod,
@@ -38,6 +39,39 @@ describe("createEmptyBudget", () => {
     expect(budget.husbandFixed).toEqual([]);
     expect(budget.wifeDailyFromSavings).toEqual([]);
     expect(budget.transferReceived).toBe(false);
+  });
+});
+
+describe("createBudgetFromPrevious", () => {
+  it("carries fixed expenses over unchecked, with fresh ids, and keeps income", () => {
+    const prev = budgetWith({
+      husbandIncome: 5_000_000,
+      wifeIncome: 4_000_000,
+      husbandFixed: [{ id: "old-h", name: "Rent", amount: 2_000_000, checked: true }],
+      wifeFixed: [{ id: "old-w", name: "Internet", amount: 300_000, checked: true }]
+    });
+
+    const next = createBudgetFromPrevious("2026-11", prev);
+
+    expect(next.id).toBe("2026-11");
+    expect(next.husbandIncome).toBe(5_000_000);
+    expect(next.wifeIncome).toBe(4_000_000);
+    expect(next.husbandFixed[0]).toMatchObject({ name: "Rent", amount: 2_000_000, checked: false });
+    expect(next.wifeFixed[0]).toMatchObject({ name: "Internet", amount: 300_000, checked: false });
+    expect(next.husbandFixed[0].id).not.toBe("old-h");
+    expect(next.wifeFixed[0].id).not.toBe("old-w");
+  });
+
+  it("always seeds the routine sadaqah in the husband's salary bucket", () => {
+    const next = createBudgetFromPrevious("2026-11", budgetWith());
+
+    expect(next.husbandDailyFromSalary).toHaveLength(1);
+    expect(next.husbandDailyFromSalary[0]).toMatchObject({
+      name: "Sedekah Jariyah",
+      amount: 30_000,
+      method: "Auto Donate"
+    });
+    expect(next.wifeDailyFromSavings).toEqual([]);
   });
 });
 

@@ -9,15 +9,16 @@
   } from "#lib/budget-store";
   import {
     computeTotals,
-    createEmptyBudget,
+    createBudgetFromPrevious,
     formatCurrency,
-    makeId,
     todayISO,
     totalExpenses,
     type MonthBudget,
-    type FixedExpense
+    type DailyExpense,
+    type DailySectionKey
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
+  import { toastError, toastSuccess } from "#lib/toast.svelte";
   import { currentPeriodId, listedPeriodIds, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
@@ -27,12 +28,14 @@
   import Skeleton from "#lib/components/Skeleton.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import CountUp from "#lib/components/CountUp.svelte";
+  import QuickAddDailyExpense from "#lib/components/QuickAddDailyExpense.svelte";
 
   let budgets = $state<MonthBudget[]>([]);
   let loading = $state(true);
   let busy = $state(false);
   let showAllMonths = $state(false);
   let searchQuery = $state("");
+  let quickAddOpen = $state(false);
 
   // ── Overview summary: open on the first visit of the day ───────────────────
   const LAST_OPEN_KEY = "fhb-last-open";
@@ -252,30 +255,47 @@
       return;
     }
     busy = true;
-    const budget = createEmptyBudget(id);
-
-    // Copy ALL fixed expenses from the previous month (checked and unchecked),
-    // but reset them to unchecked for the new period. Also carry over income.
+    // Carry over fixed expenses (unchecked) and income from the previous
+    // period; the shared helper also seeds the routine sadaqah.
     const prev = await fetchBudget(previousMonthId(id));
-    const carryHusband = prev.husbandFixed ?? [];
-    const carryWife = prev.wifeFixed ?? [];
-    if (carryHusband.length > 0 || carryWife.length > 0) {
-      const newId = () => makeId();
-      budget.husbandFixed = carryHusband.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
-      budget.wifeFixed = carryWife.map((i: FixedExpense) => ({ ...i, id: newId(), checked: false }));
-    }
-    if ((prev.husbandIncome ?? 0) > 0) budget.husbandIncome = prev.husbandIncome;
-    if ((prev.wifeIncome ?? 0) > 0) budget.wifeIncome = prev.wifeIncome;
-
-    // Always start a new month with the routine monthly sadaqah (auto donate).
-    budget.husbandDailyFromSalary = [
-      { id: makeId(), name: "Sedekah Jariyah", amount: 30000, method: "Auto Donate" }
-    ];
+    const budget = createBudgetFromPrevious(id, prev);
 
     await saveBudget(budget);
     budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
     busy = false;
     location.href = `/month/${budget.id}`;
+  }
+
+  /**
+   * Append a daily expense to the active period. When that period has no
+   * document yet, create it with the same carry-over a month card would use,
+   * so quick-add works without opening the month page first.
+   */
+  async function quickAddExpense(sectionKey: DailySectionKey, item: DailyExpense): Promise<boolean> {
+    try {
+      let budget = currentBudget;
+      if (!budget) {
+        const prev = await fetchBudget(previousMonthId(currentMonthId));
+        budget = createBudgetFromPrevious(currentMonthId, prev);
+      }
+      const next = {
+        ...budget,
+        [sectionKey]: [...budget[sectionKey], item]
+      } as MonthBudget;
+
+      await saveBudget(next);
+      // Keep the local state in step before the live snapshot arrives, so the
+      // summary numbers move as soon as the sheet closes.
+      budgets = usedIds.has(next.id)
+        ? budgets.map((b) => (b.id === next.id ? next : b))
+        : [...budgets, next].sort((a, b) => b.id.localeCompare(a.id));
+      toastSuccess(t("toast.added"));
+      return true;
+    } catch (error) {
+      console.error("Failed to add daily expense:", error);
+      toastError(t("toast.saveFailed"));
+      return false;
+    }
   }
 
   async function removeMonth(id: string) {
@@ -578,8 +598,57 @@
   {/if}
 </div>
 
+{#if !loading}
+  <!-- One always-reachable entry point for daily spending on the dashboard. -->
+  <button
+    class="quick-add-fab"
+    type="button"
+    aria-label={t("dashboard.quickAdd")}
+    title={t("dashboard.quickAdd")}
+    onclick={() => (quickAddOpen = true)}
+  >
+    <svg class="quick-add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  </button>
+{/if}
+
+{#if quickAddOpen}
+  <QuickAddDailyExpense
+    month={monthLabel(currentMonthId, locale)}
+    onClose={() => (quickAddOpen = false)}
+    onSave={quickAddExpense}
+  />
+{/if}
+
 <style>
   .page { display: flex; flex-direction: column; gap: 2rem; }
+  /* The FAB floats over the page; phones need room so it never covers the
+     info strip at the very bottom. */
+  @media (max-width: 768px) {
+    .page { padding-bottom: 5rem; }
+  }
+
+  .quick-add-fab {
+    position: fixed;
+    right: max(1.25rem, env(safe-area-inset-right));
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    z-index: var(--z-overlay);
+    display: grid; place-items: center;
+    width: 3.4rem; height: 3.4rem;
+    border-radius: 50%; color: #fff;
+    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
+    box-shadow: 0 10px 26px rgba(200, 149, 108, 0.42), 0 4px 10px rgba(26, 23, 20, 0.18);
+    transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+  }
+  .quick-add-fab:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 14px 32px rgba(200, 149, 108, 0.5), 0 6px 14px rgba(26, 23, 20, 0.2);
+  }
+  .quick-add-fab:active { transform: scale(0.96); }
+  .quick-add-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+  .quick-add-icon { width: 1.4rem; height: 1.4rem; transition: transform var(--dur-base) var(--ease-spring); }
+  .quick-add-fab:hover .quick-add-icon { transform: rotate(90deg); }
 
   .hero { padding: 3rem 0 1rem; border-bottom: 1px solid var(--surface-border); }
   .hero-eyebrow { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold); margin-bottom: 1rem; }
