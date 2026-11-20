@@ -7,6 +7,7 @@
  * mapping a label back to its `qris` / `transfer` / `cash` value stays in
  * `ExpenseSection.svelte` where the translations live.
  */
+import type { DailySectionKey } from "./types";
 
 /** Bases that can carry a bank / e-wallet channel. */
 export const CHANNEL_BASES = ["qris", "transfer", "cash"] as const;
@@ -57,3 +58,15 @@ export function joinMethod(baseLabel: string, channel: string): string {
   const trimmedChannel = channel.trim();
   return trimmedChannel ? `${baseLabel} ${SEPARATOR} ${trimmedChannel}` : baseLabel;
 }
+
+/**
+ * Payment method preselected for each daily-expense section. Shared by the
+ * month page's editors and the dashboard quick-add sheet, so the same
+ * destination always opens with the same bank in both places.
+ */
+export const DAILY_METHOD_DEFAULTS: Record<DailySectionKey, { base: MethodBase; channel: string }> = {
+  husbandDailyFromSalary: { base: "qris", channel: "Bank Jago" },
+  husbandDailyFromSavings: { base: "qris", channel: "Allo Bank" },
+  wifeDailyFromSalary: { base: "qris", channel: "BSI" },
+  wifeDailyFromSavings: { base: "qris", channel: "Bank Jago" }
+};

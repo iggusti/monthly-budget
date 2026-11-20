@@ -15,7 +15,7 @@
     type DailyExpense,
     type DailySectionKey
   } from "#lib/types";
-  import { channelsFor, joinMethod } from "#lib/expense-methods";
+  import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
   import { t } from "#lib/i18n.svelte";
 
   interface Props {
@@ -59,11 +59,15 @@
     })
   );
 
-  let sectionKey = $state<DailySectionKey>("husbandDailyFromSalary");
+  /** The section preselected when the sheet opens (section 5 on the month page). */
+  const DEFAULT_SECTION: DailySectionKey = "husbandDailyFromSalary";
+
+  let sectionKey = $state<DailySectionKey>(DEFAULT_SECTION);
   let name = $state("");
   let amountInput = $state("");
-  let methodBase = $state("qris");
-  let methodChannel = $state("");
+  // Open with the same preset the month page uses for that section.
+  let methodBase = $state(DAILY_METHOD_DEFAULTS[DEFAULT_SECTION].base);
+  let methodChannel = $state(DAILY_METHOD_DEFAULTS[DEFAULT_SECTION].channel);
   let date = $state(todayISO());
   let saving = $state(false);
   /** Validation hints appear only after the first submit attempt. */
@@ -91,6 +95,17 @@
   /** Drop a channel that is not offered by the newly chosen method. */
   function onMethodBaseChange() {
     if (!channelOptions.includes(methodChannel)) methodChannel = "";
+  }
+
+  /**
+   * Changing the destination also applies that section's method preset, so
+   * the bank/e-wallet default is exactly the one used on the month page.
+   */
+  function pickSection(key: DailySectionKey) {
+    sectionKey = key;
+    const preset = DAILY_METHOD_DEFAULTS[key];
+    methodBase = preset.base;
+    methodChannel = preset.channel;
   }
 
   async function submit(event: SubmitEvent) {
@@ -193,7 +208,7 @@
               class:active={sectionKey === option.key}
               type="button"
               aria-pressed={sectionKey === option.key}
-              onclick={() => (sectionKey = option.key)}
+              onclick={() => pickSection(option.key)}
             >
               <span class="destination-dot" aria-hidden="true"></span>
               <span>{option.label}</span>

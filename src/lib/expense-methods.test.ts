@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CHANNEL_BASES,
+  DAILY_METHOD_DEFAULTS,
   METHOD_CHANNELS_ALL,
   METHOD_CHANNELS_BANK,
   channelsFor,
@@ -31,6 +32,15 @@ describe("channelsFor", () => {
   it("offers nothing for an unknown base", () => {
     expect(channelsFor("")).toEqual([]);
     expect(channelsFor("legacy")).toEqual([]);
+  });
+});
+
+describe("DAILY_METHOD_DEFAULTS", () => {
+  it("preselects a valid channel for every daily section", () => {
+    for (const preset of Object.values(DAILY_METHOD_DEFAULTS)) {
+      expect(isMethodBase(preset.base)).toBe(true);
+      expect(channelsFor(preset.base)).toContain(preset.channel);
+    }
   });
 });
 

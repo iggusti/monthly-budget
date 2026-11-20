@@ -19,6 +19,7 @@
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
+  import { DAILY_METHOD_DEFAULTS } from "#lib/expense-methods";
   import { t, lang } from "#lib/i18n.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import Seo from "#lib/components/Seo.svelte";
@@ -936,7 +937,7 @@
       items={visibleItemsPerSection[4]?.items ?? budget.husbandDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
-      methodDefault={{ base: "qris", channel: "Bank Jago" }}
+      methodDefault={DAILY_METHOD_DEFAULTS.husbandDailyFromSalary}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -982,7 +983,7 @@
       items={visibleItemsPerSection[5]?.items ?? budget.husbandDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
-      methodDefault={{ base: "qris", channel: "Allo Bank" }}
+      methodDefault={DAILY_METHOD_DEFAULTS.husbandDailyFromSavings}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -1009,7 +1010,7 @@
       items={visibleItemsPerSection[6]?.items ?? budget.wifeDailyFromSalary}
       highlightedQuery={searchQuery}
       withMethod
-      methodDefault={{ base: "qris", channel: "BSI" }}
+      methodDefault={DAILY_METHOD_DEFAULTS.wifeDailyFromSalary}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
@@ -1044,7 +1045,7 @@
       items={visibleItemsPerSection[7]?.items ?? budget.wifeDailyFromSavings}
       highlightedQuery={searchQuery}
       withMethod
-      methodDefault={{ base: "qris", channel: "Bank Jago" }}
+      methodDefault={DAILY_METHOD_DEFAULTS.wifeDailyFromSavings}
       withDate
       onChange={(items: ExpenseItem[]) =>
         update(
