@@ -54,7 +54,7 @@
     <header class="topbar">
       <div class="topbar-inner">
         <a href="/" class="logo">
-          <span class="logo-mark">❖</span>
+          <img class="logo-mark" src="/favicon.svg" alt="" width="32" height="32" />
           <span class="logo-text">Nia & Ilham</span>
         </a>
         <nav class="topbar-nav">
@@ -106,11 +106,9 @@
   }
   .logo { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); }
   .logo-mark {
+    display: block;
     width: 32px; height: 32px;
-    background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
     border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px; color: white; font-weight: 700;
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.06); box-shadow: 0 6px 16px rgba(200, 149, 108, 0.35); }
