@@ -808,6 +808,7 @@
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
+          <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
         </label>
         <label class="field">
           <span>{amountText}</span>
@@ -882,7 +883,6 @@
         {/if}
       </div>
       <div class="editor-actions">
-        <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
         <button class="btn-save" onclick={commit} disabled={!canCommit}>{t("expense.add")}</button>
         <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
       </div>
@@ -939,6 +939,7 @@
                 <label class="field">
                   <span>{nameText}</span>
                   <input type="text" use:focusEditor bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
+                  <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
@@ -1013,7 +1014,6 @@
                 {/if}
               </div>
               <div class="editor-actions">
-                <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
                 <button class="btn-save" onclick={commit} disabled={!canCommit}>{t("expense.saveChanges")}</button>
                 <button class="btn-cancel" onclick={cancel}>{t("expense.cancel")}</button>
               </div>
@@ -1206,9 +1206,10 @@
   .date-preview { margin-top: 0.45rem; }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
   /* Same look as `.field-hint`, but toggled rather than mounted, so the hint
-     fades in and out as the name is cleared or filled. */
+     fades in and out as the name is cleared or filled. Like the dashboard
+     sheet, it sits under its own input instead of in the actions row. */
   .editor-hint {
-    margin-right: auto; font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
+    font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
     opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
   }
   .editor-hint.visible { opacity: 1; transform: translateX(0); }
