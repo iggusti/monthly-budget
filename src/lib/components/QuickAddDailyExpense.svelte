@@ -16,6 +16,7 @@
     type DailySectionKey
   } from "#lib/types";
   import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
+  import BadgeIcon from "#lib/components/BadgeIcon.svelte";
   import { t } from "#lib/i18n.svelte";
 
   interface Props {
@@ -28,12 +29,21 @@
 
   let { month, onClose, onSave }: Props = $props();
 
-  /** The four daily buckets, in the same order as sections 5–8 of a month. */
-  const destinations: { key: DailySectionKey; label: string; person: "husband" | "wife" }[] = $derived([
-    { key: "husbandDailyFromSalary", label: `${t("common.husband")} · ${t("common.salary")}`, person: "husband" },
-    { key: "husbandDailyFromSavings", label: `${t("common.husband")} · ${t("common.savings")}`, person: "husband" },
-    { key: "wifeDailyFromSalary", label: `${t("common.wife")} · ${t("common.salary")}`, person: "wife" },
-    { key: "wifeDailyFromSavings", label: `${t("common.wife")} · ${t("common.savings")}`, person: "wife" }
+  /**
+   * The four daily buckets, in the same order as sections 5–8 of a month.
+   * The icons match those sections' badges: wallet for salary, savings for
+   * withdrawals, with the same blue/rose tone per person.
+   */
+  const destinations: {
+    key: DailySectionKey;
+    label: string;
+    person: "husband" | "wife";
+    icon: "wallet" | "savings";
+  }[] = $derived([
+    { key: "husbandDailyFromSalary", label: `${t("common.husband")} · ${t("common.salary")}`, person: "husband", icon: "wallet" },
+    { key: "husbandDailyFromSavings", label: `${t("common.husband")} · ${t("common.savings")}`, person: "husband", icon: "savings" },
+    { key: "wifeDailyFromSalary", label: `${t("common.wife")} · ${t("common.salary")}`, person: "wife", icon: "wallet" },
+    { key: "wifeDailyFromSavings", label: `${t("common.wife")} · ${t("common.savings")}`, person: "wife", icon: "savings" }
   ]);
 
   const methodBases = $derived([
@@ -197,7 +207,9 @@
       </button>
     </div>
 
-    <form class="sheet-body" onsubmit={submit}>
+    <!-- `min`/`max` only guide the native picker; `novalidate` keeps a typed
+         date from silently blocking the submit handler. -->
+    <form class="sheet-body" onsubmit={submit} novalidate>
       <div>
         <span class="group-label">{t("dashboard.quickAddTarget")}</span>
         <div class="destinations" role="group" aria-label={t("dashboard.quickAddTarget")}>
@@ -210,7 +222,9 @@
               aria-pressed={sectionKey === option.key}
               onclick={() => pickSection(option.key)}
             >
-              <span class="destination-dot" aria-hidden="true"></span>
+              <span class="destination-icon" aria-hidden="true">
+                <BadgeIcon name={option.icon} />
+              </span>
               <span>{option.label}</span>
             </button>
           {/each}
@@ -280,7 +294,14 @@
             </button>
           {/each}
         </div>
-        <input class="date-input" type="date" bind:value={date} aria-label={t("expense.dateOther")} />
+        <input
+          class="date-input"
+          type="date"
+          bind:value={date}
+          min={dateOptions[dateOptions.length - 1].value}
+          max={dateOptions[0].value}
+          aria-label={t("expense.dateOther")}
+        />
       </div>
 
       <div class="sheet-actions">
@@ -294,7 +315,8 @@
 <style>
   .sheet-overlay {
     position: fixed; inset: 0; z-index: var(--z-modal);
-    display: flex; align-items: center; justify-content: center;
+    /* Phones only, like the month page's jump-to-section button. */
+    display: none; align-items: center; justify-content: center;
     padding: 1.25rem;
     background: rgba(26, 23, 20, 0.5);
     backdrop-filter: blur(3px);
@@ -336,7 +358,7 @@
   .destinations { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .destination {
     display: flex; align-items: center; gap: 0.5rem;
-    padding: 0.55rem 0.7rem; border-radius: var(--radius-sm);
+    padding: 0.4rem 0.6rem; border-radius: var(--radius-sm);
     border: 1px solid var(--surface-border); background: var(--bg-muted);
     color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;
     text-align: left;
@@ -346,13 +368,17 @@
     border-color: var(--accent-gold); background: var(--accent-gold-light);
     color: var(--text-primary); box-shadow: 0 0 0 2px rgba(200, 149, 108, 0.16);
   }
-  .destination-dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    background: var(--accent-blue);
+  /* Same badge icons and blue/rose tones as sections 5–8 on the month page. */
+  .destination-icon {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    display: grid; place-items: center;
+    background: rgba(107, 127, 163, 0.15); color: var(--accent-blue);
     transition: transform var(--dur-base) var(--ease-spring);
   }
-  .destination.rose .destination-dot { background: var(--accent-rose); }
-  .destination.active .destination-dot { transform: scale(1.3); }
+  .destination.rose .destination-icon {
+    background: rgba(196, 112, 112, 0.15); color: var(--accent-rose);
+  }
+  .destination.active .destination-icon { transform: scale(1.08) rotate(-4deg); }
 
   .field { display: block; }
   .sheet input[type="text"], .sheet input[type="date"], .sheet select {
@@ -392,6 +418,10 @@
   .close-btn:focus-visible, .destination:focus-visible, .date-chip:focus-visible,
   .btn-cancel:focus-visible, .btn-save:focus-visible {
     outline: 2px solid var(--accent-gold); outline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .sheet-overlay { display: flex; }
   }
 
   @media (max-width: 640px) {

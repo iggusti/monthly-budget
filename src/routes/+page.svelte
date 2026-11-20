@@ -627,6 +627,7 @@
      info strip at the very bottom. */
   @media (max-width: 768px) {
     .page { padding-bottom: 5rem; }
+    .quick-add-fab { display: grid; }
   }
 
   .quick-add-fab {
@@ -634,7 +635,8 @@
     right: max(1.25rem, env(safe-area-inset-right));
     bottom: calc(1.5rem + env(safe-area-inset-bottom));
     z-index: var(--z-overlay);
-    display: grid; place-items: center;
+    /* Phones only, like the month page's jump-to-section button. */
+    display: none; place-items: center;
     width: 3.4rem; height: 3.4rem;
     border-radius: 50%; color: #fff;
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));

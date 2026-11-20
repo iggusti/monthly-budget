@@ -312,8 +312,8 @@
 
   // ── Date helpers ──────────────────────────────────────────────────────────
 
-  /** Quick-pick options shown above the native date input (today, 1 … up to 5 days ago). */
-  const DATE_QUICK_DAYS = [0, 1, 2, 3, 4, 5] as const;
+  /** Same window as the dashboard quick-add: today through three days ago. */
+  const DATE_QUICK_DAYS = [0, 1, 2, 3] as const;
 
   interface DateOption {
     /** `YYYY-MM-DD` value stored on the item. */
@@ -864,7 +864,12 @@
             </div>
             <label class="date-custom">
               <span class="date-custom-label">{t("expense.dateOther")}</span>
-              <input type="date" bind:value={draft.date} />
+              <input
+                type="date"
+                bind:value={draft.date}
+                min={dateOptions[dateOptions.length - 1].value}
+                max={todayValue}
+              />
             </label>
             <span class="date-preview field-hint">
               {#if draft.date}
@@ -990,7 +995,12 @@
                     </div>
                     <label class="date-custom">
                       <span class="date-custom-label">{t("expense.dateOther")}</span>
-                      <input type="date" bind:value={draft.date} />
+                      <input
+                        type="date"
+                        bind:value={draft.date}
+                        min={dateOptions[dateOptions.length - 1].value}
+                        max={todayValue}
+                      />
                     </label>
                     <span class="date-preview field-hint">
                       {#if draft.date}
@@ -1165,29 +1175,27 @@
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
-  /* Date capture: quick-pick chips + a native picker + a live preview. */
+  /* Date capture: quick-pick chips + a native picker + a live preview.
+     Chips match the dashboard quick-add sheet: four even columns of compact
+     rounded rectangles; the full date stays in the tooltip and the preview. */
   .date-field { grid-column: 1 / -1; }
-  .date-quick { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  /* Quick picks are single-line pills; the full date stays available as the
-     tooltip and as a hint once the date is picked (see .date-preview). */
+  .date-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
-    display: inline-flex; align-items: center;
-    padding: 0.35rem 0.7rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.4rem 0.15rem;
     border: 1px solid var(--surface-border);
-    border-radius: 999px;
-    background: var(--surface);
+    border-radius: var(--radius-sm);
+    background: var(--bg-muted);
     color: var(--text-secondary);
+    font-size: 0.7rem; font-weight: 700;
     line-height: 1.2;
-    transition: all 0.15s ease;
   }
-  .date-chip:hover { border-color: var(--accent-gold); background: var(--bg-muted); }
+  .date-chip:hover { border-color: var(--accent-gold); }
   .date-chip.active {
     border-color: var(--accent-gold);
-    background: color-mix(in srgb, var(--accent-gold) 14%, transparent);
+    background: var(--accent-gold-light);
     color: var(--text-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-gold) 25%, transparent);
   }
-  .date-chip-relative { font-size: 0.74rem; font-weight: 700; }
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
   .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
