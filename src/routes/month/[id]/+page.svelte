@@ -1262,17 +1262,19 @@
   .income-panel { margin-top: 1rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }
   .income-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
-  .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  /* Form labels stay in sentence case, like the dashboard quick-add sheet;
+     uppercase is reserved for section/card captions. */
+  .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
 
   /* Period input: two date pickers joined by an arrow. The live preview below
      them uses the shared `.field-hint` look (app.css). */
   .period-field { display: flex; flex-direction: column; gap: 0.3rem; }
-  .period-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  .period-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .period-dates { display: flex; align-items: flex-end; gap: 0.5rem; }
   .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
-  .period-date span { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .period-date span { font-size: 0.68rem; font-weight: 600; color: var(--text-tertiary); }
   .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
   .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }

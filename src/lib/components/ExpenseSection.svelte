@@ -1136,7 +1136,9 @@
   .editor-item .editor { border-bottom: none; }
   .editor-fields { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.75rem; }
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
-  .field span { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); }
+  /* Form labels stay in sentence case, like the dashboard quick-add sheet;
+     uppercase is reserved for section/card captions. */
+  .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
