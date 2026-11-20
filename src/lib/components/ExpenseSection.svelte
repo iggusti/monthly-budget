@@ -1152,7 +1152,8 @@
   .field { display: flex; flex-direction: column; gap: 0.3rem; }
   /* Form labels stay in sentence case, like the dashboard quick-add sheet;
      uppercase is reserved for section/card captions. */
-  .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
+  /* Only the field's own label; hints and date details keep their gold colour. */
+  .field > span:first-child { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
   .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
   .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
