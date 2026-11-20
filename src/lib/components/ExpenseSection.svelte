@@ -479,8 +479,10 @@
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "", date: "" });
 
-  /** True when the draft has a name, so it can be saved. */
-  const canCommit = $derived(draft.name.trim().length > 0);
+  /** Name and amount are both required, with hints under their own inputs. */
+  const hasName = $derived(draft.name.trim().length > 0);
+  const hasAmount = $derived(Number(draft.amount) > 0);
+  const canCommit = $derived(hasName && hasAmount);
 
   const total = $derived(items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
   const checkedTotal = $derived(
@@ -808,7 +810,7 @@
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
-          <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
+          <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
         </label>
         <label class="field">
           <span>{amountText}</span>
@@ -822,6 +824,7 @@
             placeholder="0"
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
+          <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
         </label>
         {#if withMethod}
           <label class="field method-field" class:wide={!needsChannel}>
@@ -939,7 +942,7 @@
                 <label class="field">
                   <span>{nameText}</span>
                   <input type="text" use:focusEditor bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
-                  <span class="editor-hint" class:visible={!canCommit}>{t("expense.nameRequired")}</span>
+                  <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
@@ -953,6 +956,7 @@
                     placeholder="0"
                     onkeydown={(e) => e.key === "Enter" && commit()}
                   />
+                  <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
                 </label>
                 {#if withMethod}
                   <label class="field method-field" class:wide={!needsChannel}>
@@ -1205,9 +1209,9 @@
      and the icon tell them apart. */
   .date-preview { margin-top: 0.45rem; }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
-  /* Same look as `.field-hint`, but toggled rather than mounted, so the hint
-     fades in and out as the name is cleared or filled. Like the dashboard
-     sheet, it sits under its own input instead of in the actions row. */
+  /* Same look as `.field-hint`, but toggled rather than mounted, so each hint
+     fades in and out as its field is cleared or filled. Like the dashboard
+     sheet, hints sit under their own inputs instead of in the actions row. */
   .editor-hint {
     font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
     opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
