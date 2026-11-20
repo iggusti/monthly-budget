@@ -9,7 +9,9 @@
    */
   import { fade, fly } from "svelte/transition";
   import {
+    daysBetween,
     makeId,
+    parseISODate,
     todayISO,
     toISODate,
     type DailyExpense,
@@ -17,7 +19,7 @@
   } from "#lib/types";
   import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
   import BadgeIcon from "#lib/components/BadgeIcon.svelte";
-  import { t } from "#lib/i18n.svelte";
+  import { lang, t } from "#lib/i18n.svelte";
 
   interface Props {
     /** Human label of the period receiving the entry, e.g. "November 2026". */
@@ -69,6 +71,28 @@
     })
   );
 
+  /** Date descriptions, worded and formatted like the month page's editor. */
+  function formatFullDate(value: string | undefined): string {
+    const date = parseISODate(value);
+    if (!date) return "";
+    return date.toLocaleDateString(lang.value === "id" ? "id-ID" : "en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
+  }
+
+  function relativeLabel(value: string | undefined): string {
+    const date = parseISODate(value);
+    if (!date) return t("expense.noDate");
+    const diff = daysBetween(date, new Date());
+    if (diff === 0) return t("expense.dateToday");
+    if (diff === 1) return t("expense.dateYesterday");
+    if (diff > 1) return t("expense.daysAgo", { n: diff });
+    return formatFullDate(value);
+  }
+
   /** The section preselected when the sheet opens (section 5 on the month page). */
   const DEFAULT_SECTION: DailySectionKey = "husbandDailyFromSalary";
 
@@ -80,14 +104,17 @@
   let methodChannel = $state(DAILY_METHOD_DEFAULTS[DEFAULT_SECTION].channel);
   let date = $state(todayISO());
   let saving = $state(false);
-  /** Validation hints appear only after the first submit attempt. */
-  let showHints = $state(false);
 
   const channelOptions = $derived(channelsFor(methodBase));
   const channelLabel = $derived(
     methodBase === "cash" ? t("expense.methodChannelBank") : t("expense.methodChannel")
   );
   const amount = $derived(Number(amountInput.replace(/\D/g, "")) || 0);
+
+  /** Live validation, with the same always-on hints as the month page. */
+  const hasName = $derived(name.trim().length > 0);
+  const hasAmount = $derived(amount > 0);
+  const canCommit = $derived(hasName && hasAmount);
 
   /** Focus the first field without letting the browser jump the page. */
   function focusName(node: HTMLInputElement) {
@@ -120,9 +147,8 @@
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
-    showHints = true;
+    if (!canCommit || saving) return;
     const trimmed = name.trim();
-    if (!trimmed || amount <= 0 || saving) return;
 
     const base = methodBases.find((option) => option.value === methodBase)?.label ?? "";
     const channel = channelOptions.includes(methodChannel) ? methodChannel : "";
@@ -239,9 +265,7 @@
           bind:value={name}
           placeholder={t("expense.namePlaceholder")}
         />
-        {#if showHints && !name.trim()}
-          <span class="field-hint">{t("expense.nameRequired")}</span>
-        {/if}
+        <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
       </label>
 
       <label class="field">
@@ -253,9 +277,7 @@
           oninput={onAmountInput}
           placeholder="0"
         />
-        {#if showHints && amount <= 0}
-          <span class="field-hint">{t("expense.amountRequired")}</span>
-        {/if}
+        <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
       </label>
 
       <div class="field-row">
@@ -287,26 +309,35 @@
               class:active={date === option.value}
               type="button"
               aria-pressed={date === option.value}
-              title={option.value}
+              title={formatFullDate(option.value)}
               onclick={() => (date = option.value)}
             >
               {option.relative}
             </button>
           {/each}
         </div>
-        <input
-          class="date-input"
-          type="date"
-          bind:value={date}
-          min={dateOptions[dateOptions.length - 1].value}
-          max={dateOptions[0].value}
-          aria-label={t("expense.dateOther")}
-        />
+        <label class="date-custom">
+          <span class="date-custom-label">{t("expense.dateOther")}</span>
+          <input
+            class="date-input"
+            type="date"
+            bind:value={date}
+            min={dateOptions[dateOptions.length - 1].value}
+            max={dateOptions[0].value}
+          />
+        </label>
+        <span class="date-preview field-hint">
+          {#if date}
+            🗓 {relativeLabel(date)} · {formatFullDate(date)}
+          {:else}
+            {t("expense.noDate")}
+          {/if}
+        </span>
       </div>
 
       <div class="sheet-actions">
         <button class="btn-cancel" type="button" onclick={onClose}>{t("expense.cancel")}</button>
-        <button class="btn-save" type="submit" disabled={saving}>{t("expense.add")}</button>
+        <button class="btn-save" type="submit" disabled={!canCommit || saving}>{t("expense.add")}</button>
       </div>
     </form>
   </div>
@@ -402,7 +433,21 @@
     border-color: var(--accent-gold); background: var(--accent-gold-light);
     color: var(--text-primary);
   }
-  .date-input { margin-top: 0.45rem; }
+  /* Same date field as the month page: a labelled native picker and a live
+     description of the chosen day. */
+  .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
+  .date-custom-label {
+    font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
+  }
+  .date-custom input { flex: 1; min-width: 0; }
+  .date-preview { margin-top: 0.45rem; }
+
+  /* Toggled, fading hint — the same validation style as the month page. */
+  .editor-hint {
+    font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
+    opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
+  }
+  .editor-hint.visible { opacity: 1; transform: translateX(0); }
 
   .sheet-actions { display: flex; gap: 0.6rem; justify-content: flex-end; padding-top: 0.2rem; }
   .btn-cancel, .btn-save {
