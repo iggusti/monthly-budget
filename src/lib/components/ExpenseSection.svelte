@@ -1176,15 +1176,15 @@
   .method-field.wide { grid-column: 1 / -1; }
 
   /* Date capture: quick-pick chips + a native picker + a live preview.
-     Chips match the dashboard quick-add sheet: four even columns of compact
-     rounded rectangles; the full date stays in the tooltip and the preview. */
+     Four even columns with the dashboard's compact colours, but the pill
+     radius this page had before; the full date stays in the tooltip/preview. */
   .date-field { grid-column: 1 / -1; }
   .date-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
     display: inline-flex; align-items: center; justify-content: center;
     padding: 0.4rem 0.15rem;
     border: 1px solid var(--surface-border);
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     background: var(--bg-muted);
     color: var(--text-secondary);
     font-size: 0.7rem; font-weight: 700;

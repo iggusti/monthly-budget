@@ -393,7 +393,7 @@
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
-    padding: 0.4rem 0.15rem; border-radius: var(--radius-sm);
+    padding: 0.4rem 0.15rem; border-radius: 999px;
     border: 1px solid var(--surface-border); background: var(--bg-muted);
     color: var(--text-secondary); font-size: 0.7rem; font-weight: 700;
   }

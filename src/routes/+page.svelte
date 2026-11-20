@@ -627,7 +627,6 @@
      info strip at the very bottom. */
   @media (max-width: 768px) {
     .page { padding-bottom: 5rem; }
-    .quick-add-fab { display: grid; }
   }
 
   .quick-add-fab {
@@ -651,6 +650,10 @@
   .quick-add-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
   .quick-add-icon { width: 1.4rem; height: 1.4rem; transition: transform var(--dur-base) var(--ease-spring); }
   .quick-add-fab:hover .quick-add-icon { transform: rotate(90deg); }
+  /* Must follow the base rule so the equal-specificity override wins on phones. */
+  @media (max-width: 768px) {
+    .quick-add-fab { display: grid; }
+  }
 
   .hero { padding: 3rem 0 1rem; border-bottom: 1px solid var(--surface-border); }
   .hero-eyebrow { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold); margin-bottom: 1rem; }
