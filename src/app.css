@@ -239,10 +239,10 @@ input, select, textarea {
 .animate-stagger > :nth-child(n + 11) { animation-delay: 0.42s; }
 
 /* Inline validation hint: the single style for the "what's still needed"
-   messages under a field — the expense name and date hints and the budget
-   period hint. Accent gold, semi-bold, fading in. `.editor-hint` in
-   ExpenseSection toggles visibility instead of mounting, so it repeats these
-   values rather than reusing the class. */
+   messages under a field — the expense name/amount and date hints and the
+   budget period hint. Accent gold, semi-bold, fading in. The editors' hints
+   repeat these values rather than reusing the class so they can mount and
+   fade only while their field is empty, leaving no gap once it is filled. */
 .field-hint {
   font-size: 0.72rem;
   font-weight: 600;

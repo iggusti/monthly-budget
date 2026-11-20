@@ -178,7 +178,7 @@
 </script>
 
 <script lang="ts">
-  import { slide } from "svelte/transition";
+  import { fade, slide } from "svelte/transition";
   import {
     formatCurrency,
     makeId,
@@ -810,7 +810,9 @@
             placeholder={t("expense.namePlaceholder")}
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
-          <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
+          {#if !hasName}
+            <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+          {/if}
         </label>
         <label class="field">
           <span>{amountText}</span>
@@ -824,7 +826,9 @@
             placeholder="0"
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
-          <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
+          {#if !hasAmount}
+            <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+          {/if}
         </label>
         {#if withMethod}
           <label class="field method-field" class:wide={!needsChannel}>
@@ -942,7 +946,9 @@
                 <label class="field">
                   <span>{nameText}</span>
                   <input type="text" use:focusEditor bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
-                  <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
+                  {#if !hasName}
+                    <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+                  {/if}
                 </label>
                 <label class="field">
                   <span>{amountText}</span>
@@ -956,7 +962,9 @@
                     placeholder="0"
                     onkeydown={(e) => e.key === "Enter" && commit()}
                   />
-                  <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
+                  {#if !hasAmount}
+                    <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+                  {/if}
                 </label>
                 {#if withMethod}
                   <label class="field method-field" class:wide={!needsChannel}>
@@ -1210,14 +1218,12 @@
      and the icon tell them apart. */
   .date-preview { margin-top: 0.45rem; }
   .editor-actions { display: flex; gap: 0.6rem; justify-content: flex-end; align-items: center; margin-top: 0.85rem; }
-  /* Same look as `.field-hint`, but toggled rather than mounted, so each hint
-     fades in and out as its field is cleared or filled. Like the dashboard
-     sheet, hints sit under their own inputs instead of in the actions row. */
+  /* Same look as `.field-hint`, under its own input. Mounted only while the
+     field is empty, so a filled field leaves no extra gap; `fade` animates
+     the appearance without animating layout height. */
   .editor-hint {
     font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
-    opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
   }
-  .editor-hint.visible { opacity: 1; transform: translateX(0); }
   .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.8rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }
   .btn-save:disabled { opacity: 0.4; cursor: not-allowed; }

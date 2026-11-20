@@ -265,7 +265,9 @@
           bind:value={name}
           placeholder={t("expense.namePlaceholder")}
         />
-        <span class="editor-hint" class:visible={!hasName}>{t("expense.nameRequired")}</span>
+        {#if !hasName}
+          <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+        {/if}
       </label>
 
       <label class="field">
@@ -277,7 +279,9 @@
           oninput={onAmountInput}
           placeholder="0"
         />
-        <span class="editor-hint" class:visible={!hasAmount}>{t("expense.amountRequired")}</span>
+        {#if !hasAmount}
+          <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+        {/if}
       </label>
 
       <div class="field-row">
@@ -442,12 +446,11 @@
   .date-custom input { flex: 1; min-width: 0; }
   .date-preview { margin-top: 0.45rem; }
 
-  /* Toggled, fading hint — the same validation style as the month page. */
+  /* Mounted only while the field is empty, so filled fields keep normal
+     spacing; `fade` handles the appearance without animating layout height. */
   .editor-hint {
     font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
-    opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s;
   }
-  .editor-hint.visible { opacity: 1; transform: translateX(0); }
 
   .sheet-actions { display: flex; gap: 0.6rem; justify-content: flex-end; padding-top: 0.2rem; }
   .btn-cancel, .btn-save {
