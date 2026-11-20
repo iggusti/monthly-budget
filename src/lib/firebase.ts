@@ -12,19 +12,11 @@ import {
 } from "firebase/firestore";
 import { firebaseConfig } from "./firebase-config";
 
-/**
- * Web Push VAPID public key (safe to ship: it is a public key).
- *
- * Firebase Console → Project settings → Cloud Messaging → Web Push
- * certificates → "Generate key pair". Paste the key below (or set
- * `VITE_FCM_VAPID_KEY` in `.env`). Until it is filled in, the notification
- * toggle stays disabled and tells the user push is not configured yet.
- */
+/** Public VAPID key for web push; override with `VITE_FCM_VAPID_KEY`. */
 const FCM_VAPID_KEY =
   (import.meta.env.VITE_FCM_VAPID_KEY as string | undefined) ||
   "BIX8u3qPcruCgaPbOSNVwWqlG7Ojgx42LXh_pOkYDLrr9xtO2s08ISlV1wmFEHMMnXYmi6EMBI26ZhT5IPTQKTI";
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);

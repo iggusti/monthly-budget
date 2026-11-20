@@ -53,6 +53,18 @@ export type DailySectionKey =
   | "wifeDailyFromSalary"
   | "wifeDailyFromSavings";
 
+/** The eight budget sections in page order (index 0 is section 1). */
+export const BUDGET_SECTION_KEYS = [
+  "husbandIncome",
+  "wifeIncome",
+  "husbandFixed",
+  "wifeFixed",
+  "husbandDailyFromSalary",
+  "husbandDailyFromSavings",
+  "wifeDailyFromSalary",
+  "wifeDailyFromSavings"
+] as const;
+
 /**
  * Generic editable line item used by the reusable expense list component.
  * Fixed expenses use `name`; daily expenses also carry an optional `method`.

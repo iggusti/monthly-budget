@@ -2,7 +2,6 @@
   import { t } from "#lib/i18n.svelte";
   import { untrack } from "svelte";
 
-  /** SearchBar component props. */
   interface Props {
     query: string;
     onQueryChange: (query: string) => void;
@@ -26,7 +25,6 @@
     });
   });
 
-  // Commit the current draft as the search query.
   function commitSearch() {
     if (draft !== query) onQueryChange(draft);
   }

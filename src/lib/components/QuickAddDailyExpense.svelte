@@ -111,7 +111,6 @@
   );
   const amount = $derived(Number(amountInput.replace(/\D/g, "")) || 0);
 
-  /** Live validation, with the same always-on hints as the month page. */
   const hasName = $derived(name.trim().length > 0);
   const hasAmount = $derived(amount > 0);
   const canCommit = $derived(hasName && hasAmount);

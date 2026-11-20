@@ -8,6 +8,7 @@
     deleteBudget
   } from "#lib/budget-store";
   import {
+    BUDGET_SECTION_KEYS,
     computeTotals,
     createBudgetFromPrevious,
     formatCurrency,
@@ -37,7 +38,6 @@
   let searchQuery = $state("");
   let quickAddOpen = $state(false);
 
-  // ── Overview summary: open on the first visit of the day ───────────────────
   const LAST_OPEN_KEY = "fhb-last-open";
 
   /** Open the summary on the first visit today, folded on every later visit. */
@@ -52,7 +52,6 @@
     overviewExpanded = !overviewExpanded;
   }
 
-  // Redirect to login when not authenticated.
   onMount(() => {
     if (!isAuthenticated()) {
       location.href = "/login";
@@ -115,17 +114,6 @@
   const usedIds = $derived(new Set(budgets.map((b) => b.id)));
 
   // ── Cross-month item search ─────────────────────────────────────────────
-  // Section keys mapped 1:1 to the eight budget sections and their labels.
-  const SECTION_KEYS = [
-    "husbandIncome",
-    "wifeIncome",
-    "husbandFixed",
-    "wifeFixed",
-    "husbandDailyFromSalary",
-    "husbandDailyFromSavings",
-    "wifeDailyFromSalary",
-    "wifeDailyFromSavings"
-  ] as const;
 
   /** A single item match inside a month, tagged with its section label. */
   interface ItemMatch {
@@ -143,7 +131,7 @@
     if (matchesQuery(t("month.wifeIncome"), undefined, query)) {
       matches.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
     }
-    SECTION_KEYS.forEach((key, i) => {
+    BUDGET_SECTION_KEYS.forEach((key, i) => {
       if (key === "husbandIncome" || key === "wifeIncome") return;
       const items = (budget[key] ?? []) as { id: string; name: string; method?: string }[];
       for (const item of items) {
@@ -188,7 +176,6 @@
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
   const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
 
-  // This month's headline numbers.
   const currentIncome = $derived(currentTotals ? currentTotals.totalIncome : 0);
   const currentFixedExpense = $derived(currentTotals ? currentTotals.totalFixedExpenses : 0);
   const currentPerPerson = $derived(currentTotals ? currentTotals.equalSplitAmount : 0);
@@ -214,13 +201,11 @@
       : `${t("common.wife")} → ${t("common.husband")}`
   );
 
-  // Per-spouse splits for the income and fixed-expense cards.
   const currentIncomeHusband = $derived(currentBudget ? currentBudget.husbandIncome : 0);
   const currentIncomeWife = $derived(currentBudget ? currentBudget.wifeIncome : 0);
   const currentFixedHusband = $derived(currentTotals ? currentTotals.husbandFixedTotal : 0);
   const currentFixedWife = $derived(currentTotals ? currentTotals.wifeFixedTotal : 0);
 
-  // Daily spending for the CURRENT month only (broken down per spouse).
   const currentSalaryHusband = $derived(currentTotals ? currentTotals.husbandDailyFromSalaryTotal : 0);
   const currentSalaryWife = $derived(currentTotals ? currentTotals.wifeDailyFromSalaryTotal : 0);
   const currentSavingsHusband = $derived(currentTotals ? currentTotals.husbandDailyFromSavingsTotal : 0);
@@ -228,7 +213,6 @@
   const currentSalary = $derived(currentSalaryHusband + currentSalaryWife);
   const currentSavings = $derived(currentSavingsHusband + currentSavingsWife);
 
-  // Total expenses = fixed + daily from salary + daily from savings.
   const currentTotalExpense = $derived(currentFixedExpense + currentSalary + currentSavings);
   const currentTotalExpenseHusband = $derived(
     currentFixedHusband + currentSalaryHusband + currentSavingsHusband
@@ -667,8 +651,6 @@
   .overview-head { display: flex; align-items: center; gap: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--surface-border); }
   .overview-head-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
   .overview-head-sub { font-size: 0.78rem; color: var(--text-tertiary); }
-  /* Fold the eight summary values: open on the first visit of the day, closed
-     on later visits (see `initialOverviewExpanded`). */
   .overview-toggle {
     margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
     width: 1.9rem; height: 1.9rem; flex-shrink: 0; padding: 0;

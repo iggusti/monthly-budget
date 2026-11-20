@@ -27,7 +27,6 @@
   // Canonical URL for the current page (no query/hash).
   const canonical = $derived(`${BASE_URL}${path ?? page.url.pathname}`);
 
-  // Structured data describing the web application.
   const jsonLd = $derived({
     "@context": "https://schema.org",
     "@type": "WebApplication",

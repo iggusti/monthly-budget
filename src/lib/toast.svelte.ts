@@ -35,12 +35,10 @@ export function showToast(kind: ToastKind, message: string) {
   }
 }
 
-/** Confirm that a change was saved. */
 export function toastSuccess(message: string) {
   showToast("success", message);
 }
 
-/** Report that a change could not be saved. */
 export function toastError(message: string) {
   showToast("error", message);
 }

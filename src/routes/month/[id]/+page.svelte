@@ -6,13 +6,15 @@
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
   import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
   import {
+    BUDGET_SECTION_KEYS,
     computeTotals,
     createEmptyBudget,
     formatCurrency,
     formatPeriod,
     totalExpenses,
     type MonthBudget,
-    type ExpenseItem
+    type ExpenseItem,
+    type DailyExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
   import { currentPeriodId, isUpcomingPeriod, monthLabel } from "#lib/period";
@@ -64,21 +66,8 @@
   let showSectionNav = $state(false);
   let searchQuery = $state("");
 
-  // Section keys mapped 1:1 to sections 1–8 (index 0 = section 1, … index 7 = section 8).
-  const SECTION_KEYS = [
-    "husbandIncome",
-    "wifeIncome",
-    "husbandFixed",
-    "wifeFixed",
-    "husbandDailyFromSalary",
-    "husbandDailyFromSavings",
-    "wifeDailyFromSalary",
-    "wifeDailyFromSavings"
-  ] as const;
-
-  // Derived visible items per section after search filtering.
   const visibleItemsPerSection = $derived(
-    SECTION_KEYS.map((sectionKey, index) => {
+    BUDGET_SECTION_KEYS.map((sectionKey, index) => {
       let items: ExpenseItem[] = [];
       if (sectionKey === "husbandIncome") {
         items = [{ id: "husband-income", name: t("month.husbandIncome"), amount: budget.husbandIncome, method: undefined }];
@@ -89,7 +78,7 @@
         items = (budget[sectionKey as keyof MonthBudget] ?? []) as ExpenseItem[];
       }
       return {
-        index, // 0 = section 1, 1 = section 2, …, 7 = section 8
+        index,
         key: sectionKey,
         title: t(`month.section${index + 1}`),
         items: items.filter((item) => matchesQuery(item.name, item.method, searchQuery)),
@@ -97,14 +86,12 @@
     })
   );
 
-  // Which sections have a match, and the first one for auto-focus.
   const searchActive = $derived(searchQuery.trim().length > 0);
   const matchedSections = $derived(
     visibleItemsPerSection.map((section) => section.items.length > 0)
   );
   const firstMatchedIndex = $derived(matchedSections.indexOf(true));
 
-  // Auto-scroll to the first section that has a search result.
   $effect(() => {
     if (searchActive && firstMatchedIndex !== -1) {
       const target = document.getElementById(`section-${firstMatchedIndex + 1}`);
@@ -114,18 +101,6 @@
       }
     }
   });
-
-  // Section titles for the mobile quick-jump menu, in page order.
-  const SECTION_NAV_KEYS = [
-    "month.section1",
-    "month.section2",
-    "month.section3",
-    "month.section4",
-    "month.section5",
-    "month.section6",
-    "month.section7",
-    "month.section8"
-  ] as const;
 
   /** Close the menu and smooth-scroll to the requested section. */
   function goToSection(index: number) {
@@ -229,7 +204,6 @@
   );
   const equalSplitTransferAmount = $derived(Math.abs(totals.equalSplitTransfer));
 
-  // Combined daily totals (husband + wife).
   const dailyFromSalaryTotal = $derived(
     totals.husbandDailyFromSalaryTotal + totals.wifeDailyFromSalaryTotal
   );
@@ -237,7 +211,6 @@
     totals.husbandDailyFromSavingsTotal + totals.wifeDailyFromSavingsTotal
   );
 
-  // Total expenses = fixed + daily from salary + daily from savings.
   const totalExpense = $derived(totalExpenses(totals));
   const husbandTotalExpense = $derived(
     totals.husbandFixedTotal + totals.husbandDailyFromSalaryTotal + totals.husbandDailyFromSavingsTotal
@@ -411,6 +384,17 @@
     wifeDailyFromSalary: { person: "common.wife", kind: "common.salary" },
     wifeDailyFromSavings: { person: "common.wife", kind: "common.savings" }
   };
+
+  /** Keep the daily row fields; fixed expenses' `checked` flag is dropped. */
+  function toDailyExpenses(items: ExpenseItem[]): DailyExpense[] {
+    return items.map(({ id, name, amount, method, date }) => ({
+      id,
+      name,
+      amount,
+      method: method ?? "",
+      date: date ?? ""
+    }));
+  }
 
   /**
    * Move an item dropped into `toField` from its original section.
@@ -942,7 +926,7 @@
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSalary",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
+          toDailyExpenses(items)
         )}
       footerLabel={t("month.subtotalSalary")}
       footerValue={totals.husbandDailyFromSalaryTotal}
@@ -988,7 +972,7 @@
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSavings",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
+          toDailyExpenses(items)
         )}
       footerLabel={t("month.subtotalSavings")}
       footerValue={totals.husbandDailyFromSavingsTotal}
@@ -1015,7 +999,7 @@
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSalary",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
+          toDailyExpenses(items)
         )}
       footerLabel={t("month.subtotalSalary")}
       footerValue={totals.wifeDailyFromSalaryTotal}
@@ -1050,7 +1034,7 @@
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSavings",
-          items.map((item: ExpenseItem) => ({ id: item.id, name: item.name, amount: item.amount, method: item.method ?? "", date: item.date ?? "" }))
+          toDailyExpenses(items)
         )}
       footerLabel={t("month.subtotalSavings")}
       footerValue={totals.wifeDailyFromSavingsTotal}
@@ -1143,9 +1127,9 @@
         </div>
 
         <span class="section-nav-title">{t("month.sectionMenu")}</span>
-        {#each SECTION_NAV_KEYS as key, i (key)}
+        {#each visibleItemsPerSection as section, i (section.key)}
           <button class="section-nav-item" type="button" style="--stagger: {i}" onclick={() => goToSection(i + 1)}>
-            <span>{t(key)}</span>
+            <span>{section.title}</span>
             <svg
               viewBox="0 0 24 24"
               class="section-nav-chevron"
@@ -1437,7 +1421,6 @@
       var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower) + 60ms
     );
   }
-  /* A segment too short to hold its label simply hides it (threshold ≈ 1.2rem). */
   @container barseg (max-height: 1.2rem) {
     .bar-seg-value { display: none; }
   }
@@ -1742,8 +1725,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  /* "This is the active period" marker: a crisp ring reads cleaner than a
-     blurred glow at this size. */
   .month-nav-dot {
     flex-shrink: 0;
     width: 0.42rem;

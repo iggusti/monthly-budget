@@ -25,10 +25,10 @@ describe("monthRowsForColumns", () => {
 
 describe("monthPageSize", () => {
   it("fills whole rows for every layout", () => {
-    expect(monthPageSize(1)).toBe(4); // phone: 4 rows
-    expect(monthPageSize(2)).toBe(6); // tablet: 3 rows
-    expect(monthPageSize(3)).toBe(6); // small desktop: 2 rows
-    expect(monthPageSize(4)).toBe(8); // desktop: 2 rows
+    expect(monthPageSize(1)).toBe(4);
+    expect(monthPageSize(2)).toBe(6);
+    expect(monthPageSize(3)).toBe(6);
+    expect(monthPageSize(4)).toBe(8);
     expect(monthPageSize(5)).toBe(10);
   });
 

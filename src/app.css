@@ -2,7 +2,6 @@
 
 :root {
   --bg: #faf9f7;
-  --bg-elevated: #ffffff;
   --bg-muted: #f3f1ee;
   --surface: #ffffff;
   --surface-border: #e8e4df;
@@ -12,17 +11,12 @@
   --accent-gold: #c8956c;
   --accent-gold-light: #f5ece4;
   --accent-rose: #c47070;
-  --accent-rose-light: #f9eded;
   --accent-teal: #5b8a8a;
   --accent-teal-light: #edf4f4;
   --accent-blue: #6b7fa3;
-  --accent-blue-light: #eef1f7;
   --accent-violet: #8a6fa3;
-  --accent-violet-light: #f2eef7;
   --accent-indigo: #6d74b5;
-  --accent-indigo-light: #eef0f9;
   --accent-olive: #93994f;
-  --accent-olive-light: #f3f4e8;
   --success: #6b9e78;
   --success-light: #eef5f1;
   --danger: #c47070;
@@ -73,7 +67,6 @@
  */
 :root[data-theme="dark"] {
   --bg: #17150f;
-  --bg-elevated: #201d18;
   --bg-muted: #262219;
   --surface: #211e18;
   --surface-border: #34302a;
@@ -83,17 +76,12 @@
   --accent-gold: #d8a878;
   --accent-gold-light: #33291f;
   --accent-rose: #d98a8a;
-  --accent-rose-light: #332321;
   --accent-teal: #79acac;
   --accent-teal-light: #1e2c2c;
   --accent-blue: #8ea3c6;
-  --accent-blue-light: #212733;
   --accent-violet: #a892c0;
-  --accent-violet-light: #28222f;
   --accent-indigo: #969cd8;
-  --accent-indigo-light: #25273a;
   --accent-olive: #bcc178;
-  --accent-olive-light: #2b2d1d;
   --success: #86b892;
   --success-light: #1f2a22;
   --danger: #d98a8a;
@@ -151,16 +139,6 @@ input, select, textarea {
   border: 0;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
@@ -170,13 +148,6 @@ input, select, textarea {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-in { animation: fadeIn 0.5s ease backwards; }
 
 /* ── Motion utilities ───────────────────────────────────────────────────────
  * Reusable entrance animations. `.animate-rise`/`.animate-pop` animate a single
@@ -267,7 +238,7 @@ input, select, textarea {
     transition-delay: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-in, .animate-rise, .animate-pop, .animate-stagger > *, .field-hint {
+  .animate-rise, .animate-pop, .animate-stagger > *, .field-hint {
     opacity: 1 !important;
     transform: none !important;
   }

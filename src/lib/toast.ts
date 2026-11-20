@@ -41,7 +41,6 @@ export function pushToast(
   return [...rest, toast].slice(-limit);
 }
 
-/** The stack without the toast `id`. */
 export function dropToast(list: readonly Toast[], id: number): Toast[] {
   return list.filter((t) => t.id !== id);
 }

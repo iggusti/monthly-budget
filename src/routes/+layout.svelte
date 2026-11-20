@@ -25,7 +25,6 @@
     authed = isAuthenticated();
   });
 
-  // Keep the document theme in sync with the store on mount.
   $effect(() => {
     syncTheme();
   });
@@ -71,8 +70,6 @@
     </header>
 
     <main class="main-content">
-      <!-- Re-enter the page content on every route change so navigation feels
-           deliberate: a short rise + fade instead of an instant swap. -->
       {#key page.url.pathname}
         <div class="page-enter" in:fly={{ y: 12, duration: 380 }} out:fade={{ duration: 120 }}>
           {@render children()}
@@ -86,7 +83,6 @@
   </div>
 {/if}
 
-<!-- Transient success/failure feedback, above every page. -->
 <Toasts />
 
 <style>
@@ -123,7 +119,6 @@
   .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
   .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2rem 2rem 3rem; }
 
-  /* Wrapper used by the keyed route transition in the markup. */
   .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; }
   .footer { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 0.8rem; border-top: 1px solid var(--surface-border); }
 

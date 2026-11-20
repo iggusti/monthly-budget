@@ -148,7 +148,6 @@
     rowEl: HTMLElement
   ) {
     if (!key || !group) return;
-    // Don't start a drag when interacting with controls in the row.
     if ((e.target as HTMLElement).closest("button, input, select, a, label.check")) return;
     dragState.active = true;
     dragState.picked = false;
@@ -202,6 +201,7 @@
   } from "#lib/expense-methods";
   import BadgeIcon from "./BadgeIcon.svelte";
   import { toastError, toastSuccess } from "#lib/toast.svelte";
+  import { highlightText } from "#lib/search";
 
   interface Props {
     /** Section title, e.g. "Husband Fixed Expenses". */
@@ -302,13 +302,6 @@
   /** Reactive labels so they follow the active language unless overridden. */
   const nameText = $derived(nameLabel ?? t("expense.nameLabel"));
   const amountText = $derived(amountLabel ?? t("expense.amountLabel"));
-
-  /** Highlight matching text in item names when search query is provided. */
-  function highlightText(name: string, query: string): string {
-    if (!query || !query.trim()) return name;
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    return name.replace(regex, "<mark>$1</mark>");
-  }
 
   // ── Date helpers ──────────────────────────────────────────────────────────
 
@@ -479,7 +472,6 @@
 
   let draft = $state<ExpenseItem>({ id: "", name: "", amount: 0, method: "", date: "" });
 
-  /** Name and amount are both required, with hints under their own inputs. */
   const hasName = $derived(draft.name.trim().length > 0);
   const hasAmount = $derived(Number(draft.amount) > 0);
   const canCommit = $derived(hasName && hasAmount);
@@ -1360,8 +1352,6 @@
       align-items: baseline;
       gap: 0.1rem 0.45rem;
     }
-    /* Keep the type scale identical to the other sections' footers:
-       value 0.8rem, label/supporting text 0.72rem. */
     .section-footer.stackable .footer-remaining { font-size: 0.8rem; line-height: 1.2; }
     .section-footer.stackable .footer-sub { font-size: 0.72rem; line-height: 1.35; }
   }
@@ -1445,7 +1435,6 @@
     .item-right { gap: 0.5rem; }
   }
 
-  /* Global drag & drop visuals (target both mouse and touch). */
   :global(body.drag-in-progress) { cursor: grabbing; }
   :global(body.drag-in-progress *) { cursor: grabbing; }
 

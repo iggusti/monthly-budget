@@ -12,6 +12,13 @@ import {
 } from "./firebase";
 import { normalizeBudget, type MonthBudget } from "./types";
 
+/** Normalise query results into budgets, newest first. */
+function toBudgetList(docs: { id: string; data: () => Partial<MonthBudget> }[]): MonthBudget[] {
+  return docs
+    .map((entry) => normalizeBudget(entry.id, entry.data()))
+    .sort((a, b) => b.id.localeCompare(a.id));
+}
+
 /** Fetch a single month budget. Returns an empty (normalised) budget when missing. */
 export async function fetchBudget(id: string): Promise<MonthBudget> {
   try {
@@ -48,9 +55,7 @@ export async function budgetExists(id: string): Promise<boolean> {
 export async function fetchAllBudgets(): Promise<MonthBudget[]> {
   try {
     const snapshot = await getDocs(collection(db, BUDGET_COLLECTION));
-    return snapshot.docs
-      .map((entry) => normalizeBudget(entry.id, entry.data() as Partial<MonthBudget>))
-      .sort((a, b) => b.id.localeCompare(a.id));
+    return toBudgetList(snapshot.docs);
   } catch (error) {
     console.error("Failed to load budgets:", error);
     return [];
@@ -88,10 +93,7 @@ export function subscribeAllBudgets(
   return onSnapshot(
     collection(db, BUDGET_COLLECTION),
     (snapshot) => {
-      const budgets = snapshot.docs
-        .map((entry) => normalizeBudget(entry.id, entry.data() as Partial<MonthBudget>))
-        .sort((a, b) => b.id.localeCompare(a.id));
-      onChange(budgets);
+      onChange(toBudgetList(snapshot.docs));
     },
     (error) => {
       console.error("Failed to subscribe to budgets:", error);
