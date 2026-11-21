@@ -69,7 +69,7 @@ export async function buildBudgetsPdf(
 
   doc.setProperties({
     title: labels.title,
-    subject: labels.generated.replace("{date}", todayISO()),
+    subject: labels.generated,
     creator: "Monthly Budget Nia Ilham"
   });
 
@@ -130,7 +130,7 @@ export async function buildBudgetsPdf(
   doc.text(safe(labels.title), margin, 14);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(safe(labels.generated.replace("{date}", new Date().toLocaleDateString())), margin, 22);
+  doc.text(safe(labels.generated), margin, 22);
 
   y = 40;
   doc.setFont("helvetica", "bold");
