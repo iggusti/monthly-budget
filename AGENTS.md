@@ -8,6 +8,9 @@ changing code; the rules below are easy to break accidentally.
 - **SvelteKit 3** (Svelte 5, runes mode enforced in `vite.config.ts`) + TypeScript
   + Vite 8. Static build via `@sveltejs/adapter-static` (`fallback: index.html`),
   no server-side data loading — the app is client-rendered on Firebase Hosting.
+- Installable PWA: `static/manifest.webmanifest` plus the icons in `static/icons/`
+  are linked from `src/app.html`. The service worker is FCM-only, so there is no
+  offline app shell.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
 - **Cloud Functions** (`functions/`, Node 22) + FCM for push notifications.
@@ -41,8 +44,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
   stores, no `export let`. Server-side rendering must stay safe: guard
   `window`/`navigator` access or lazy-import browser-only SDKs.
 - **Code, comments and markdown are English.** UI copy is bilingual: every new
-  string needs both `en` and `id` entries in `src/lib/i18n.svelte.ts`; use
-  `t("namespace.key")`. `svelte-check` does not catch missing translations.
+  string needs both `en` and `id` entries in `src/lib/i18n-dicts.ts` (plain
+  dictionaries, parity checked by `i18n-dicts.test.ts`); `i18n.svelte.ts` only
+  holds the reactive `t()` / `lang` state. Use `t("namespace.key")`.
 - Styling is plain CSS per component using the CSS variables in `app.css`.
   Inline field validation hints (expense name/date, budget period) all share the
   `.field-hint` class in `app.css`; use it instead of restyling a hint.
@@ -54,14 +58,18 @@ every push to `main`; that workflow does **not** touch functions or rules.
   tokens — keep them plain rgba, `color-mix()` is not supported everywhere.
 - Transient success/failure feedback goes through the toast stack:
   `Toasts.svelte` is mounted once in `+layout.svelte` and fed by
-  `toastSuccess()` / `toastError()` from `#lib/toast.svelte` (pure queue logic in
-  `toast.ts`). `ExpenseSection` confirms add/edit/delete once the parent's
+  `toastSuccess()` / `toastError()` / `toastAction()` from `#lib/toast.svelte`
+  (pure queue logic in `toast.ts`). `toastAction()` shows a 7-second Undo
+  button; destructive deletes use it instead of `confirm()` so the snapshot can
+  be written back with `saveBudget()`. `ExpenseSection` confirms add/edit/delete once the parent's
   `onChange` promise settles — it resolves `false` when the save failed — and the
   month page confirms a drag-and-drop move between sections the same way.
 - Keep changes small and consistent with the surrounding code; run
   `npm run verify` before finishing.
 - Logic worth testing belongs in `src/lib/*.ts` (no Svelte imports) so it stays
   unit-testable with Vitest.
+- Shared animation timings/easings live in `src/lib/motion.ts` (`MOTION`,
+  `motionFade()`, `motionFly()`); use them instead of new literal durations.
 - **License: MIT** (see `LICENSE`). Keep the `license` field in both
   `package.json` files in sync.
 
@@ -92,8 +100,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   `Date` math). Documents created before the field existed have none.
 - Payment method is one string in `item.method`, composed from a preset pair:
   base (`qris` / `transfer` / `cash`) plus a channel (bank or e-wallet). The
-  preset lists live in `ExpenseSection.svelte` (`CHANNEL_BASES`,
-  `METHOD_CHANNELS_BANK`, `METHOD_CHANNELS_EWALLET`). Do not turn it back into a
+  shared presets and defaults live in `src/lib/expense-methods.ts` (used by both
+  `ExpenseSection` and the dashboard quick-add). Do not turn it back into a
   free-text field.
 - `ExpenseSection.svelte` is opt-in per feature: `withMethod`, `withDate`,
   `methodDefault` (base + channel preselected for new entries, e.g. husband
@@ -105,6 +113,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
   those two helpers add.
 - `src/lib/auth.ts` gates the UI with the shared keyword and signs in
   anonymously. The anonymous uid is the device identity used for notifications.
+- Whole-data backup lives in `src/lib/backup.ts`: JSON is lossless (and
+  re-importable), CSV is download-only. The dashboard panel is the only UI;
+  imports are validated/normalised before `saveBudget()` writes them, so the
+  notification stamps are never bypassed.
 
 ## Notifications (do not break)
 

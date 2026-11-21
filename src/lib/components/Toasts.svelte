@@ -32,6 +32,18 @@
         {/if}
       </span>
       <span class="toast-text">{toast.message}</span>
+      {#if toast.action}
+        <button
+          class="toast-action"
+          type="button"
+          onclick={() => {
+            toast.action?.run();
+            dismissToast(toast.id);
+          }}
+        >
+          {toast.action.label}
+        </button>
+      {/if}
       <button
         class="toast-close"
         type="button"
@@ -93,6 +105,17 @@
   .toast.error .toast-icon { background: var(--danger-light); color: var(--danger); }
 
   .toast-text { flex: 1; min-width: 0; }
+
+  .toast-action {
+    flex-shrink: 0;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-gold-light);
+    color: var(--accent-gold);
+    font-size: 0.75rem;
+    font-weight: 800;
+  }
+  .toast-action:hover { background: var(--accent-gold); color: #fff; }
 
   .toast-close {
     display: inline-flex;

@@ -8,6 +8,7 @@
     saveBudget,
     deleteBudget
   } from "#lib/budget-store";
+  import { buildBackupJson, parseBackup, toBudgetsCsv } from "#lib/backup";
   import {
     BUDGET_SECTION_KEYS,
     computeTotals,
@@ -20,7 +21,7 @@
     type DailySectionKey
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { toastError, toastSuccess } from "#lib/toast.svelte";
+  import { toastAction, toastError, toastSuccess } from "#lib/toast.svelte";
   import { currentPeriodId, listedPeriodIds, monthLabel, previousMonthId } from "#lib/period";
   import { highlightText, matchesQuery } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
@@ -38,6 +39,7 @@
   let showAllMonths = $state(false);
   let searchQuery = $state("");
   let quickAddOpen = $state(false);
+  let importInput = $state<HTMLInputElement | null>(null);
 
   const LAST_OPEN_KEY = "fhb-last-open";
 
@@ -284,9 +286,74 @@
   }
 
   async function removeMonth(id: string) {
-    if (!confirm(t("dashboard.confirmDelete", { month: monthLabel(id, locale) }))) return;
-    await deleteBudget(id);
+    const snapshot = budgets.find((b) => b.id === id);
+    if (!snapshot) return;
+    try {
+      await deleteBudget(id);
+    } catch (error) {
+      console.error("Failed to delete budget:", error);
+      toastError(t("toast.saveFailed"));
+      return;
+    }
     budgets = budgets.filter((b) => b.id !== id);
+    toastAction(t("toast.monthDeleted", { month: snapshot.title }), t("common.undo"), () => {
+      void saveBudget(snapshot).then(
+        () => {
+          budgets = [...budgets, snapshot].sort((a, b) => b.id.localeCompare(a.id));
+          toastSuccess(t("toast.restored"));
+        },
+        (error) => {
+          console.error("Failed to restore budget:", error);
+          toastError(t("toast.saveFailed"));
+        }
+      );
+    });
+  }
+
+  function downloadBackup(text: string, extension: string, type: string) {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `monthly-budget-${todayISO()}.${extension}`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toastSuccess(t("backup.exported"));
+  }
+
+  async function restoreBackup(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    let restored: MonthBudget[];
+    let skipped: number;
+    try {
+      ({ budgets: restored, skipped } = parseBackup(await file.text()));
+    } catch (error) {
+      console.error("Invalid backup file:", error);
+      toastError(t("backup.invalidFile"));
+      return;
+    }
+    if (restored.length === 0) {
+      toastError(t("backup.invalidFile"));
+      return;
+    }
+    if (!confirm(t("backup.confirmReplace", { n: restored.length }))) return;
+
+    try {
+      for (const budget of restored) await saveBudget(budget);
+    } catch (error) {
+      console.error("Failed to restore backup:", error);
+      toastError(t("backup.importFailed"));
+      return;
+    }
+    const restoredIds = new Set(restored.map((b) => b.id));
+    budgets = [...budgets.filter((b) => !restoredIds.has(b.id)), ...restored].sort((a, b) =>
+      b.id.localeCompare(a.id)
+    );
+    toastSuccess(t("backup.imported", { n: restored.length }));
+    if (skipped > 0) toastSuccess(t("backup.skipped", { n: skipped }));
   }
 </script>
 
@@ -583,6 +650,29 @@
       {/each}
     </div>
   {/if}
+
+  {#if !loading}
+    <section class="backup-panel" in:fade={motionFade(MOTION.slow, 220)}>
+      <div class="backup-copy">
+        <h2>{t("backup.title")}</h2>
+        <p>{t("backup.text")}</p>
+        <small>{t("backup.importHint")}</small>
+      </div>
+      <div class="backup-actions">
+        <button class="backup-btn" onclick={() => downloadBackup(buildBackupJson(budgets), "json", "application/json")} disabled={budgets.length === 0}>{t("backup.exportJson")}</button>
+        <button class="backup-btn" onclick={() => downloadBackup(toBudgetsCsv(budgets), "csv", "text/csv;charset=utf-8")} disabled={budgets.length === 0}>{t("backup.exportCsv")}</button>
+        <button class="backup-btn primary" onclick={() => importInput?.click()}>{t("backup.import")}</button>
+        <input
+          bind:this={importInput}
+          class="sr-only"
+          type="file"
+          accept="application/json,.json"
+          aria-label={t("backup.import")}
+          onchange={restoreBackup}
+        />
+      </div>
+    </section>
+  {/if}
 </div>
 
 {#if !loading}
@@ -810,6 +900,16 @@
   .info-dot.rose { background: var(--accent-rose); }
   .info-dot.teal { background: var(--accent-teal); }
   .info-dot.gold { background: var(--accent-gold); }
+
+  .backup-panel { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 1.5rem; padding: 1.1rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .backup-copy h2 { font-size: 0.9rem; font-weight: 800; margin-bottom: 0.2rem; }
+  .backup-copy p, .backup-copy small { display: block; font-size: 0.78rem; color: var(--text-tertiary); }
+  .backup-copy small { margin-top: 0.15rem; font-size: 0.72rem; }
+  .backup-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .backup-btn { padding: 0.55rem 0.9rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+  .backup-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent-teal); }
+  .backup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .backup-btn.primary { background: var(--accent-teal); border-color: var(--accent-teal); color: #fff; }
 
   @media (max-width: 1000px) {
     .overview-body-clip { grid-template-columns: repeat(2, 1fr); }

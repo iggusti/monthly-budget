@@ -12,7 +12,9 @@ import {
   dropToast,
   pushToast,
   TOAST_DURATION,
+  TOAST_UNDO_DURATION,
   type Toast,
+  type ToastAction,
   type ToastKind
 } from "./toast";
 
@@ -27,11 +29,23 @@ export function dismissToast(id: number) {
 }
 
 /** Show a toast and dismiss it automatically after its kind's duration. */
-export function showToast(kind: ToastKind, message: string) {
+export function showToast(
+  kind: ToastKind,
+  message: string,
+  options: { action?: ToastAction; duration?: number } = {}
+) {
   const id = nextId++;
-  toastState.list = pushToast(toastState.list, { id, kind, message });
+  toastState.list = pushToast(toastState.list, {
+    id,
+    kind,
+    message,
+    action: options.action
+  });
   if (typeof window !== "undefined") {
-    setTimeout(() => dismissToast(id), TOAST_DURATION[kind]);
+    setTimeout(
+      () => dismissToast(id),
+      options.duration ?? TOAST_DURATION[kind]
+    );
   }
 }
 
@@ -41,4 +55,12 @@ export function toastSuccess(message: string) {
 
 export function toastError(message: string) {
   showToast("error", message);
+}
+
+/** Feedback with an "Undo"-style button that stays long enough to tap. */
+export function toastAction(message: string, label: string, run: () => void) {
+  showToast("success", message, {
+    action: { label, run },
+    duration: TOAST_UNDO_DURATION
+  });
 }

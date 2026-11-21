@@ -33,6 +33,12 @@ describe("pushToast", () => {
     const list = pushToast([toast(1, "success", "Saved")], toast(2, "error", "Saved"));
     expect(list.map((t) => t.id)).toEqual([1, 2]);
   });
+
+  it("keeps same-message toasts when only one offers an action", () => {
+    const first = { ...toast(1, "success", "Deleted"), action: { label: "Undo", run: () => {} } };
+    const list = pushToast([first], toast(2, "success", "Deleted"));
+    expect(list.map((t) => t.id)).toEqual([1, 2]);
+  });
 });
 
 describe("dropToast", () => {

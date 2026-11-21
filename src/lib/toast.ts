@@ -7,11 +7,20 @@
 
 export type ToastKind = "success" | "error";
 
+/** Optional one-shot button, used for undoing a destructive change. */
+export interface ToastAction {
+  label: string;
+  run: () => void;
+}
+
 export interface Toast {
   /** Unique, monotonically increasing id — also the `{#each}` key. */
   id: number;
   kind: ToastKind;
   message: string;
+  action?: ToastAction;
+  /** Overrides the kind's automatic dismiss time, e.g. for undo actions. */
+  duration?: number;
 }
 
 /** How long each kind stays on screen before it dismisses itself. */
@@ -19,6 +28,9 @@ export const TOAST_DURATION: Record<ToastKind, number> = {
   success: 2800,
   error: 4800
 };
+
+/** Undo stays long enough to reach the phone and tap it. */
+export const TOAST_UNDO_DURATION = 7000;
 
 /** Most toasts shown at once; the oldest is dropped when more arrive. */
 export const TOAST_LIMIT = 3;
@@ -36,7 +48,12 @@ export function pushToast(
   limit: number = TOAST_LIMIT
 ): Toast[] {
   const rest = list.filter(
-    (t) => !(t.kind === toast.kind && t.message === toast.message)
+    (t) =>
+      !(
+        t.kind === toast.kind &&
+        t.message === toast.message &&
+        t.action?.label === toast.action?.label
+      )
   );
   return [...rest, toast].slice(-limit);
 }

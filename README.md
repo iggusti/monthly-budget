@@ -94,16 +94,22 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   jumps when Firestore data lands), the flow charts rise in from the baseline
   on page entry, and every animation honours the OS `prefers-reduced-motion`
   setting.
-- **Push notifications** — when an expense is added, edited or deleted, the
-  other phone gets a system notification even with the app closed. The device
-  that made the change is never notified. See
-  [Push notifications](#push-notifications).
+- **Backup & restore** — the dashboard can download every period as JSON
+  (re-importable) or as a flat CSV. Restores are validated first and written
+  through the normal budget store, so real-time sync keeps working.
+- **Installable PWA** — Add to Home Screen uses the bundled manifest and icons;
+  the service worker is FCM-only, so the app still needs a connection.
+- **Push notifications** — the delivery pipeline is wired up so an expense
+  edit notifies the other phone, but the bell is hidden until the sender Cloud
+  Function can be deployed. See [Push notifications](#push-notifications).
 
 ## Push notifications
 
-Each phone registers an FCM token through the bell button in the topbar; the
+Each phone can register an FCM token through the bell button in the topbar; the
 token is stored in the `devices` collection together with the anonymous
-Firebase uid and the UI language.
+Firebase uid and the UI language. The bell is currently hidden in
+`+layout.svelte` (`PUSH_NOTIFICATIONS_ENABLED = false`) because nothing would be
+delivered yet.
 
 Every budget write is stamped with `lastEditBy = <anonymous uid>` (see
 `saveBudget()` / `deleteBudget()`). A Firestore-triggered Cloud Function
@@ -125,8 +131,9 @@ Details:
 - Dead tokens are pruned automatically when FCM reports them as unregistered.
 
 > Sending pushes requires Cloud Functions, and Cloud Functions require the
-> Firebase **Blaze** plan. The project is currently on Spark, so the bell can
-> register a device but no notification is sent yet. See
+> Firebase **Blaze** plan. The project is currently on Spark, so no notification
+> is sent yet and the bell is hidden. Flip `PUSH_NOTIFICATIONS_ENABLED` back to
+> `true` after the function is deployed. See
 > [Support & donations](#support--donations).
 
 ### Notification setup

@@ -201,7 +201,7 @@
     parseMethod
   } from "#lib/expense-methods";
   import BadgeIcon from "./BadgeIcon.svelte";
-  import { toastError, toastSuccess } from "#lib/toast.svelte";
+  import { toastAction, toastError, toastSuccess } from "#lib/toast.svelte";
   import { highlightText } from "#lib/search";
 
   interface Props {
@@ -679,6 +679,12 @@
     delete: "toast.deleted"
   };
 
+  /** Snapshot needed to put a deleted entry back from the undo toast. */
+  interface UndoDelete {
+    name: string;
+    restore: () => unknown;
+  }
+
   /**
    * Push a change to the parent and confirm it with a toast.
    *
@@ -687,7 +693,11 @@
    * instead. Checkbox toggles call `onChange` directly — they are not changes
    * worth announcing.
    */
-  function applyChange(nextItems: ExpenseItem[], action: "add" | "edit" | "delete") {
+  function applyChange(
+    nextItems: ExpenseItem[],
+    action: "add" | "edit" | "delete",
+    undo?: UndoDelete
+  ) {
     let result: unknown;
     try {
       result = onChange(nextItems);
@@ -696,14 +706,36 @@
       toastError(t("toast.saveFailed"));
       return;
     }
-    void reportChange(result, action);
+    void reportChange(result, action, undo);
   }
 
-  async function reportChange(result: unknown, action: "add" | "edit" | "delete") {
+  async function reportChange(
+    result: unknown,
+    action: "add" | "edit" | "delete",
+    undo?: UndoDelete
+  ) {
     try {
       const saved = await result;
-      if (saved === false) toastError(t("toast.saveFailed"));
-      else toastSuccess(t(TOAST_KEY[action]));
+      if (saved === false) {
+        toastError(t("toast.saveFailed"));
+        return;
+      }
+      if (undo && action === "delete") {
+        toastAction(t("toast.itemDeleted", { name: undo.name }), t("common.undo"), () => {
+          void Promise.resolve(undo.restore()).then(
+            (restored) => {
+              if (restored === false) toastError(t("toast.saveFailed"));
+              else toastSuccess(t("toast.restored"));
+            },
+            (error) => {
+              console.error("Failed to restore expense:", error);
+              toastError(t("toast.saveFailed"));
+            }
+          );
+        });
+        return;
+      }
+      toastSuccess(t(TOAST_KEY[action]));
     } catch (error) {
       console.error("Failed to update expenses:", error);
       toastError(t("toast.saveFailed"));
@@ -757,7 +789,13 @@
   }
 
   function remove(id: string) {
-    applyChange(items.filter((item) => item.id !== id), "delete");
+    const target = items.find((item) => item.id === id);
+    if (!target) return;
+    const before = [...items];
+    applyChange(before.filter((item) => item.id !== id), "delete", {
+      name: target.name,
+      restore: () => onChange(before)
+    });
     if (editingId === id) editingId = null;
     confirmDeleteId = null;
   }
