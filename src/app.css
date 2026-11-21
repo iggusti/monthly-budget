@@ -6,8 +6,9 @@
   --surface: #ffffff;
   --surface-border: #e8e4df;
   --text-primary: #1a1714;
-  --text-secondary: #6b6560;
-  --text-tertiary: #9c9690;
+  /* Text tones stay >=4.5:1 on every light surface, including tinted cards. */
+  --text-secondary: #5f5954;
+  --text-tertiary: #6f6a65;
   --accent-gold: #c8956c;
   --accent-gold-light: #f5ece4;
   /* Darker gold for text on tinted surfaces; brand gold stays for fills. */
@@ -76,7 +77,7 @@
   --surface-border: #34302a;
   --text-primary: #f2ede6;
   --text-secondary: #b3aca2;
-  --text-tertiary: #837c72;
+  --text-tertiary: #9e978e;
   --accent-gold: #d8a878;
   --accent-gold-light: #33291f;
   --accent-gold-ink: #d8a878;
