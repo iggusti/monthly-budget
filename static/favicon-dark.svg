@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0c9a0"/>
+      <stop offset="0.55" stop-color="#d98a8a"/>
+      <stop offset="1" stop-color="#d98a8a"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8a878"/>
+      <stop offset="1" stop-color="#a07050"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark-theme counterpart of favicon.svg, swapped in by the theme store. -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#79acac"/>
+
+  <!-- House body -->
+  <rect x="15" y="29" width="34" height="24" rx="3" fill="url(#g)"/>
+
+  <!-- Roof -->
+  <path d="M10 30 L32 11 L54 30 Z" fill="url(#roof)"/>
+
+  <!-- Door -->
+  <rect x="27" y="37" width="10" height="16" rx="2" fill="#faf9f7"/>
+
+  <!-- Heart on the door -->
+  <path d="M32 39.5c-1-1.5-3.4-1.4-4.2 0.2-0.8 1.6 0.6 2.8 4.2 4.8 3.6-2 5-3.2 4.2-4.8-0.8-1.6-3.2-1.7-4.2-0.2z" fill="#d98a8a"/>
+</svg>

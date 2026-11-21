@@ -6,7 +6,9 @@
  * `:root` and a dark override on `[data-theme="dark"]`.
  *
  * The choice is persisted in localStorage (`fhb-theme`) and applied before the
- * first paint by an inline script in `app.html`, so there is no flash.
+ * first paint by an inline script in `app.html`, so there is no flash. That
+ * script and `apply()` also swap the favicon and `theme-color` so the browser
+ * chrome matches the in-app logo.
  *
  * Usage in components:
  *   import { theme, toggleTheme, setTheme } from "#lib/theme.svelte";
@@ -28,10 +30,17 @@ function initialTheme(): Theme {
   return "light";
 }
 
-/** Apply a theme to the document root. */
+/** Apply a theme to the document root and its browser-level colours. */
 function apply(next: Theme) {
   if (typeof document === "undefined") return;
+  const dark = next === "dark";
   document.documentElement.dataset.theme = next;
+
+  const icon = document.getElementById("favicon");
+  if (icon) icon.setAttribute("href", dark ? "/favicon-dark.svg" : "/favicon.svg");
+
+  const themeColor = document.getElementById("theme-color");
+  if (themeColor) themeColor.setAttribute("content", dark ? "#79acac" : "#5b8a8a");
 }
 
 /** Reactive current theme (Svelte 5 rune-based store). */

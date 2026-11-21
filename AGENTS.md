@@ -16,8 +16,10 @@ changing code; the rules below are easy to break accidentally.
   `node scripts/generate-pwa-icons.mjs`; their background is the light-theme
   accent teal `#5b8a8a` (same as the primary/backup button). The header logo is
   inlined in `+layout.svelte` instead, so its tile uses `var(--accent-teal)` and
-  follows dark mode. The service worker is FCM-only, so there is no offline app
-  shell.
+  follows dark mode; `theme.svelte.ts` swaps in `static/favicon-dark.svg` and a
+  darker `theme-color` meta on theme changes. Installed PWA icons and the OG
+  image stay static because the platform chooses them outside the theme. The
+  service worker is FCM-only, so there is no offline app shell.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
 - **Cloud Functions** (`functions/`, Node 22) + FCM for push notifications.

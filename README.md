@@ -101,6 +101,8 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   Android installs it fullscreen (no title bar), while iOS falls back to
   standalone. The service worker is FCM-only, so the app still needs a
   connection.
+- **Light & dark theme** — the topbar switch recolours the inline logo, favicon
+  and browser theme colour together (installed PWA icons stay fixed).
 - **Push notifications** — the delivery pipeline is wired up so an expense
   edit notifies the other phone, but the bell is hidden until the sender Cloud
   Function can be deployed. See [Push notifications](#push-notifications).
