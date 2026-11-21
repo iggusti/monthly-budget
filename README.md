@@ -95,8 +95,9 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   on page entry, and every animation honours the OS `prefers-reduced-motion`
   setting.
 - **Backup & restore** — the dashboard can download every period as JSON
-  (re-importable) or as a flat CSV. Restores are validated first and written
-  through the normal budget store, so real-time sync keeps working.
+  (re-importable), a flat CSV, or a printable PDF report. Restores are validated
+  first and written through the normal budget store, so real-time sync keeps
+  working.
 - **Installable PWA** — Add to Home Screen uses the bundled manifest and icons;
   Android installs it fullscreen (no title bar), while iOS falls back to
   standalone. The service worker is FCM-only, so the app still needs a

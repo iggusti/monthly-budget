@@ -38,6 +38,8 @@
 	},
 	"dependencies": {
 		"date-fns": "^4.4.0",
-		"firebase": "^12.9.0"
+		"firebase": "^12.9.0",
+		"jspdf": "^4.2.1",
+		"jspdf-autotable": "^5.0.9"
 	}
 }

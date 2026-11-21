@@ -123,9 +123,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - `src/lib/auth.ts` gates the UI with the shared keyword and signs in
   anonymously. The anonymous uid is the device identity used for notifications.
 - Whole-data backup lives in `src/lib/backup.ts`: JSON is lossless (and
-  re-importable), CSV is download-only. The dashboard panel is the only UI;
-  imports are validated/normalised before `saveBudget()` writes them, so the
-  notification stamps are never bypassed.
+  re-importable), CSV is download-only, and `backup-pdf.ts` renders a printable
+  period report (jsPDF/autoTable are lazy-loaded on button press). The dashboard
+  panel is the only UI; imports are validated/normalised before `saveBudget()`
+  writes them, so the notification stamps are never bypassed.
 
 ## Notifications (do not break)
 

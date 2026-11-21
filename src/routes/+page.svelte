@@ -9,6 +9,7 @@
     deleteBudget
   } from "#lib/budget-store";
   import { buildBackupJson, parseBackup, toBudgetsCsv } from "#lib/backup";
+  import { downloadBudgetsPdf } from "#lib/backup-pdf";
   import {
     BUDGET_SECTION_KEYS,
     computeTotals,
@@ -40,6 +41,7 @@
   let searchQuery = $state("");
   let quickAddOpen = $state(false);
   let importInput = $state<HTMLInputElement | null>(null);
+  let exportingPdf = $state(false);
 
   const LAST_OPEN_KEY = "fhb-last-open";
 
@@ -318,6 +320,45 @@
     link.click();
     URL.revokeObjectURL(url);
     toastSuccess(t("backup.exported"));
+  }
+
+  async function exportPdf() {
+    if (exportingPdf) return;
+    exportingPdf = true;
+    try {
+      await downloadBudgetsPdf(budgets, {
+        title: t("backup.title"),
+        generated: t("backup.pdfGenerated", {
+          date: new Date().toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" })
+        }),
+        summary: t("backup.pdfSummary"),
+        period: t("backup.pdfPeriod"),
+        totalIncome: t("month.totalIncome"),
+        totalExpense: t("month.totalExpense"),
+        name: t("expense.nameLabel"),
+        amount: t("expense.amountLabel"),
+        method: t("expense.method"),
+        date: t("expense.date"),
+        noItems: t("backup.pdfNoItems"),
+        page: t("backup.pdfPage"),
+        sections: [
+          t("month.section1"),
+          t("month.section2"),
+          t("month.section3"),
+          t("month.section4"),
+          t("month.section5"),
+          t("month.section6"),
+          t("month.section7"),
+          t("month.section8")
+        ]
+      });
+      toastSuccess(t("backup.exported"));
+    } catch (error) {
+      console.error("Failed to create PDF:", error);
+      toastError(t("backup.exportFailed"));
+    } finally {
+      exportingPdf = false;
+    }
   }
 
   async function restoreBackup(event: Event) {
@@ -661,6 +702,7 @@
       <div class="backup-actions">
         <button class="backup-btn" onclick={() => downloadBackup(buildBackupJson(budgets), "json", "application/json")} disabled={budgets.length === 0}>{t("backup.exportJson")}</button>
         <button class="backup-btn" onclick={() => downloadBackup(toBudgetsCsv(budgets), "csv", "text/csv;charset=utf-8")} disabled={budgets.length === 0}>{t("backup.exportCsv")}</button>
+        <button class="backup-btn" onclick={exportPdf} disabled={budgets.length === 0 || exportingPdf}>{exportingPdf ? "…" : t("backup.exportPdf")}</button>
         <button class="backup-btn primary" onclick={() => importInput?.click()}>{t("backup.import")}</button>
         <input
           bind:this={importInput}
