@@ -98,7 +98,9 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   (re-importable) or as a flat CSV. Restores are validated first and written
   through the normal budget store, so real-time sync keeps working.
 - **Installable PWA** — Add to Home Screen uses the bundled manifest and icons;
-  the service worker is FCM-only, so the app still needs a connection.
+  Android installs it fullscreen (no title bar), while iOS falls back to
+  standalone. The service worker is FCM-only, so the app still needs a
+  connection.
 - **Push notifications** — the delivery pipeline is wired up so an expense
   edit notifies the other phone, but the bell is hidden until the sender Cloud
   Function can be deployed. See [Push notifications](#push-notifications).

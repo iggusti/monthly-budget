@@ -99,7 +99,8 @@
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--surface-border);
-    padding: 0 2rem; height: 60px;
+    padding: 0 2rem; padding-top: env(safe-area-inset-top, 0px);
+    height: calc(60px + env(safe-area-inset-top, 0px));
     display: flex; align-items: center;
   }
   .topbar-inner {
@@ -129,7 +130,7 @@
   .footer { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 0.8rem; border-top: 1px solid var(--surface-border); }
 
   @media (max-width: 640px) {
-    .topbar { padding: 0 1rem; }
+    .topbar { padding: 0 1rem; padding-top: env(safe-area-inset-top, 0px); }
     .topbar-nav { gap: 0.3rem; }
     .main-content { padding: 1.25rem 1rem 2rem; }
     .nav-logout { padding: 0.25rem 0.6rem; font-size: 0.68rem; }

@@ -9,8 +9,10 @@ changing code; the rules below are easy to break accidentally.
   + Vite 8. Static build via `@sveltejs/adapter-static` (`fallback: index.html`),
   no server-side data loading — the app is client-rendered on Firebase Hosting.
 - Installable PWA: `static/manifest.webmanifest` plus the icons in `static/icons/`
-  are linked from `src/app.html`. The service worker is FCM-only, so there is no
-  offline app shell.
+  are linked from `src/app.html`. The manifest requests `fullscreen` (no PWA title
+  bar on Android); `viewport-fit=cover` and `env(safe-area-inset-top)` in the
+  layout topbar keep content clear of the cutout. iOS falls back to standalone.
+  The service worker is FCM-only, so there is no offline app shell.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
 - **Cloud Functions** (`functions/`, Node 22) + FCM for push notifications.
