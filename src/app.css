@@ -10,6 +10,10 @@
   --text-tertiary: #9c9690;
   --accent-gold: #c8956c;
   --accent-gold-light: #f5ece4;
+  /* Darker gold for text on tinted surfaces; brand gold stays for fills. */
+  --accent-gold-ink: #8a5f3c;
+  /* Near-black reads clearly on teal/gold/rose fills in both themes. */
+  --on-accent: #17150f;
   --accent-rose: #c47070;
   --accent-teal: #5b8a8a;
   --accent-teal-light: #edf4f4;
@@ -75,6 +79,8 @@
   --text-tertiary: #837c72;
   --accent-gold: #d8a878;
   --accent-gold-light: #33291f;
+  --accent-gold-ink: #d8a878;
+  --on-accent: #17150f;
   --accent-rose: #d98a8a;
   --accent-teal: #79acac;
   --accent-teal-light: #1e2c2c;

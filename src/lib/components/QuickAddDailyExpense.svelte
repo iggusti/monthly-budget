@@ -401,17 +401,17 @@
   .destination:hover { border-color: var(--accent-gold); }
   .destination.active {
     border-color: var(--accent-gold); background: var(--accent-gold-light);
-    color: var(--text-primary); box-shadow: 0 0 0 2px rgba(200, 149, 108, 0.16);
+    color: var(--text-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-gold) 16%, transparent);
   }
   /* Same badge icons and blue/rose tones as sections 5–8 on the month page. */
   .destination-icon {
     width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
     display: grid; place-items: center;
-    background: rgba(107, 127, 163, 0.15); color: var(--accent-blue);
+    background: color-mix(in srgb, var(--accent-blue) 15%, transparent); color: var(--accent-blue);
     transition: transform var(--dur-base) var(--ease-spring);
   }
   .destination.rose .destination-icon {
-    background: rgba(196, 112, 112, 0.15); color: var(--accent-rose);
+    background: color-mix(in srgb, var(--accent-rose) 15%, transparent); color: var(--accent-rose);
   }
   .destination.active .destination-icon { transform: scale(1.08) rotate(-4deg); }
 
@@ -423,7 +423,7 @@
   }
   .sheet input:focus, .sheet select:focus {
     outline: none; border-color: var(--accent-gold);
-    box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent);
   }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }

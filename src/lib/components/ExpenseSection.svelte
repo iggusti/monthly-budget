@@ -1172,17 +1172,17 @@
   .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
   .section:hover .badge { transform: scale(1.08) rotate(-4deg); }
   .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast, 0.18s) ease, color var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
-  .add-btn:hover { background: var(--text-primary); color: white; transform: rotate(90deg) scale(1.08); }
+  .add-btn:hover { background: var(--text-primary); color: var(--bg); transform: rotate(90deg) scale(1.08); }
   .add-btn:active { transform: rotate(90deg) scale(0.96); }
 
-  .blue .section-head { background: rgba(107, 127, 163, 0.07); }
-  .blue .badge { background: rgba(107, 127, 163, 0.15); color: var(--accent-blue); }
-  .rose .section-head { background: rgba(196, 112, 112, 0.07); }
-  .rose .badge { background: rgba(196, 112, 112, 0.15); color: var(--accent-rose); }
-  .gold .section-head { background: rgba(200, 149, 108, 0.07); }
-  .gold .badge { background: rgba(200, 149, 108, 0.15); color: var(--accent-gold); }
-  .teal .section-head { background: rgba(91, 138, 138, 0.07); }
-  .teal .badge { background: rgba(91, 138, 138, 0.15); color: var(--accent-teal); }
+  .blue .section-head { background: color-mix(in srgb, var(--accent-blue) 7%, transparent); }
+  .blue .badge { background: color-mix(in srgb, var(--accent-blue) 15%, transparent); color: var(--accent-blue); }
+  .rose .section-head { background: color-mix(in srgb, var(--accent-rose) 7%, transparent); }
+  .rose .badge { background: color-mix(in srgb, var(--accent-rose) 15%, transparent); color: var(--accent-rose); }
+  .gold .section-head { background: color-mix(in srgb, var(--accent-gold) 7%, transparent); }
+  .gold .badge { background: color-mix(in srgb, var(--accent-gold) 15%, transparent); color: var(--accent-gold-ink); }
+  .teal .section-head { background: color-mix(in srgb, var(--accent-teal) 7%, transparent); }
+  .teal .badge { background: color-mix(in srgb, var(--accent-teal) 15%, transparent); color: var(--accent-teal); }
 
   .editor { padding: 1rem 1.25rem; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
   .editor-item { list-style: none; background: var(--bg); border-bottom: 1px solid var(--surface-border); }
@@ -1194,7 +1194,7 @@
   /* Only the field's own label; hints and date details keep their gold colour. */
   .field > span:first-child { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
-  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
   .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
 
   /* Payment method: two native selects (method, then bank / e-wallet). The
@@ -1215,7 +1215,7 @@
     cursor: pointer;
     text-overflow: ellipsis;
   }
-  .field select:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .field select:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
@@ -1243,7 +1243,7 @@
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
   .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
-  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
   /* The hint look comes from the shared `.field-hint` (app.css); this only
      holds the layout. "No date" and a picked date share it, so only the text
      and the icon tell them apart. */
@@ -1273,7 +1273,7 @@
   .item.no-shift:hover { padding-left: 1.25rem; }
   .no-shift:hover .badge,
   .section.no-shift:hover .badge { transform: none; }
-  .item.editing { background: rgba(200, 149, 108, 0.08); }
+  .item.editing { background: color-mix(in srgb, var(--accent-gold) 8%, transparent); }
   .item.checked .item-name { text-decoration: line-through; color: var(--text-tertiary); }
   .item.checked .item-amount { color: var(--text-tertiary); }
   .item-left { display: flex; align-items: center; gap: 0.6rem; min-width: 0; flex: 1; }
@@ -1291,14 +1291,14 @@
     width: 18px; height: 18px; border-radius: 5px;
     border: 2px solid var(--surface-border); background: var(--surface);
     display: inline-flex; align-items: center; justify-content: center;
-    transition: background var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease); font-size: 11px; color: white;
+    transition: background var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease); font-size: 11px; color: var(--on-accent);
   }
   .check:hover .checkmark { border-color: var(--accent-gold); transform: scale(1.08); }
   .check:active .checkmark { transform: scale(0.92); }
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
   .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base, 0.28s) var(--ease-spring, ease) backwards; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
-  .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: rgba(107, 127, 163, 0.1); color: var(--accent-blue); }
+  .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: color-mix(in srgb, var(--accent-blue) 10%, transparent); color: var(--accent-blue); }
   .date-badge {
     display: inline-flex; align-items: center; gap: 0.35rem;
     font-size: 0.66rem; font-weight: 600;
@@ -1423,14 +1423,14 @@
   }
   .switch input:checked + .switch-track { background: var(--accent-teal); border-color: var(--accent-teal); }
   .switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
-  .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(91, 138, 138, 0.25); }
+  .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-teal) 25%, transparent); }
   .switch-label { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); }
   .switch-hint { font-size: 0.72rem; color: var(--text-tertiary); margin-left: auto; }
 
-  .gold .section-footer { --footer-accent: var(--accent-gold); --footer-bg: rgba(200, 149, 108, 0.08); }
-  .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: rgba(196, 112, 112, 0.08); }
-  .blue .section-footer { --footer-accent: var(--accent-blue); --footer-bg: rgba(107, 127, 163, 0.08); }
-  .teal .section-footer { --footer-accent: var(--accent-teal); --footer-bg: rgba(91, 138, 138, 0.08); }
+  .gold .section-footer { --footer-accent: var(--accent-gold-ink); --footer-bg: color-mix(in srgb, var(--accent-gold) 8%, transparent); }
+  .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: color-mix(in srgb, var(--accent-rose) 8%, transparent); }
+  .blue .section-footer { --footer-accent: var(--accent-blue); --footer-bg: color-mix(in srgb, var(--accent-blue) 8%, transparent); }
+  .teal .section-footer { --footer-accent: var(--accent-teal); --footer-bg: color-mix(in srgb, var(--accent-teal) 8%, transparent); }
 
   .modal-overlay {
     position: fixed; inset: 0; z-index: var(--z-modal);
@@ -1461,8 +1461,8 @@
     margin: -0.6rem 0 1.1rem; text-align: left;
   }
   .modal-actions { display: flex; gap: 0.6rem; justify-content: center; }
-  .btn-danger { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--danger); color: white; font-size: 0.825rem; font-weight: 700; }
-  .btn-danger:hover { background: #a85a5a; }
+  .btn-danger { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--danger); color: var(--on-accent); font-size: 0.825rem; font-weight: 700; }
+  .btn-danger:hover { background: color-mix(in srgb, var(--danger) 85%, #000); }
 
   @media (max-width: 640px) {
     .editor-fields { grid-template-columns: 1fr; }
@@ -1493,7 +1493,7 @@
   /* Search highlight for matched item names (rendered via {@html}). */
   :global(mark) {
     background: var(--accent-gold);
-    color: #fff;
+    color: var(--on-accent);
     padding: 0 0.15rem;
     border-radius: 2px;
     font-weight: 600;

@@ -88,11 +88,11 @@
     color: var(--text-secondary);
     transition: all 0.2s ease;
   }
-  .notify-toggle:hover { color: var(--accent-gold); border-color: var(--accent-gold); }
+  .notify-toggle:hover { color: var(--accent-gold-ink); border-color: var(--accent-gold); }
   .notify-toggle.active {
     background: var(--accent-gold-light);
     border-color: var(--accent-gold);
-    color: var(--accent-gold);
+    color: var(--accent-gold-ink);
   }
   .notify-toggle.busy { opacity: 0.6; }
 

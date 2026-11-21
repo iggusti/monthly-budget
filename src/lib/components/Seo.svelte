@@ -74,9 +74,7 @@
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={OG_IMAGE} />
 
-  <!-- Theme colour for mobile browser chrome -->
-  <meta name="theme-color" content="#c8956c" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)" />
+  <!-- theme-color lives in app.html so the theme switch can update it. -->
 
   <!-- Structured data -->
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd)}<\/script>`}

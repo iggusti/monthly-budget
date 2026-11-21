@@ -33,7 +33,7 @@
     display: inline-flex; align-items: center; gap: 0.4rem;
     padding: 0.6rem 1.3rem; border-radius: 999px;
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
-    color: #fff; font-size: 0.85rem; font-weight: 700; text-decoration: none;
+    color: var(--on-accent); font-size: 0.85rem; font-weight: 700; text-decoration: none;
     box-shadow: var(--shadow-sm);
     transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
   }

@@ -756,14 +756,14 @@
     /* Phones only, like the month page's jump-to-section button. */
     display: none; place-items: center;
     width: 3.4rem; height: 3.4rem;
-    border-radius: 50%; color: #fff;
+    border-radius: 50%; color: var(--on-accent);
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
-    box-shadow: 0 10px 26px rgba(200, 149, 108, 0.42), 0 4px 10px rgba(26, 23, 20, 0.18);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-gold) 42%, transparent), 0 4px 10px rgba(26, 23, 20, 0.18);
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .quick-add-fab:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 14px 32px rgba(200, 149, 108, 0.5), 0 6px 14px rgba(26, 23, 20, 0.2);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-gold) 50%, transparent), 0 6px 14px rgba(26, 23, 20, 0.2);
   }
   .quick-add-fab:active { transform: scale(0.96); }
   .quick-add-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
@@ -775,7 +775,7 @@
   }
 
   .hero { padding: 3rem 0 1rem; border-bottom: 1px solid var(--surface-border); }
-  .hero-eyebrow { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold); margin-bottom: 1rem; }
+  .hero-eyebrow { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent-gold-ink); margin-bottom: 1rem; }
   .hero-title { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
   .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
@@ -825,7 +825,7 @@
      escape scoping; the `.overview-item` prefix keeps it local enough. */
   .overview-item :global(.overview-value) { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
   .overview-item :global(.overview-value.income) { color: var(--success); }
-  .overview-item :global(.overview-value.expense) { color: var(--accent-gold); }
+  .overview-item :global(.overview-value.expense) { color: var(--accent-gold-ink); }
   .overview-item :global(.overview-value.teal) { color: var(--accent-teal); }
   .overview-item :global(.overview-value.rose) { color: var(--accent-rose); }
   .overview-item :global(.overview-value.blue) { color: var(--accent-blue); }
@@ -848,7 +848,7 @@
     color: var(--text-secondary); font-size: 0.82rem; font-weight: 700;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .toggle-btn:hover { background: var(--surface); border-color: var(--accent-gold); color: var(--accent-gold); }
+  .toggle-btn:hover { background: var(--surface); border-color: var(--accent-gold); color: var(--accent-gold-ink); }
   .toggle-arrow { font-size: 0.8rem; line-height: 1; }
 
   .month-card {
@@ -885,10 +885,10 @@
     text-transform: uppercase; letter-spacing: 0.06em;
     padding: 0.22rem 0.6rem; border-radius: 999px;
   }
-  .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold); }
+  .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold-ink); }
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
   .card-badge.current { background: var(--success-light); color: var(--success); }
-  .card-badge.match { background: var(--accent-gold-light); color: var(--accent-gold); }
+  .card-badge.match { background: var(--accent-gold-light); color: var(--accent-gold-ink); }
 
   .card-matches { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
   .card-match { display: flex; flex-direction: column; gap: 0.1rem; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
@@ -897,7 +897,7 @@
   /* Highlight for matched text inside item names. */
   .card-matches :global(mark) {
     background: var(--accent-gold);
-    color: #fff;
+    color: var(--on-accent);
     padding: 0 0.15rem;
     border-radius: 2px;
     font-weight: 600;
@@ -920,10 +920,10 @@
     padding: 1.25rem; border: 1.5px dashed var(--surface-border); border-radius: var(--radius-md);
     color: var(--text-tertiary); font-size: 0.85rem; font-weight: 600;
   }
-  .card-empty-icon { font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); }
+  .card-empty-icon { font-size: 1.1rem; font-weight: 700; color: var(--accent-gold-ink); }
 
   /* Current (active) month stands out, but not overdone. */
-  .month-card.current { border-color: rgba(91, 138, 138, 0.55); box-shadow: 0 0 0 1px rgba(91, 138, 138, 0.2), var(--shadow-md); }
+  .month-card.current { border-color: color-mix(in srgb, var(--accent-teal) 55%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-teal) 20%, transparent), var(--shadow-md); }
   .month-card.current::before { background: linear-gradient(90deg, var(--accent-teal), var(--accent-gold)); background-size: 200% 100%; animation: gradientPan 6s var(--ease-in-out) infinite; }
   .month-card.past::before { background: var(--bg-muted); }
 
@@ -951,7 +951,7 @@
   .backup-btn { padding: 0.55rem 0.9rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
   .backup-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent-teal); }
   .backup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .backup-btn.primary { background: var(--accent-teal); border-color: var(--accent-teal); color: #fff; }
+  .backup-btn.primary { background: var(--accent-teal); border-color: var(--accent-teal); color: var(--on-accent); }
 
   @media (max-width: 1000px) {
     .overview-body-clip { grid-template-columns: repeat(2, 1fr); }

@@ -111,11 +111,11 @@
     padding: 0.3rem 0.6rem;
     border-radius: 999px;
     background: var(--accent-gold-light);
-    color: var(--accent-gold);
+    color: var(--accent-gold-ink);
     font-size: 0.75rem;
     font-weight: 800;
   }
-  .toast-action:hover { background: var(--accent-gold); color: #fff; }
+  .toast-action:hover { background: var(--accent-gold); color: var(--on-accent); }
 
   .toast-close {
     display: inline-flex;

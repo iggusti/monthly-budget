@@ -110,7 +110,7 @@
   .search-bar:focus-within {
     background: var(--surface);
     border-color: var(--accent-gold);
-    box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent);
     outline: none;
     transform: translateY(-1px);
   }

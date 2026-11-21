@@ -1241,10 +1241,10 @@
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
   .header-side { display: flex; align-items: center; gap: 0.75rem; }
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); transition: color var(--dur-base) var(--ease-out); }
-  .save-state.saving { color: var(--accent-gold); animation: pulse 1.2s var(--ease-in-out) infinite; }
-  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid rgba(200, 149, 108, 0.2); transition: background var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
+  .save-state.saving { color: var(--accent-gold-ink); animation: pulse 1.2s var(--ease-in-out) infinite; }
+  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--accent-gold) 20%, transparent); transition: background var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
   .edit-btn-svg { width: 14px; height: 14px; transition: transform var(--dur-base) var(--ease-spring); }
-  .edit-btn:hover { background: rgba(200, 149, 108, 0.2); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .edit-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
   .edit-btn:active { transform: translateY(0) scale(0.97); }
 
@@ -1258,7 +1258,7 @@
      uppercase is reserved for section/card captions. */
   .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
-  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
 
   /* Period input: two date pickers joined by an arrow. The live preview below
      them uses the shared `.field-hint` look (app.css). */
@@ -1268,7 +1268,7 @@
   .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
   .period-date span { font-size: 0.68rem; font-weight: 600; color: var(--text-tertiary); }
   .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
-  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px rgba(200, 149, 108, 0.15); }
+  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
   .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
   .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
   .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
@@ -1291,9 +1291,9 @@
      escape scoping; the `.stat-card` prefix keeps it local enough. */
   .stat-card :global(.stat-value) { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; display: block; margin-bottom: 0.4rem; }
   .stat-card.income :global(.stat-value) { color: var(--success); }
-  .stat-card.expense :global(.stat-value) { color: var(--accent-gold); }
+  .stat-card.expense :global(.stat-value) { color: var(--accent-gold-ink); }
   .stat-card.savings :global(.stat-value) { color: var(--accent-blue); }
-  .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-color: rgba(91, 138, 138, 0.35); }
+  .stat-card.split { background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-color: color-mix(in srgb, var(--accent-teal) 35%, transparent); }
   .stat-card.split :global(.stat-value) { color: var(--accent-teal); }
   .stat-card.split.negative :global(.stat-value) { color: var(--danger); }
 
@@ -1569,7 +1569,7 @@
     transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
   }
   .section-nav-month-btn svg { display: block; width: 1.05rem; height: 1.05rem; }
-  .section-nav-month-btn:hover:not(:disabled) { color: var(--accent-gold); border-color: var(--accent-gold); transform: scale(1.06); }
+  .section-nav-month-btn:hover:not(:disabled) { color: var(--accent-gold-ink); border-color: var(--accent-gold); transform: scale(1.06); }
   .section-nav-month-btn:active:not(:disabled) { transform: scale(0.94); }
   .section-nav-month-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .section-nav-month-label {
@@ -1637,7 +1637,7 @@
     color: var(--text-tertiary);
     transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast) ease;
   }
-  .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold); transform: translateX(3px); }
+  .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold-ink); transform: translateX(3px); }
 
   .section-nav-fab {
     position: relative;
@@ -1647,14 +1647,14 @@
     width: 3.4rem;
     height: 3.4rem;
     border-radius: 50%;
-    color: #fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
-    box-shadow: 0 10px 26px rgba(200, 149, 108, 0.42), 0 4px 10px rgba(26, 23, 20, 0.18);
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-gold) 42%, transparent), 0 4px 10px rgba(26, 23, 20, 0.18);
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .section-nav-fab:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 14px 32px rgba(200, 149, 108, 0.5), 0 6px 14px rgba(26, 23, 20, 0.2);
+    box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-gold) 50%, transparent), 0 6px 14px rgba(26, 23, 20, 0.2);
   }
   .section-nav-fab:active { transform: scale(0.96); }
   .section-nav-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
@@ -1689,7 +1689,7 @@
   .month-nav-icon { width: 1.15rem; height: 1.15rem; display: block; }
   .month-nav-btn:hover:not(:disabled) {
     background: var(--bg-muted);
-    color: var(--accent-gold);
+    color: var(--accent-gold-ink);
     border-color: var(--accent-gold);
     transform: scale(1.08);
   }
