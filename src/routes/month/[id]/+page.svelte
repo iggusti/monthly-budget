@@ -350,11 +350,16 @@
   }
 
   /** Record whether the wife-to-husband equal-split transfer has arrived. */
-  function setTransferReceived(received: boolean) {
+  async function setTransferReceived(received: boolean) {
     // Only meaningful for Wife → Husband; ignore any stale call when the
     // transfer direction is Husband → Wife.
     if (!showTransferReceived) return;
-    persist({ ...budget, transferReceived: received });
+    const saved = await persist({ ...budget, transferReceived: received });
+    if (saved) {
+      toastSuccess(received ? t("toast.transferReceived") : t("toast.transferPending"));
+    } else {
+      toastError(t("toast.saveFailed"));
+    }
   }
 
   // ── Drag & drop between paired sections ─────────────────────────────────
