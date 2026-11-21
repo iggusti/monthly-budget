@@ -21,21 +21,33 @@ const svg = await readFile(src);
 await writeFile(join(outDir, ".keep"), "", { flag: "w" }).catch(() => {});
 
 for (const { name, size, padding = 0 } of targets) {
-  let img = sharp(svg, { density: 384 }).resize(size, size, { fit: "contain" });
+  let buf = await sharp(svg, { density: 384 })
+    .resize(size, size, { fit: "contain" })
+    .png()
+    .toBuffer();
+
   if (padding > 0) {
-    const inner = Math.round(size * (1 - padding * 2));
-    img = sharp(svg, { density: 384 })
+    const inset = Math.round(size * padding);
+    const inner = size - inset * 2;
+    const art = await sharp(svg, { density: 384 })
       .resize(inner, inner, { fit: "contain" })
+      .png()
+      .toBuffer();
+    const padded = await sharp(art)
       .extend({
-        top: Math.round(size * padding),
-        bottom: Math.round(size * padding),
-        left: Math.round(size * padding),
-        right: Math.round(size * padding),
-        background: "#1a1714"
+        top: inset,
+        bottom: inset,
+        left: inset,
+        right: inset,
+        background: "#5b8a8a"
       })
-      .resize(size, size);
+      .png()
+      .toBuffer();
+    // Materialise before resizing: chaining resize after extend on the SVG
+    // pipeline lets Sharp reapply the SVG density and produces a wrong size.
+    buf = await sharp(padded).resize(size, size).png().toBuffer();
   }
-  const buf = await img.png().toBuffer();
+
   await writeFile(join(outDir, name), buf);
   console.log("wrote", name, `${size}x${size}`);
 }
