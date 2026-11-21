@@ -8,6 +8,7 @@
    * the typed data available for a retry.
    */
   import { fade, fly } from "svelte/transition";
+  import { MOTION, motionFade, motionFly } from "#lib/motion";
   import {
     daysBetween,
     makeId,
@@ -211,14 +212,14 @@
 
 <svelte:window onkeydown={onKeydown} onfocusin={keepFieldVisible} />
 
-<div class="sheet-overlay" role="presentation" transition:fade={{ duration: 160 }}>
+<div class="sheet-overlay" role="presentation" transition:fade={motionFade(MOTION.fast)}>
   <div
     class="sheet"
     role="dialog"
     aria-modal="true"
     aria-label={t("dashboard.quickAdd")}
     bind:this={dialogEl}
-    transition:fly={{ y: 24, duration: 220 }}
+    transition:fly={motionFly(20, MOTION.fast)}
   >
     <div class="sheet-head">
       <div class="head-text">
@@ -265,7 +266,7 @@
           placeholder={t("expense.namePlaceholder")}
         />
         {#if !hasName}
-          <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+          <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.nameRequired")}</span>
         {/if}
       </label>
 
@@ -279,7 +280,7 @@
           placeholder="0"
         />
         {#if !hasAmount}
-          <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+          <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.amountRequired")}</span>
         {/if}
       </label>
 

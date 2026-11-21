@@ -3,6 +3,7 @@
   import { goto } from "$app/navigation";
   import { fade, fly, slide } from "svelte/transition";
   import { untrack } from "svelte";
+  import { MOTION, motionFade, motionFly, setMonthNavDirection } from "#lib/motion";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
   import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
   import {
@@ -115,6 +116,7 @@
   function goToMonth(id: string | null) {
     if (!id) return;
     showSectionNav = false;
+    setMonthNavDirection(monthId, id);
     goto(`/month/${id}`);
   }
 
@@ -479,7 +481,7 @@
 />
 
 <div class="page">
-  <div class="page-header animate-stagger" in:fade={{ duration: 350 }}>
+  <div class="page-header animate-stagger" in:fade={motionFade(MOTION.base)}>
     <div class="header-top">
       <a href="/" class="back-btn" aria-label={t("month.allMonths")}>← <span class="back-text">{t("month.allMonths")}</span></a>
       <div class="header-side">
@@ -514,7 +516,7 @@
              child of `.page-header`, whose `.animate-stagger` would hide it
              behind a stagger delay. -->
         {#if showHeaderEditor}
-          <div class="income-panel" in:slide={{ duration: 220 }}>
+          <div class="income-panel" in:slide={motionFade(MOTION.fast)}>
             <div class="income-fields">
               <label class="field">
                 <span>{t("month.fieldTitle")}</span>
@@ -662,7 +664,7 @@
       <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
     </nav>
   {:else}
-  <div class="summary-row animate-stagger" in:fly={{ y: 14, duration: 420, delay: 60 }}>
+  <div class="summary-row animate-stagger" in:fly={motionFly(10, MOTION.slow, 60)}>
     <div class="stat-card income">
       <span class="stat-label">{t("month.totalIncome")}</span>
       <CountUp value={totals.totalIncome} class="stat-value" />
@@ -708,7 +710,7 @@
     </div>
   </div>
 
-  <div class="chart-section" in:fly={{ y: 12, duration: 420, delay: 100 }}>
+  <div class="chart-section" in:fly={motionFly(10, MOTION.slow, 90)}>
     <div class="chart-header">
       <span class="chart-title">{t("month.chartTitle")}</span>
     </div>
@@ -833,7 +835,7 @@
     </div>
   </div>
 
-  <div class="sections animate-stagger" in:fade={{ duration: 350, delay: 120 }}>
+  <div class="sections animate-stagger" in:fade={motionFade(MOTION.base, 110)}>
     {#if !searchActive || matchedSections[0]}
     <ExpenseSection
       sectionId="section-1"
@@ -1046,7 +1048,7 @@
   </div>
 
   {#if searchActive && firstMatchedIndex === -1}
-    <div class="search-empty" in:fade={{ duration: 300 }}>
+    <div class="search-empty" in:fade={motionFade(MOTION.base)}>
       <span class="search-empty-icon">⌕</span>
       <h3>{t("month.searchEmpty")}</h3>
       <p>“{searchQuery}”</p>
@@ -1054,7 +1056,7 @@
   {/if}
 
   {#if searchActive}
-    <div class="clear-filter-row" in:fade={{ duration: 250 }}>
+    <div class="clear-filter-row" in:fade={motionFade(MOTION.fast)}>
       <button
         type="button"
         class="clear-filter-btn"
@@ -1087,13 +1089,13 @@
         tabindex="-1"
         aria-label={t("month.sectionMenuClose")}
         onclick={() => (showSectionNav = false)}
-        transition:fade={{ duration: 180 }}
+        transition:fade={motionFade(MOTION.fast)}
       ></button>
       <nav
         id="section-nav-menu"
         class="section-nav-menu"
         aria-label={t("month.sectionMenu")}
-        transition:fly={{ y: 10, duration: 180 }}
+        transition:fly={motionFly(8, MOTION.fast)}
       >
         <!-- Month switcher: the section menu floats over the page, so this is the
              only month control reachable without scrolling to the bottom nav. -->
@@ -1193,7 +1195,7 @@
       type="button"
       aria-label={t("month.prevMonth")}
       disabled={!canGoPrevious}
-      onclick={() => canGoPrevious && goto(`/month/${prevMonthId}`)}
+      onclick={() => goToMonth(prevMonthId)}
     >
       <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M15 18l-6-6 6-6" />
@@ -1213,7 +1215,7 @@
       type="button"
       aria-label={t("month.nextMonth")}
       disabled={!canGoNext}
-      onclick={() => canGoNext && goto(`/month/${nextMonthId}`)}
+      onclick={() => goToMonth(nextMonthId)}
     >
       <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M9 18l6-6-6-6" />
@@ -1313,8 +1315,8 @@
      would be painted at full width straight away, so it is a pseudo-element. */
   .bar-chart-plot::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-    background: var(--surface-border); transform-origin: left;
-    animation: underlineGrow var(--dur-slow) var(--ease-out) both;
+    background: var(--surface-border); transform-origin: left; transform: scaleX(1);
+    animation: underlineGrow var(--dur-slow) var(--ease-out) backwards;
     animation-delay: 80ms;
   }
   /* ── Bar chart motion ──────────────────────────────────────────────────────
@@ -1356,7 +1358,7 @@
     flex: 1; max-width: 96px;
     font-size: 0.74rem; font-weight: 600;
     color: var(--text-tertiary); text-align: center; line-height: 1.25;
-    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation: barTextIn var(--dur-base) var(--ease-out) backwards;
     animation-delay: calc(var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + 120ms);
   }
   .bar-label.combined { color: var(--text-primary); font-weight: 800; }
@@ -1416,7 +1418,7 @@
     overflow: hidden; text-overflow: ellipsis;
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation: barTextIn var(--dur-base) var(--ease-out) backwards;
     animation-delay: calc(
       var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower) + 60ms
     );
@@ -1430,7 +1432,7 @@
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none;
-    animation: barTextIn var(--dur-base) var(--ease-out) both;
+    animation: barTextIn var(--dur-base) var(--ease-out) backwards;
     animation-delay: calc(
       var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower)
     );
@@ -1611,7 +1613,7 @@
     font-weight: 500;
     line-height: 1.35;
     text-align: left;
-    animation: riseIn var(--dur-base) var(--ease-out) both;
+    animation: riseIn var(--dur-base) var(--ease-out) backwards;
     /* Delay comes from the item index (`--stagger`), not `nth-child`: the menu
        also holds the month switcher and the title above the list. */
     animation-delay: calc(var(--stagger, 0) * 0.03s);

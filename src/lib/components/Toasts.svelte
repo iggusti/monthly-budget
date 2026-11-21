@@ -7,6 +7,7 @@
    * it. Success cards are announced politely, failures assertively.
    */
   import { fly } from "svelte/transition";
+  import { MOTION, motionFly } from "#lib/motion";
   import { t } from "#lib/i18n.svelte";
   import { dismissToast, toastState } from "#lib/toast.svelte";
 </script>
@@ -16,7 +17,7 @@
     <div
       class="toast {toast.kind}"
       role={toast.kind === "error" ? "alert" : undefined}
-      transition:fly={{ y: 18, duration: 220 }}
+      transition:fly={motionFly(14, MOTION.fast)}
     >
       <span class="toast-icon" aria-hidden="true">
         {#if toast.kind === "success"}

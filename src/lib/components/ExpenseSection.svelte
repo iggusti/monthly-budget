@@ -178,6 +178,7 @@
 
 <script lang="ts">
   import { fade, slide } from "svelte/transition";
+  import { MOTION, motionFade } from "#lib/motion";
   import {
     formatCurrency,
     makeId,
@@ -791,7 +792,7 @@
   </div>
 
   {#if adding}
-    <div class="editor" in:slide={{ duration: 200 }}>
+    <div class="editor" in:slide={motionFade(MOTION.fast)}>
       <div class="editor-fields">
         <label class="field">
           <span>{nameText}</span>
@@ -803,7 +804,7 @@
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
           {#if !hasName}
-            <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+            <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.nameRequired")}</span>
           {/if}
         </label>
         <label class="field">
@@ -819,7 +820,7 @@
             onkeydown={(e) => e.key === "Enter" && commit()}
           />
           {#if !hasAmount}
-            <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+            <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.amountRequired")}</span>
           {/if}
         </label>
         {#if withMethod}
@@ -932,14 +933,14 @@
         </li>
 
         {#if editingId === item.id}
-          <li class="editor-item" in:slide={{ duration: 200 }}>
+          <li class="editor-item" in:slide={motionFade(MOTION.fast)}>
             <div class="editor">
               <div class="editor-fields">
                 <label class="field">
                   <span>{nameText}</span>
                   <input type="text" use:focusEditor bind:value={draft.name} placeholder={t("expense.namePlaceholder")} onkeydown={(e) => e.key === "Enter" && commit()} />
                   {#if !hasName}
-                    <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.nameRequired")}</span>
+                    <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.nameRequired")}</span>
                   {/if}
                 </label>
                 <label class="field">
@@ -955,7 +956,7 @@
                     onkeydown={(e) => e.key === "Enter" && commit()}
                   />
                   {#if !hasAmount}
-                    <span class="editor-hint" transition:fade={{ duration: 150 }}>{t("expense.amountRequired")}</span>
+                    <span class="editor-hint" transition:fade={motionFade(MOTION.fast)}>{t("expense.amountRequired")}</span>
                   {/if}
                 </label>
                 {#if withMethod}
@@ -1257,7 +1258,7 @@
   .check:hover .checkmark { border-color: var(--accent-gold); transform: scale(1.08); }
   .check:active .checkmark { transform: scale(0.92); }
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
-  .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base, 0.28s) var(--ease-spring, ease) both; }
+  .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base, 0.28s) var(--ease-spring, ease) backwards; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
   .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: rgba(107, 127, 163, 0.1); color: var(--accent-blue); }
   .date-badge {

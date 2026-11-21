@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { fade, fly, scale } from "svelte/transition";
+  import { fade, fly } from "svelte/transition";
+  import { MOTION, motionFade, motionFly } from "#lib/motion";
   import {
     subscribeAllBudgets,
     fetchBudget,
@@ -295,7 +296,7 @@
   {#if loading}
     <span class="sr-only" role="status">{t("common.loading")}</span>
   {/if}
-  <div in:fade={{ duration: 500 }} class="hero">
+  <div in:fade={motionFade(MOTION.slow)} class="hero">
     <p class="hero-eyebrow animate-rise">{t("dashboard.heroEyebrow")}</p>
     <h1 class="hero-title animate-rise" style="--anim-delay: 0.08s">{t("dashboard.heroTitleLine1")}<br />{t("dashboard.heroTitleLine2")}</h1>
     <p class="hero-sub animate-rise" style="--anim-delay: 0.16s">
@@ -303,9 +304,10 @@
     </p>
   </div>
 
+  <div class="overview-slot">
   {#if loading}
     <!-- Overview skeleton (mirrors the real summary layout) -->
-    <div class="overview" aria-hidden="true">
+    <div class="overview" aria-hidden="true" out:fade={motionFade(MOTION.fast)}>
       <div class="overview-head">
         <Skeleton width="90px" height="1rem" />
         <Skeleton width="120px" height="0.88rem" />
@@ -324,7 +326,7 @@
       </div>
     </div>
   {:else if budgets.length}
-    <div class="overview" in:fly={{ y: 14, duration: 450, delay: 80 }}>
+    <div class="overview" in:fly={motionFly(10, MOTION.slow, 60)}>
       <div class="overview-head">
         <span class="overview-head-title">{t("dashboard.overviewTitle")}</span>
         <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
@@ -404,13 +406,14 @@
       </div>
     </div>
   {/if}
+  </div>
 
-  <div class="section-label" in:fly={{ y: 14, duration: 450, delay: 120 }}>
+  <div class="section-label" in:fly={motionFly(10, MOTION.slow, 90)}>
     <span>{t("dashboard.budgetPeriods")}</span>
   </div>
 
   {#if !loading}
-    <div class="search-row" in:fade={{ duration: 350 }}>
+    <div class="search-row" in:fade={motionFade(MOTION.base)}>
       <SearchBar
         query={searchQuery}
         onQueryChange={(q: string) => (searchQuery = q)}
@@ -457,7 +460,7 @@
       {/each}
     </div>
   {:else}
-    <div class="months-grid animate-stagger" in:fly={{ y: 14, duration: 450, delay: 140 }} bind:this={monthsGridEl}>
+    <div class="months-grid animate-stagger" in:fly={motionFly(10, MOTION.slow, 110)} bind:this={monthsGridEl}>
       {#each visibleMonthIds as id}
         {@const exists = usedIds.has(id)}
         {@const budget = monthBudget(id)}
@@ -537,7 +540,7 @@
     </div>
 
     {#if searchActive && searchResults.length === 0}
-      <div class="empty-state" in:fade={{ duration: 300 }}>
+      <div class="empty-state" in:fade={motionFade(MOTION.base)}>
         <span class="empty-icon">⌕</span>
         <h3>{t("dashboard.searchEmpty")}</h3>
         <p>“{searchQuery}”</p>
@@ -555,7 +558,7 @@
   {/if}
 
   {#if !loading && budgets.length === 0}
-    <div class="empty-state" in:fade={{ duration: 400 }}>
+    <div class="empty-state" in:fade={motionFade(MOTION.slow)}>
       <span class="empty-icon">◻</span>
       <h3>{t("dashboard.noBudgetTitle")}</h3>
       <p>{t("dashboard.noBudgetText")}</p>
@@ -563,7 +566,7 @@
   {/if}
 
   {#if !loading}
-    <div in:fade={{ duration: 500, delay: 400 }} class="info-strip animate-stagger">
+    <div in:fade={motionFade(MOTION.slow, 180)} class="info-strip animate-stagger">
       <div class="info-item"><span class="info-dot blue"></span><span><b>{t("dashboard.infoIncomeFixed")}</b> — {t("dashboard.infoIncomeFixedSub")}</span></div>
       <div class="info-item"><span class="info-dot rose"></span><span><b>{t("dashboard.infoSalary")}</b> — {t("dashboard.infoSalarySub")}</span></div>
       <div class="info-item"><span class="info-dot teal"></span><span><b>{t("dashboard.infoSavings")}</b> — {t("dashboard.infoSavingsSub")}</span></div>
@@ -644,6 +647,11 @@
   .hero-title { font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
   .hero-sub { font-size: 1.05rem; color: var(--text-secondary); max-width: 520px; line-height: 1.7; }
 
+  /* Skeleton and real card share one grid cell so the crossfade cannot push
+     the rest of the page down while both are briefly mounted. */
+  .overview-slot { display: grid; }
+  .overview-slot > * { grid-area: 1 / 1; }
+
   .overview {
     background: var(--surface); border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm);
@@ -694,7 +702,7 @@
   .overview-item :global(.overview-value.olive) { color: var(--accent-olive); }
 
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
-  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; animation: underlineGrow var(--dur-slower) var(--ease-out) both; animation-delay: 0.2s; }
+  .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; transform: scaleX(1); animation: underlineGrow var(--dur-slower) var(--ease-out) backwards; animation-delay: 0.2s; }
 
   .search-row { display: flex; justify-content: flex-start; }
   .search-row :global(.search-bar) { max-width: 420px; }
@@ -788,7 +796,7 @@
   .month-card.past::before { background: var(--bg-muted); }
 
   .empty-state { text-align: center; padding: 4rem 2rem; background: var(--surface); border: 1px dashed var(--surface-border); border-radius: var(--radius-xl); }
-  .empty-icon { font-size: 2.25rem; display: block; margin-bottom: 1rem; color: var(--text-tertiary); animation: popIn var(--dur-slow) var(--ease-spring) both, floaty 4s var(--ease-in-out) 0.45s infinite; }
+  .empty-icon { font-size: 2.25rem; display: block; margin-bottom: 1rem; color: var(--text-tertiary); animation: popIn var(--dur-slow) var(--ease-spring) backwards, floaty 4s var(--ease-in-out) 0.45s infinite; }
   .empty-state h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
   .empty-state p { font-size: 0.85rem; color: var(--text-tertiary); }
 

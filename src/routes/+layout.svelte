@@ -1,7 +1,8 @@
 <script lang="ts">
   import "../app.css";
-  import { fly, fade } from "svelte/transition";
+  import { fly } from "svelte/transition";
   import { page } from "$app/state";
+  import { MOTION, motionFly, takeNavOffset } from "#lib/motion";
   import { logout, isAuthenticated } from "#lib/auth";
   import { t, lang } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
@@ -19,6 +20,11 @@
   const PUSH_NOTIFICATIONS_ENABLED = false;
 
   let { children } = $props();
+
+  /** Month changes slide in from their direction; other routes just rise. */
+  function pageEnter() {
+    return { ...motionFly(8, MOTION.base), x: takeNavOffset(12) };
+  }
 
   let authed = $state(false);
   $effect(() => {
@@ -71,7 +77,7 @@
 
     <main class="main-content">
       {#key page.url.pathname}
-        <div class="page-enter" in:fly={{ y: 12, duration: 380 }} out:fade={{ duration: 120 }}>
+        <div class="page-enter" in:fly={pageEnter()}>
           {@render children()}
         </div>
       {/key}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { MOTION, motionFade } from "#lib/motion";
   import { login, isAuthenticated } from "#lib/auth";
   import { t } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
@@ -105,7 +106,7 @@
       </div>
 
       {#if hasError}
-        <p class="error" in:fade={{ duration: 200 }}>{t("login.error")}</p>
+        <p class="error" in:fade={motionFade(MOTION.fast)}>{t("login.error")}</p>
       {/if}
 
       <button class="submit" type="submit" disabled={loading || !keyword.trim()}>
