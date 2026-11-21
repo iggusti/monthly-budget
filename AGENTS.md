@@ -13,9 +13,11 @@ changing code; the rules below are easy to break accidentally.
   bar on Android); `viewport-fit=cover` and `env(safe-area-inset-top)` in the
   layout topbar keep content clear of the cutout. iOS falls back to standalone.
   The PNG icons are generated from `static/pwa-icon.svg` with
-  `node scripts/generate-pwa-icons.mjs`; the logo background is the light-theme
-  accent teal `#5b8a8a` (same as the primary/backup button). The service worker
-  is FCM-only, so there is no offline app shell.
+  `node scripts/generate-pwa-icons.mjs`; their background is the light-theme
+  accent teal `#5b8a8a` (same as the primary/backup button). The header logo is
+  inlined in `+layout.svelte` instead, so its tile uses `var(--accent-teal)` and
+  follows dark mode. The service worker is FCM-only, so there is no offline app
+  shell.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
 - **Cloud Functions** (`functions/`, Node 22) + FCM for push notifications.

@@ -59,7 +59,25 @@
     <header class="topbar">
       <div class="topbar-inner">
         <a href="/" class="logo">
-          <img class="logo-mark" src="/favicon.svg" alt="" width="32" height="32" />
+          <!-- Inline so the tile follows the active theme; CSS vars cannot cross an <img>. -->
+          <svg class="logo-mark" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="logo-body" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" style="stop-color: #f0c9a0" />
+                <stop offset="0.55" style="stop-color: #d98a8a" />
+                <stop offset="1" style="stop-color: var(--accent-rose)" />
+              </linearGradient>
+              <linearGradient id="logo-roof" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" style="stop-color: var(--accent-gold)" />
+                <stop offset="1" style="stop-color: #a07050" />
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="60" height="60" rx="16" style="fill: var(--accent-teal)" />
+            <rect x="15" y="29" width="34" height="24" rx="3" fill="url(#logo-body)" />
+            <path d="M10 30 L32 11 L54 30 Z" fill="url(#logo-roof)" />
+            <rect x="27" y="37" width="10" height="16" rx="2" fill="#faf9f7" />
+            <path d="M32 39.5c-1-1.5-3.4-1.4-4.2 0.2-0.8 1.6 0.6 2.8 4.2 4.8 3.6-2 5-3.2 4.2-4.8-0.8-1.6-3.2-1.7-4.2-0.2z" style="fill: var(--accent-rose)" />
+          </svg>
           <span class="logo-text">Nia & Ilham</span>
         </a>
         <nav class="topbar-nav">
@@ -114,7 +132,7 @@
     border-radius: 8px;
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
-  .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.06); box-shadow: 0 6px 16px rgba(200, 149, 108, 0.35); }
+  .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.06); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-teal) 35%, transparent); }
   .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
   .nav-logout {
