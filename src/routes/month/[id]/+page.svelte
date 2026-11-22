@@ -535,9 +535,13 @@
     </div>
     <div class="header-meta">
       {#if loading}
-        <Skeleton width="220px" height="1.85rem" />
-        <Skeleton width="160px" height="1.1rem" style="margin-top:0.35rem;" />
-        <Skeleton width="118px" height="2.4rem" radius="var(--radius-sm)" style="margin-top:0.75rem;" />
+        <div class="header-titleblock">
+          <Skeleton width="220px" height="1.85rem" />
+          <Skeleton width="160px" height="1.1rem" />
+        </div>
+        <div class="header-actions">
+          <Skeleton width="130px" height="2.4rem" radius="var(--radius-sm)" />
+        </div>
       {:else}
         <div class="header-titleblock">
           <h1 class="page-title">{budget.title}</h1>
@@ -1321,10 +1325,11 @@
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; }
   .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out); }
   .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); transform: translateX(-3px); }
-  .header-titleblock { min-width: 0; }
-  .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
-  .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
-  .header-actions { display: flex; justify-content: flex-end; margin-top: 0.75rem; }
+  .header-meta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; }
+  .header-titleblock { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.1rem; min-width: 0; }
+  .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .header-actions { display: flex; flex: 0 0 auto; justify-content: flex-end; }
   .upcoming-daily-notice { margin: 0; padding: 0.75rem 1rem; font-size: 0.8rem; color: var(--text-secondary); background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
   .header-side { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .header-side :global(.search-bar),
@@ -1859,8 +1864,8 @@
 
   @media (max-width: 768px) {
     .page { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
-    .header-actions { justify-content: stretch; }
-    .header-actions > button { width: 100%; }
+    .header-meta { gap: 0.75rem; }
+    .header-actions > button { padding: 0.5rem 0.8rem; }
     .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
     .charts-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
