@@ -412,7 +412,7 @@
     const preview = restorePreview;
     if (!preview) return;
     restorePreview = null;
-    const snapshot = structuredClone(budgets);
+    const snapshot = JSON.parse(JSON.stringify(budgets)) as MonthBudget[];
     const restoredIds = new Set(preview.budgets.map((b) => b.id));
 
     try {
