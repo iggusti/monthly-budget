@@ -138,6 +138,16 @@
     goto(`/month/${id}`);
   }
 
+  /** Keep the fixed nav outside the page transition's transformed wrapper. */
+  function portalToBody(node: HTMLElement) {
+    document.body.appendChild(node);
+    return {
+      destroy() {
+        node.remove();
+      }
+    };
+  }
+
   // On narrow screens the bar value labels have little room, so they switch to
   // a compact currency form (e.g. "Rp 9,6 jt") to avoid overlapping each other.
   let isNarrow = $state(false);
@@ -1154,7 +1164,7 @@
   {/if}
 
   <!-- Mobile-only floating navigation to jump between the eight sections. -->
-  <div class="section-nav">
+  <div class="section-nav" use:portalToBody>
     {#if showSectionNav}
       <button
         class="section-nav-backdrop"
