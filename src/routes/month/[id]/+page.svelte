@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
-  import { fade, fly, slide } from "svelte/transition";
+  import { fade, fly } from "svelte/transition";
   import { untrack } from "svelte";
   import { MOTION, motionFade, motionFly, prefersReducedMotion, setMonthNavDirection } from "#lib/motion";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
@@ -11,7 +11,6 @@
     computeTotals,
     createEmptyBudget,
     formatCurrency,
-    formatPeriod,
     totalExpenses,
     type MonthBudget,
     type ExpenseItem,
@@ -70,7 +69,6 @@
   let loading = $state(true);
   let saving = $state(false);
   let savedAt = $state<string>("");
-  let showHeaderEditor = $state(false);
   let showSectionNav = $state(false);
   let searchQuery = $state("");
   let activeBar = $state<string | null>(null);
@@ -135,16 +133,6 @@
     setMonthNavDirection(monthId, id);
     goto(`/month/${id}`);
   }
-
-  let headerDraft = $state({ title: "", periodStart: "", periodEnd: "" });
-
-  /** Locale for date formatting, following the active language. */
-  const dateLocale = $derived(lang.value === "id" ? "id-ID" : "en-US");
-
-  /** Live preview of the period label built from the two draft dates. */
-  const headerPeriodPreview = $derived(
-    formatPeriod(headerDraft.periodStart, headerDraft.periodEnd, dateLocale)
-  );
 
   // On narrow screens the bar value labels have little room, so they switch to
   // a compact currency form (e.g. "Rp 9,6 jt") to avoid overlapping each other.
@@ -324,14 +312,6 @@
     // whenever the opened month changes so navigation actually loads new data.
     const unsubscribe = subscribeBudget(monthId, (next) => {
       budget = next;
-      // Don't clobber an in-progress header edit.
-      if (!showHeaderEditor) {
-        headerDraft = {
-          title: next.title,
-          periodStart: next.periodStart ?? "",
-          periodEnd: next.periodEnd ?? ""
-        };
-      }
       loading = false;
     });
 
@@ -485,32 +465,29 @@
     }
   }
 
-  function openHeaderEditor() {
-    if (isLocked) return;
-    headerDraft = {
-      title: budget.title,
-      periodStart: budget.periodStart ?? "",
-      periodEnd: budget.periodEnd ?? ""
-    };
-    showHeaderEditor = true;
-  }
-
-  function saveHeader() {
-    if (isLocked) {
-      showHeaderEditor = false;
-      return;
-    }
-    const period = headerPeriodPreview || budget.period;
-    persist({
-      ...budget,
-      title: headerDraft.title.trim() || budget.title,
-      period,
-      periodStart: headerDraft.periodStart,
-      periodEnd: headerDraft.periodEnd
-    });
-    showHeaderEditor = false;
-  }
 </script>
+
+{#snippet lockButton(locked: boolean)}
+  <button
+    class="lock-btn"
+    class:unlocking={locked}
+    onclick={() => void setLocked(!locked)}
+    aria-label={t(locked ? "month.unlock" : "month.lock")}
+  >
+    {#if locked}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 7.5-2" />
+      </svg>
+    {:else}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="10" rx="2" />
+        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+      </svg>
+    {/if}
+    {t(locked ? "month.unlock" : "month.lock")}
+  </button>
+{/snippet}
 
 <Seo
   title={t("month.pageTitle", { title: budget.title })}
@@ -552,56 +529,9 @@
           <h1 class="page-title">{budget.title}</h1>
           <p class="page-subtitle">{budget.period}</p>
         </div>
-        <div class="header-actions">
-          {#if !isLocked}
-            <button class="edit-btn" onclick={openHeaderEditor}>
-              <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-              </svg>
-              {t("month.editHeader")}
-            </button>
-          {/if}
-          {#if isLocked}
-            <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
-          {:else if canLock}
-            <button class="lock-btn" onclick={() => void setLocked(true)}>{t("month.lock")}</button>
-          {/if}
-        </div>
-
-        <!-- Header editor: inside the header block so it reads as the header
-             opening up, not as a card floating between the header and the
-             summary. It sits under the edit button rather than as a direct
-             child of `.page-header`, whose `.animate-stagger` would hide it
-             behind a stagger delay. -->
-        {#if showHeaderEditor}
-          <div class="income-panel" in:slide={motionFade(MOTION.fast)}>
-            <div class="income-fields">
-              <label class="field">
-                <span>{t("month.fieldTitle")}</span>
-                <input type="text" bind:value={headerDraft.title} />
-              </label>
-              <div class="period-field">
-                <span class="period-label">{t("month.fieldPeriod")}</span>
-                <div class="period-dates">
-                  <label class="period-date">
-                    <span>{t("month.fieldPeriodFrom")}</span>
-                    <input type="date" bind:value={headerDraft.periodStart} />
-                  </label>
-                  <span class="period-arrow" aria-hidden="true">→</span>
-                  <label class="period-date">
-                    <span>{t("month.fieldPeriodTo")}</span>
-                    <input type="date" bind:value={headerDraft.periodEnd} />
-                  </label>
-                </div>
-                <span class="field-hint">
-                  {headerPeriodPreview || t("month.fieldPeriodHint")}
-                </span>
-              </div>
-            </div>
-            <div class="income-actions">
-              <button class="btn-save" onclick={saveHeader}>{t("common.saveChanges")}</button>
-              <button class="btn-cancel" onclick={() => (showHeaderEditor = false)}>{t("common.cancel")}</button>
-            </div>
+        {#if isLocked || canLock}
+          <div class="header-actions">
+            {@render lockButton(isLocked)}
           </div>
         {/if}
       {/if}
@@ -956,9 +886,11 @@
 
   {#if isLocked}
     <div class="lock-notice" in:fade={motionFade(MOTION.base, 110)}>
-      <strong>{t("month.lockedTitle")}</strong>
-      <p>{t("month.lockedText")}</p>
-      <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
+      <div class="lock-notice-copy">
+        <strong>{t("month.lockedTitle")}</strong>
+        <p>{t("month.lockedText")}</p>
+      </div>
+      {@render lockButton(true)}
     </div>
   {/if}
   {#if isUpcomingMonth && !isLocked}
@@ -1373,51 +1305,39 @@
   .header-titleblock { min-width: 0; }
   .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
-  .header-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.75rem; }
-  .header-actions > button { flex: 1 1 auto; }
+  .header-actions { display: flex; justify-content: flex-end; margin-top: 0.75rem; }
   .upcoming-daily-notice { margin: 0; padding: 0.75rem 1rem; font-size: 0.8rem; color: var(--text-secondary); background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
   .header-side { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .header-side :global(.search-bar),
   .header-side :global(.search-bar-input) { min-width: 0; }
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); transition: color var(--dur-base) var(--ease-out); }
   .save-state.saving { color: var(--accent-gold-ink); animation: pulse 1.2s var(--ease-in-out) infinite; }
-  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--accent-gold) 20%, transparent); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
-  .edit-btn-svg { width: 14px; height: 14px; transition: transform var(--dur-base) var(--ease-spring); }
-  .edit-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-  .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
-  .edit-btn:active { transform: translateY(0) scale(0.97); }
-  .lock-btn { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm); cursor: pointer; }
-  .lock-btn:hover { border-color: var(--accent-gold); }
-  .lock-notice { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 1.25rem 1.5rem; background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
-  .lock-notice p { margin: 0; color: var(--text-secondary); font-size: 0.85rem; }
-
-  /* Header editor panel (title + period), opened from the "Edit header" button
-     and kept inside the header block. `.header-meta` is a plain block, so the
-     panel carries its own gap from the button. */
-  .income-panel { margin-top: 1rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-md); }
-  .income-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.85rem; }
-  .field { display: flex; flex-direction: column; gap: 0.3rem; }
-  /* Form labels stay in sentence case, like the dashboard quick-add sheet;
-     uppercase is reserved for section/card captions. */
-  .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
-  .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
-  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
-
-  /* Period input: two date pickers joined by an arrow. The live preview below
-     them uses the shared `.field-hint` look (app.css). */
-  .period-field { display: flex; flex-direction: column; gap: 0.3rem; }
-  .period-label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
-  .period-dates { display: flex; align-items: flex-end; gap: 0.5rem; }
-  .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
-  .period-date span { font-size: 0.68rem; font-weight: 600; color: var(--text-tertiary); }
-  .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
-  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
-  .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
-  .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
-  .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
-  .btn-save:hover { opacity: 0.88; }
-  .btn-cancel { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); font-size: 0.825rem; font-weight: 600; }
-  .btn-cancel:hover { background: var(--bg-muted); }
+  .lock-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    padding: 0.55rem 1rem; font-size: 0.8rem; font-weight: 700;
+    color: var(--accent-gold-ink); background: var(--accent-gold-light);
+    border: 1px solid color-mix(in srgb, var(--accent-gold) 28%, transparent);
+    border-radius: var(--radius-pill); box-shadow: var(--shadow-sm); cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .lock-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .lock-btn.unlocking { color: var(--accent-teal); background: var(--accent-teal-light); border-color: color-mix(in srgb, var(--accent-teal) 30%, transparent); }
+  @media (hover: hover) {
+    .lock-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); border-color: var(--accent-gold); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .lock-btn.unlocking:hover { background: color-mix(in srgb, var(--accent-teal) 18%, transparent); border-color: var(--accent-teal); }
+  }
+  .lock-btn:active { transform: scale(0.97); }
+  .lock-btn:focus-visible { outline: var(--focus-outline); outline-offset: 2px; }
+  .lock-notice {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem 1rem;
+    padding: 1rem 1.25rem; background: var(--accent-gold-light);
+    border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
+    border-radius: var(--radius-md);
+  }
+  .lock-notice-copy { flex: 1 1 16rem; min-width: 0; }
+  .lock-notice strong { font-size: 0.9rem; color: var(--text-primary); }
+  .lock-notice p { margin: 0.15rem 0 0; color: var(--text-secondary); font-size: var(--fs-body); }
+  .lock-notice .lock-btn { flex-shrink: 0; }
 
   .summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; min-width: 0; }
   .stat-card { min-width: 0; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
@@ -1905,13 +1825,10 @@
 
   @media (max-width: 768px) {
     .page { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
-    .header-actions { flex-direction: column; }
+    .header-actions { justify-content: stretch; }
     .header-actions > button { width: 100%; }
     .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
-    .income-fields { grid-template-columns: 1fr; }
-    .period-dates { flex-direction: column; align-items: stretch; gap: 0.4rem; }
-    .period-arrow { display: none; }
     .charts-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
     .chart-section { padding: 1rem 0.85rem; }
     .bar-chart-plot { height: 180px; gap: 0.25rem; padding-left: 0; padding-right: 0; }
@@ -1923,7 +1840,6 @@
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }
     .page-title { font-size: 1.3rem; }
-    .edit-btn { padding: 0.45rem 0.85rem; font-size: 0.75rem; }
     .month-nav { gap: 0.4rem; }
     .month-nav-btn { width: 2.3rem; height: 2.3rem; }
     .month-nav-label { max-width: 11rem; padding: 0 0.35rem; }
