@@ -828,37 +828,42 @@
       </div>
     </div>
 
-    <table class="sr-only">
-      <caption>{t("month.chartDataTable")}</caption>
-      <thead>
-        <tr>
-          <th scope="col">{t("expense.nameLabel")}</th>
-          <th scope="col">{t("common.husband")}</th>
-          <th scope="col">{t("common.wife")}</th>
-          <th scope="col">{t("common.total")}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><th scope="rowgroup" colspan="4">{t("month.chartIncomeTitle")}</th></tr>
-        {#each incomeBars as bar}
+    <!-- The table keeps its natural width for screen readers; clipping it through a
+         wrapper (instead of sizing the table itself) stops it widening the layout
+         viewport on phones, which would drag the fixed section FAB off-screen. -->
+    <div class="sr-only">
+      <table>
+        <caption>{t("month.chartDataTable")}</caption>
+        <thead>
           <tr>
-            <th scope="row">{bar.label}</th>
-            <td>{formatCurrency(bar.husband)}</td>
-            <td>{formatCurrency(bar.wife)}</td>
-            <td>{formatCurrency(bar.total)}</td>
+            <th scope="col">{t("expense.nameLabel")}</th>
+            <th scope="col">{t("common.husband")}</th>
+            <th scope="col">{t("common.wife")}</th>
+            <th scope="col">{t("common.total")}</th>
           </tr>
-        {/each}
-        <tr><th scope="rowgroup" colspan="4">{t("month.chartExpenseTitle")}</th></tr>
-        {#each expenseBars as bar}
-          <tr>
-            <th scope="row">{bar.label}</th>
-            <td>{formatCurrency(bar.husband)}</td>
-            <td>{formatCurrency(bar.wife)}</td>
-            <td>{formatCurrency(bar.total)}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <tr><th scope="rowgroup" colspan="4">{t("month.chartIncomeTitle")}</th></tr>
+          {#each incomeBars as bar}
+            <tr>
+              <th scope="row">{bar.label}</th>
+              <td>{formatCurrency(bar.husband)}</td>
+              <td>{formatCurrency(bar.wife)}</td>
+              <td>{formatCurrency(bar.total)}</td>
+            </tr>
+          {/each}
+          <tr><th scope="rowgroup" colspan="4">{t("month.chartExpenseTitle")}</th></tr>
+          {#each expenseBars as bar}
+            <tr>
+              <th scope="row">{bar.label}</th>
+              <td>{formatCurrency(bar.husband)}</td>
+              <td>{formatCurrency(bar.wife)}</td>
+              <td>{formatCurrency(bar.total)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
 
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
