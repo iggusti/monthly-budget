@@ -71,7 +71,7 @@
   let savedAt = $state<string>("");
   let showSectionNav = $state(false);
   let searchQuery = $state("");
-  let activeBar = $state<string | null>(null);
+  let activeBars = $state<{ income: string | null; expense: string | null }>({ income: null, expense: null });
 
   const visibleItemsPerSection = $derived(
     BUDGET_SECTION_KEYS.map((sectionKey, index) => {
@@ -364,8 +364,8 @@
   const canLock = $derived(isPastMonth && budget.locked === false);
   const canEditDaily = $derived(canEditDailyExpenses(monthId));
 
-  function toggleBar(key: string): void {
-    activeBar = activeBar === key ? null : key;
+  function toggleBar(chart: "income" | "expense", key: string): void {
+    activeBars[chart] = activeBars[chart] === key ? null : key;
   }
 
   async function setLocked(locked: boolean): Promise<void> {
@@ -733,16 +733,17 @@
             <div
               class="bar-col"
               class:combined={bar.combined}
-              class:active={activeBar === `income-${i}`}
+              class:active={activeBars.income === `income-${i}`}
               style:--bar-index={i}
               role="button"
               tabindex="0"
+              aria-pressed={activeBars.income === `income-${i}`}
               aria-label={`${bar.label}: ${t("common.husband")} ${formatCurrency(bar.husband)}, ${t("common.wife")} ${formatCurrency(bar.wife)}, ${t("common.total")} ${formatCurrency(bar.total)}`}
-              onclick={() => toggleBar(`income-${i}`)}
+              onclick={() => toggleBar("income", `income-${i}`)}
               onkeydown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  toggleBar(`income-${i}`);
+                  toggleBar("income", `income-${i}`);
                 }
               }}
             >
@@ -787,16 +788,17 @@
           {#each expenseBars as bar, i}
             <div
               class="bar-col"
-              class:active={activeBar === `expense-${i}`}
+              class:active={activeBars.expense === `expense-${i}`}
               style:--bar-index={i}
               role="button"
               tabindex="0"
+              aria-pressed={activeBars.expense === `expense-${i}`}
               aria-label={`${bar.label}: ${t("common.husband")} ${formatCurrency(bar.husband)}, ${t("common.wife")} ${formatCurrency(bar.wife)}, ${t("common.total")} ${formatCurrency(bar.total)}`}
-              onclick={() => toggleBar(`expense-${i}`)}
+              onclick={() => toggleBar("expense", `expense-${i}`)}
               onkeydown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  toggleBar(`expense-${i}`);
+                  toggleBar("expense", `expense-${i}`);
                 }
               }}
             >
@@ -1426,24 +1428,30 @@
    * animation support at all the bars simply render at full height, because
    * the animation never owns the layout height.
    *
-   * Hovering a column lifts it and dims the others so the highlighted bar is
-   * immediately readable. */
+   * Hovering or selecting a column lifts it with a soft spotlight underneath,
+   * so the highlighted bar is readable without fading its neighbours' numbers. */
   .bar-col {
     display: flex; align-items: flex-end; justify-content: center;
     flex: 1; min-width: 0; height: 100%; max-width: 96px;
-    transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out);
+    transition: transform var(--dur-base) var(--ease-out);
   }
-  /* Only dim the other columns while one is actually hovered, so moving over the
-     empty plot area does not fade the whole chart. */
-  /* `:not(:hover)` matters: `:has(.bar-col:hover)` carries the specificity of its
-     argument, so a plain `.bar-col` selector here would outrank the hover rule
-     below and dim the hovered column too. */
-  .bar-chart-plot:has(.bar-col:hover) .bar-col:not(:hover) { opacity: 0.55; }
-  .bar-chart-plot .bar-col:hover { opacity: 1; transform: translateY(-3px); }
-  .bar-chart-plot:has(.bar-col.active) .bar-col:not(.active) { opacity: 0.55; }
-  .bar-chart-plot .bar-col.active { opacity: 1; transform: translateY(-3px); }
+  /* Selection is a local spotlight, not a chart-wide fade. Dimming every other
+     column also faded its number, which read as the labels reloading when the
+     selection moved to the other chart. Each chart keeps its own pick. */
+  .bar-chart-plot .bar-col:hover { transform: translateY(-3px); }
+  .bar-chart-plot .bar-col.active { transform: translateY(-4px); }
   .bar-col.active .bar-seg { filter: brightness(1.07) saturate(1.06); }
+  .bar-col:focus-visible { outline: 2px solid var(--accent-teal); outline-offset: 2px; border-radius: var(--radius-sm); }
   .bar-col-track { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+  .bar-col-track::before {
+    content: ""; position: absolute; inset: -0.35rem -0.2rem 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: color-mix(in srgb, var(--accent-teal) 12%, transparent);
+    opacity: 0; transform: scale(0.94); transform-origin: bottom center;
+    transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
+    pointer-events: none;
+  }
+  .bar-col.active .bar-col-track::before { opacity: 1; transform: scale(1); }
 
   .bar-chart-labels {
     display: flex; justify-content: space-around;
@@ -1527,11 +1535,16 @@
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none;
+    transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
     animation: barTextIn var(--dur-base) var(--ease-out) backwards;
     animation-delay: calc(
       var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower)
     );
   }
+  /* A transition (not a second keyframe animation) keeps the entrance fade
+     untouched: swapping animation names would restart its backwards fill and
+     briefly hide the number every time the selection changed. */
+  .bar-col.active .bar-value { transform: translateX(-50%) scale(1.07); color: var(--text-primary); }
 
   .bar-legend { display: flex; gap: 1rem; margin-top: 0.85rem; justify-content: center; }
   .legend-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); }
