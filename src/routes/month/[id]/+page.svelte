@@ -99,11 +99,15 @@
   );
   const firstMatchedIndex = $derived(matchedSections.indexOf(true));
 
-  /** Scroll to a section, snapping straight there for reduced-motion users. */
+  /** Scroll vertically to a section without ever moving the page sideways. */
   function scrollToSection(target: HTMLElement): void {
-    target.scrollIntoView({
-      behavior: prefersReducedMotion() ? "auto" : "smooth",
-      block: "start"
+    if (typeof window === "undefined") return;
+    const scrollMargin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - scrollMargin;
+    window.scrollTo({
+      top: Math.max(0, top),
+      left: 0,
+      behavior: prefersReducedMotion() ? "auto" : "smooth"
     });
   }
 
@@ -1575,7 +1579,17 @@
   .clear-filter-icon { width: 1rem; height: 1rem; flex-shrink: 0; }
 
   /* ── Mobile quick section navigation ──────────────────────────────────── */
-  .section-nav { display: none; position: fixed; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); z-index: var(--z-overlay); }
+  /* Full-width, pointer-transparent anchor: positioning the FAB and menu against
+     the viewport (not a shrink-to-fit box) keeps them inside it on phones with
+     safe-area insets or a visible scrollbar. */
+  .section-nav {
+    display: none;
+    position: fixed;
+    inset: auto 0 0;
+    height: calc(3.4rem + 1rem + env(safe-area-inset-bottom, 0px));
+    z-index: var(--z-overlay);
+    pointer-events: none;
+  }
 
   .section-nav-backdrop {
     position: fixed;
@@ -1587,14 +1601,16 @@
     padding: 0;
     cursor: default;
     touch-action: none;
+    pointer-events: auto;
   }
 
   .section-nav-menu {
     position: absolute;
-    right: 0;
-    bottom: calc(100% + 0.75rem);
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(3.4rem + 1.75rem + env(safe-area-inset-bottom, 0px));
     z-index: var(--z-raised);
-    width: min(19rem, calc(100vw - 2rem));
+    width: min(19rem, calc(100% - 2rem - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    pointer-events: auto;
     max-height: min(68vh, 32rem);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1706,8 +1722,11 @@
   .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold-ink); transform: translateX(3px); }
 
   .section-nav-fab {
-    position: relative;
+    position: absolute;
+    right: calc(1rem + env(safe-area-inset-right, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     z-index: var(--z-raised);
+    pointer-events: auto;
     display: grid;
     place-items: center;
     width: 3.4rem;
