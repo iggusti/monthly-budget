@@ -41,6 +41,7 @@
     sectionMatchesFilters,
     type SearchFilters
   } from "#lib/search";
+  import { METHOD_CHANNELS_BANK, METHOD_CHANNELS_EWALLET } from "#lib/expense-methods";
   import { monthPageSize } from "#lib/month-grid";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
   import { t, lang } from "#lib/i18n.svelte";
@@ -622,6 +623,22 @@
             {#each methodOptions as option}
               <option value={option.value}>{option.label}</option>
             {/each}
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>{t("filter.channel")}</span>
+          <select bind:value={filters.channel}>
+            <option value="">{t("filter.channelAll")}</option>
+            <optgroup label={t("filter.channelBank")}>
+              {#each METHOD_CHANNELS_BANK as channel (channel)}
+                <option value={channel}>{channel}</option>
+              {/each}
+            </optgroup>
+            <optgroup label={t("filter.channelEwallet")}>
+              {#each METHOD_CHANNELS_EWALLET as channel (channel)}
+                <option value={channel}>{channel}</option>
+              {/each}
+            </optgroup>
           </select>
         </label>
         <label class="filter-field">

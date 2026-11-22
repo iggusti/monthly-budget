@@ -7,6 +7,7 @@ export interface SearchFilters {
   person: FilterPerson;
   kind: FilterKind;
   method: string;
+  channel: string;
   from: string;
   to: string;
 }
@@ -15,6 +16,7 @@ export const EMPTY_FILTERS: SearchFilters = {
   person: "all",
   kind: "all",
   method: "",
+  channel: "",
   from: "",
   to: ""
 };
@@ -24,6 +26,7 @@ export function filtersActive(filters: SearchFilters): boolean {
     filters.person !== "all" ||
     filters.kind !== "all" ||
     filters.method !== "" ||
+    filters.channel !== "" ||
     filters.from !== "" ||
     filters.to !== ""
   );
@@ -43,7 +46,12 @@ export function sectionMatchesFilters(index: number, filters: SearchFilters): bo
   if (index < 2 && filters.kind !== "all") return false;
   if (filters.kind !== "all" && filters.kind !== kind) return false;
 
-  if (index < 4 && (filters.method !== "" || filters.from !== "" || filters.to !== "")) return false;
+  if (
+    index < 4 &&
+    (filters.method !== "" || filters.channel !== "" || filters.from !== "" || filters.to !== "")
+  ) {
+    return false;
+  }
   return true;
 }
 
@@ -51,7 +59,9 @@ export function itemMatchesFilters(
   item: { method?: string; date?: string },
   filters: SearchFilters
 ): boolean {
-  if (filters.method !== "" && parseMethod(item.method).baseLabel !== filters.method) return false;
+  const method = parseMethod(item.method);
+  if (filters.method !== "" && method.baseLabel !== filters.method) return false;
+  if (filters.channel !== "" && method.channel !== filters.channel) return false;
   if (filters.from && (!item.date || item.date < filters.from)) return false;
   if (filters.to && (!item.date || item.date > filters.to)) return false;
   return true;

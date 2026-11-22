@@ -34,6 +34,7 @@ describe("search filters", () => {
   it("reports whether any filter is set", () => {
     expect(filtersActive(EMPTY_FILTERS)).toBe(false);
     expect(filtersActive({ ...EMPTY_FILTERS, person: "wife" })).toBe(true);
+    expect(filtersActive({ ...EMPTY_FILTERS, channel: "BRI" })).toBe(true);
   });
 
   it("matches sections by person and kind", () => {
@@ -42,12 +43,16 @@ describe("search filters", () => {
     expect(sectionMatchesFilters(2, { ...EMPTY_FILTERS, kind: "fixed" })).toBe(true);
     expect(sectionMatchesFilters(4, { ...EMPTY_FILTERS, kind: "savings" })).toBe(false);
     expect(sectionMatchesFilters(2, { ...EMPTY_FILTERS, method: "QRIS" })).toBe(false);
+    expect(sectionMatchesFilters(2, { ...EMPTY_FILTERS, channel: "BRI" })).toBe(false);
+    expect(sectionMatchesFilters(0, { ...EMPTY_FILTERS, channel: "BRI" })).toBe(false);
   });
 
   it("matches items by method and date range", () => {
     const item = { method: "QRIS · BRI", date: "2026-11-10" };
     expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, method: "QRIS" })).toBe(true);
     expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, method: "Transfer" })).toBe(false);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, channel: "BRI" })).toBe(true);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, channel: "GoPay" })).toBe(false);
     expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, from: "2026-11-11" })).toBe(false);
     expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, to: "2026-11-09" })).toBe(false);
     expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, to: "2026-11-10" })).toBe(true);
