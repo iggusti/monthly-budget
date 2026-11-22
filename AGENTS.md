@@ -59,8 +59,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
   dictionaries, parity checked by `i18n-dicts.test.ts`); `i18n.svelte.ts` only
   holds the reactive `t()` / `lang` state. Use `t("namespace.key")`.
 - Styling is plain CSS per component using the CSS variables in `app.css`.
-  Inline field validation hints (expense name/date, budget period) all share the
-  `.field-hint` class in `app.css`; use it instead of restyling a hint.
+  Shared tokens cover fonts, type scale, spacing, radii, focus rings, scrims and
+  shadows too: use those instead of new literals. Inline field validation hints
+  (expense name/date, budget period) all share the `.field-hint` class in
+  `app.css`; use it instead of restyling a hint.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
 - Loading states use `src/lib/components/Skeleton.svelte` inside the real
   layout wrappers. Set each placeholder's height to the line box of the text it
@@ -106,7 +108,9 @@ every push to `main`; that workflow does **not** touch functions or rules.
   they exist because their dashboard card creates the budget first.
 - On the month page, past periods are locked automatically unless a document
   has `locked: false` (an explicit unlock); `isPeriodLocked()` decides this.
-  The upcoming period's fixed sections (3–4) skip the inactive-month
+  A locked period still renders every section: `readOnly` only removes add,
+  edit, delete, checkbox/toggle and drag controls. The upcoming period's fixed
+  sections (3–4) skip the inactive-month
   confirmation (`confirmFixedChanges`) so their carried-over fixed expenses can
   be edited, moved and deleted before the period starts. Its daily sections
   (5–8) are `readOnly` until the period starts, so no daily expense can be

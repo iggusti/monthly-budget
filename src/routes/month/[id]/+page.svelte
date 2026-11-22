@@ -3,7 +3,7 @@
   import { goto } from "$app/navigation";
   import { fade, fly, slide } from "svelte/transition";
   import { untrack } from "svelte";
-  import { MOTION, motionFade, motionFly, setMonthNavDirection } from "#lib/motion";
+  import { MOTION, motionFade, motionFly, prefersReducedMotion, setMonthNavDirection } from "#lib/motion";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
   import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
   import {
@@ -101,22 +101,30 @@
   );
   const firstMatchedIndex = $derived(matchedSections.indexOf(true));
 
+  /** Scroll to a section, snapping straight there for reduced-motion users. */
+  function scrollToSection(target: HTMLElement): void {
+    target.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start"
+    });
+  }
+
   $effect(() => {
     if (searchActive && firstMatchedIndex !== -1) {
       const target = document.getElementById(`section-${firstMatchedIndex + 1}`);
       if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollToSection(target);
         target.focus({ preventScroll: true });
       }
     }
   });
 
-  /** Close the menu and smooth-scroll to the requested section. */
+  /** Close the menu and scroll to the requested section. */
   function goToSection(index: number) {
     showSectionNav = false;
     const target = document.getElementById(`section-${index}`);
     if (!target) return;
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToSection(target);
     target.focus({ preventScroll: true });
   }
 
@@ -952,8 +960,8 @@
       <p>{t("month.lockedText")}</p>
       <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
     </div>
-  {:else}
-  {#if isUpcomingMonth}
+  {/if}
+  {#if isUpcomingMonth && !isLocked}
     <p class="upcoming-daily-notice">{t("month.upcomingDailyNotice")}</p>
   {/if}
   <div class="sections animate-stagger" in:fade={motionFade(MOTION.base, 110)}>
@@ -961,6 +969,7 @@
     <ExpenseSection
       sectionId="section-1"
       confirmChanges={!isActiveMonth}
+      readOnly={isLocked}
       noRowShift
       title={t("month.section1")}
       sectionIndex={0}
@@ -978,6 +987,7 @@
     <ExpenseSection
       sectionId="section-2"
       confirmChanges={!isActiveMonth}
+      readOnly={isLocked}
       noRowShift
       title={t("month.section2")}
       sectionIndex={1}
@@ -995,6 +1005,7 @@
     <ExpenseSection
       sectionId="section-3"
       confirmChanges={confirmFixedChanges}
+      readOnly={isLocked}
       title={t("month.section3")}
       sectionIndex={2}
       highlightedQuery={searchQuery}
@@ -1015,6 +1026,7 @@
     <ExpenseSection
       sectionId="section-4"
       confirmChanges={confirmFixedChanges}
+      readOnly={isLocked}
       title={t("month.section4")}
       sectionIndex={3}
       highlightedQuery={searchQuery}
@@ -1036,7 +1048,7 @@
     <ExpenseSection
       sectionId="section-5"
       confirmChanges={!isActiveMonth}
-      readOnly={!canEditDaily}
+      readOnly={isLocked || !canEditDaily}
       title={t("month.section5")}
       badge="○"
       icon="wallet"
@@ -1083,7 +1095,7 @@
     <ExpenseSection
       sectionId="section-6"
       confirmChanges={!isActiveMonth}
-      readOnly={!canEditDaily}
+      readOnly={isLocked || !canEditDaily}
       title={t("month.section6")}
       badge="↓"
       icon="savings"
@@ -1111,7 +1123,7 @@
     <ExpenseSection
       sectionId="section-7"
       confirmChanges={!isActiveMonth}
-      readOnly={!canEditDaily}
+      readOnly={isLocked || !canEditDaily}
       title={t("month.section7")}
       badge="○"
       icon="wallet"
@@ -1147,7 +1159,7 @@
     <ExpenseSection
       sectionId="section-8"
       confirmChanges={!isActiveMonth}
-      readOnly={!canEditDaily}
+      readOnly={isLocked || !canEditDaily}
       title={t("month.section8")}
       badge="↓"
       icon="savings"
@@ -1171,7 +1183,6 @@
     />
     {/if}
   </div>
-  {/if}
 
   {#if searchActive && firstMatchedIndex === -1}
     <div class="search-empty" in:fade={motionFade(MOTION.base)}>
@@ -1357,7 +1368,7 @@
 
   .page-header { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; }
-  .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-base) var(--ease-out); }
+  .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out); }
   .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); transform: translateX(-3px); }
   .header-titleblock { min-width: 0; }
   .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
@@ -1370,7 +1381,7 @@
   .header-side :global(.search-bar-input) { min-width: 0; }
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); transition: color var(--dur-base) var(--ease-out); }
   .save-state.saving { color: var(--accent-gold-ink); animation: pulse 1.2s var(--ease-in-out) infinite; }
-  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--accent-gold) 20%, transparent); transition: background var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
+  .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--accent-gold) 20%, transparent); transition: background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
   .edit-btn-svg { width: 14px; height: 14px; transition: transform var(--dur-base) var(--ease-spring); }
   .edit-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
@@ -1390,7 +1401,7 @@
      uppercase is reserved for section/card captions. */
   .field span { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.875rem; color: var(--text-primary); }
-  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
+  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
 
   /* Period input: two date pickers joined by an arrow. The live preview below
      them uses the shared `.field-hint` look (app.css). */
@@ -1400,7 +1411,7 @@
   .period-date { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
   .period-date span { font-size: 0.68rem; font-weight: 600; color: var(--text-tertiary); }
   .period-date input { width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg); font-size: 0.85rem; color: var(--text-primary); min-width: 0; }
-  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
+  .period-date input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
   .period-arrow { padding-bottom: 0.65rem; font-size: 0.9rem; color: var(--text-tertiary); }
   .income-actions { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 1rem; }
   .btn-save { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.825rem; font-weight: 600; }
@@ -1506,7 +1517,7 @@
   .bar-stack {
     width: 100%; max-width: 62px; min-height: 3px;
     display: flex; flex-direction: column;
-    position: relative; transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative; transition: height var(--dur-slower) var(--ease-in-out);
   }
   /* Grow the coloured layer out of the baseline. `scaleY` is explicit on both
      ends and needs no percentage resolution, so every engine runs it. The
@@ -1544,11 +1555,11 @@
     container-type: size; container-name: barseg;
     display: flex; align-items: center; justify-content: center;
     filter: brightness(1) saturate(1);
-    transition: height 0.7s cubic-bezier(0.4, 0, 0.2, 1), filter var(--dur-base) var(--ease-out);
+    transition: height var(--dur-slower) var(--ease-in-out), filter var(--dur-base) var(--ease-out);
   }
   .bar-col:hover .bar-seg { filter: brightness(1.07) saturate(1.06); }
-  .bar-seg.blue { background: linear-gradient(180deg, var(--accent-blue), #5a7090); }
-  .bar-seg.rose { background: linear-gradient(180deg, var(--accent-rose), #b06a7c); }
+  .bar-seg.blue { background: linear-gradient(180deg, var(--accent-blue), color-mix(in srgb, var(--accent-blue), var(--text-primary) 18%)); }
+  .bar-seg.rose { background: linear-gradient(180deg, var(--accent-rose), color-mix(in srgb, var(--accent-rose), var(--text-primary) 18%)); }
 
   /* Value of a single source, drawn inside its own coloured segment. Kept short
      (compact notation) and shrunk to the strip width so it never gets clipped. */
@@ -1632,11 +1643,11 @@
   .clear-filter-row { display: flex; justify-content: center; margin-top: 1.25rem; }
   .clear-filter-btn {
     display: inline-flex; align-items: center; gap: 0.45rem;
-    padding: 0.6rem 1.15rem; border-radius: 999px;
+    padding: 0.6rem 1.15rem; border-radius: var(--radius-pill);
     border: 1px solid var(--surface-border); background: var(--surface);
     color: var(--text-secondary); font-size: 0.82rem; font-weight: 600;
     cursor: pointer; box-shadow: var(--shadow-sm);
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
   }
   .clear-filter-btn:hover {
     background: var(--accent-gold-light); color: var(--text-primary); border-color: var(--accent-gold);
@@ -1650,7 +1661,7 @@
     position: fixed;
     inset: 0;
     z-index: var(--z-behind);
-    background: rgba(26, 23, 20, 0.22);
+    background: var(--scrim-soft);
     backdrop-filter: blur(2px);
     border: none;
     padding: 0;
@@ -1696,12 +1707,12 @@
     flex-shrink: 0;
     width: 2.15rem;
     height: 2.15rem;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     border: 1px solid transparent;
     background: var(--surface);
     color: var(--text-primary);
     box-shadow: var(--shadow-sm);
-    transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
   .section-nav-month-btn svg { display: block; width: 1.05rem; height: 1.05rem; }
   .section-nav-month-btn:hover:not(:disabled) { color: var(--accent-gold-ink); border-color: var(--accent-gold); transform: scale(1.06); }
@@ -1714,7 +1725,7 @@
     gap: 0.4rem;
     flex: 1;
     min-width: 0;
-    font-family: "Playfair Display", serif;
+    font-family: var(--font-serif);
     font-size: 0.95rem;
     font-weight: 700;
     letter-spacing: -0.01em;
@@ -1725,7 +1736,7 @@
     flex-shrink: 0;
     width: 0.38rem;
     height: 0.38rem;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     background: var(--success);
     box-shadow: 0 0 0 2px var(--success-light);
   }
@@ -1757,7 +1768,7 @@
     /* Delay comes from the item index (`--stagger`), not `nth-child`: the menu
        also holds the month switcher and the title above the list. */
     animation-delay: calc(var(--stagger, 0) * 0.03s);
-    transition: background var(--dur-fast) ease, color var(--dur-fast) ease, padding-left var(--dur-base) var(--ease-out);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), padding-left var(--dur-base) var(--ease-out);
   }
   .section-nav-item:hover,
   .section-nav-item:active {
@@ -1770,7 +1781,7 @@
     width: 1rem;
     height: 1rem;
     color: var(--text-tertiary);
-    transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast) ease;
+    transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast) var(--ease-out);
   }
   .section-nav-item:hover .section-nav-chevron { color: var(--accent-gold-ink); transform: translateX(3px); }
 
@@ -1781,18 +1792,18 @@
     place-items: center;
     width: 3.4rem;
     height: 3.4rem;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     color: var(--on-accent);
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
-    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-gold) 42%, transparent), 0 4px 10px rgba(26, 23, 20, 0.18);
+    box-shadow: var(--shadow-fab);
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .section-nav-fab:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-gold) 50%, transparent), 0 6px 14px rgba(26, 23, 20, 0.2);
+    box-shadow: var(--shadow-fab-hover);
   }
   .section-nav-fab:active { transform: scale(0.96); }
-  .section-nav-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+  .section-nav-fab:focus-visible { outline: var(--focus-outline); outline-offset: 3px; }
   .section-nav-icon { width: 1.35rem; height: 1.35rem; transition: transform var(--dur-base) var(--ease-spring); }
   .section-nav-fab:hover .section-nav-icon { transform: rotate(90deg); }
 
@@ -1813,12 +1824,12 @@
     place-items: center;
     width: 2.6rem;
     height: 2.6rem;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     border: 1px solid var(--surface-border);
     background: var(--bg);
     color: var(--text-primary);
     cursor: pointer;
-    transition: background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
   /* Both arrows are the same SVG so the two buttons stay pixel-identical. */
   .month-nav-icon { width: 1.15rem; height: 1.15rem; display: block; }
@@ -1852,7 +1863,7 @@
     gap: 0.45rem;
     min-width: 0;
     max-width: 100%;
-    font-family: "Playfair Display", serif;
+    font-family: var(--font-serif);
     font-size: 1.02rem;
     font-weight: 700;
     line-height: 1.2;
@@ -1871,7 +1882,7 @@
     flex-shrink: 0;
     width: 0.42rem;
     height: 0.42rem;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     background: var(--success);
     box-shadow: 0 0 0 2px var(--success-light);
   }

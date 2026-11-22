@@ -23,7 +23,7 @@
     gap: 0.7rem; padding: 4rem 1rem;
   }
   .error-code {
-    font-family: "Playfair Display", serif; font-size: 4.5rem; font-weight: 700;
+    font-family: var(--font-serif); font-size: 4.5rem; font-weight: 700;
     line-height: 1; color: var(--accent-gold);
   }
   .error-title { font-size: 1.35rem; font-weight: 800; color: var(--text-primary); }
@@ -31,7 +31,7 @@
   .error-link {
     margin-top: 0.85rem;
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.6rem 1.3rem; border-radius: 999px;
+    padding: 0.6rem 1.3rem; border-radius: var(--radius-pill);
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
     color: var(--on-accent); font-size: 0.85rem; font-weight: 700; text-decoration: none;
     box-shadow: var(--shadow-sm);

@@ -83,10 +83,10 @@
     position: relative;
     width: 32px; height: 32px; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--bg-muted); border: 1px solid var(--surface-border);
     color: var(--text-secondary);
-    transition: all 0.2s ease;
+    transition: all var(--dur-fast) var(--ease-out);
   }
   .notify-toggle:hover { color: var(--accent-gold-ink); border-color: var(--accent-gold); }
   .notify-toggle.active {
@@ -98,12 +98,15 @@
 
   .notify-spinner {
     position: absolute; inset: -3px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     border: 2px solid transparent;
     border-top-color: var(--accent-gold);
-    animation: notify-spin 0.7s linear infinite;
+    animation: notify-spin var(--dur-slower) linear infinite;
   }
-  @keyframes notify-spin { to { transform: rotate(360deg); } }
+  @keyframes notify-spin {
+    from { transform: rotate(0); }
+    to { transform: rotate(360deg); }
+  }
 
   .notify-toast {
     position: absolute; top: calc(100% + 0.55rem); right: 0;
@@ -113,10 +116,10 @@
     background: var(--surface);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.12));
+    box-shadow: var(--shadow-md);
     color: var(--text-secondary);
-    font-size: 0.78rem; line-height: 1.35; text-align: left;
-    animation: notify-fade 0.2s ease;
+    font-size: var(--fs-label); line-height: 1.35; text-align: left;
+    animation: notify-fade var(--dur-fast) var(--ease-out);
   }
   @keyframes notify-fade {
     from { opacity: 0; transform: translateY(-4px); }

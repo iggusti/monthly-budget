@@ -12,6 +12,7 @@
   --accent-gold-light: #f5ece4;
   --accent-gold-ink: #8a5f3c;
   --on-accent: #17150f;
+  --logo-door: #faf9f7;
   --accent-rose: #c47070;
   --accent-teal: #5b8a8a;
   --accent-teal-light: #edf4f4;
@@ -26,10 +27,38 @@
   --shadow-sm: 0 1px 3px rgba(26,23,20,0.06), 0 1px 2px rgba(26,23,20,0.04);
   --shadow-md: 0 4px 20px rgba(26,23,20,0.08), 0 2px 8px rgba(26,23,20,0.04);
   --shadow-lg: 0 12px 40px rgba(26,23,20,0.12), 0 4px 12px rgba(26,23,20,0.06);
+  --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --fs-caption: 0.72rem;
+  --fs-label: 0.78rem;
+  --fs-body: 0.85rem;
+  --tracking-caption: 0.06em;
+
+  --space-1: 0.25rem;
+  --space-2: 0.4rem;
+  --space-3: 0.6rem;
+  --space-4: 0.75rem;
+  --space-5: 1rem;
+  --space-6: 1.5rem;
+
+  --border-emphasis: 1.5px solid var(--surface-border);
+  --focus-outline: 2px solid var(--accent-gold);
+  --focus-ring-gold: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent);
+  --focus-ring-teal: 0 0 0 3px color-mix(in srgb, var(--accent-teal) 20%, transparent);
+  --scrim: rgba(26, 23, 20, 0.5);
+  --scrim-soft: rgba(26, 23, 20, 0.22);
+  --surface-glass: rgba(255, 255, 255, 0.8);
+  --border-glass: rgba(255, 255, 255, 0.12);
+  --shadow-fab: 0 10px 26px color-mix(in srgb, var(--accent-gold) 42%, transparent), 0 4px 10px rgba(26, 23, 20, 0.18);
+  --shadow-fab-hover: 0 14px 32px color-mix(in srgb, var(--accent-gold) 50%, transparent), 0 6px 14px rgba(26, 23, 20, 0.2);
 
   /* ── Motion tokens ──────────────────────────────────────────────────────
    * Shared timing/easing so every page animates with the same feel: short,
@@ -79,6 +108,7 @@
   --accent-gold-light: #33291f;
   --accent-gold-ink: #d8a878;
   --on-accent: #17150f;
+  --logo-door: #f2ede6;
   --accent-rose: #d98a8a;
   --accent-teal: #79acac;
   --accent-teal-light: #1e2c2c;
@@ -93,6 +123,12 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
   --shadow-lg: 0 12px 40px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.35);
+  --scrim: rgba(0, 0, 0, 0.62);
+  --scrim-soft: rgba(0, 0, 0, 0.4);
+  --surface-glass: rgba(33, 30, 24, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --shadow-fab: 0 10px 26px color-mix(in srgb, var(--accent-gold) 28%, transparent), 0 4px 10px rgba(0, 0, 0, 0.45);
+  --shadow-fab-hover: 0 14px 32px color-mix(in srgb, var(--accent-gold) 34%, transparent), 0 6px 14px rgba(0, 0, 0, 0.55);
   --skeleton-base: #2b2720;
   --skeleton-sheen: rgba(255, 255, 255, 0.07);
   color-scheme: dark;
@@ -108,7 +144,7 @@ html {
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text-primary);
   line-height: 1.6;
@@ -123,17 +159,17 @@ body {
   padding-bottom: var(--keyboard-inset, 0px);
 }
 
-h1, h2, h3, h4 { font-family: "Playfair Display", serif; font-weight: 700; letter-spacing: -0.01em; }
+h1, h2, h3, h4 { font-family: var(--font-serif); font-weight: 700; letter-spacing: -0.01em; }
 
 button {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-sans);
   cursor: pointer;
   border: none;
-  transition: all 0.2s ease;
+  transition: all var(--dur-fast) var(--ease-out);
 }
 
 input, select, textarea {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* Screen-reader-only text: used for loading announcements and other status
@@ -226,7 +262,7 @@ input, select, textarea {
    repeat these values rather than reusing the class so they can mount and
    fade only while their field is empty, leaving no gap once it is filled. */
 .field-hint {
-  font-size: 0.72rem;
+  font-size: var(--fs-caption);
   font-weight: 600;
   color: var(--accent-gold);
   animation: field-hint-in var(--dur-fast) var(--ease-out) backwards;

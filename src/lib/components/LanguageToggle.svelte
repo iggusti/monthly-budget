@@ -37,14 +37,14 @@
 <style>
   .lang-switch {
     display: inline-flex; align-items: center; gap: 2px;
-    padding: 2px; border-radius: 999px;
+    padding: 2px; border-radius: var(--radius-pill);
     background: var(--bg-muted); border: 1px solid var(--surface-border);
   }
   .lang-btn {
-    padding: 0.25rem 0.6rem; border-radius: 999px;
-    font-size: 0.7rem; font-weight: 800; letter-spacing: 0.03em;
+    padding: 0.25rem 0.6rem; border-radius: var(--radius-pill);
+    font-size: var(--fs-caption); font-weight: 800; letter-spacing: var(--tracking-caption);
     color: var(--text-tertiary); background: transparent;
-    transition: color var(--dur-fast, 0.18s) ease, background var(--dur-base, 0.28s) var(--ease-out, ease), box-shadow var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease);
+    transition: color var(--dur-fast) var(--ease-out), background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
   .lang-btn:hover { color: var(--text-secondary); transform: translateY(-1px); }
   .lang-btn:active { transform: translateY(0) scale(0.95); }
@@ -54,8 +54,7 @@
   }
 
   /* Inline variant sits on the glassy login card. */
-  .lang-switch.inline { background: rgba(255, 255, 255, 0.75); border-color: rgba(255, 255, 255, 0.8); }
-  :root[data-theme="dark"] .lang-switch.inline { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.12); }
+  .lang-switch.inline { background: var(--surface-glass); border-color: var(--border-glass); }
   .lang-switch.inline .lang-btn { color: var(--text-tertiary); }
   .lang-switch.inline .lang-btn.active { background: var(--accent-gold-light); color: var(--accent-gold); }
 </style>

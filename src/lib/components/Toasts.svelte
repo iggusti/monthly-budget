@@ -68,7 +68,7 @@
     z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-3);
     width: min(92vw, 24rem);
     pointer-events: none;
   }
@@ -85,7 +85,7 @@
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     color: var(--text-primary);
-    font-size: 0.85rem;
+    font-size: var(--fs-body);
     font-weight: 600;
     line-height: 1.35;
   }
@@ -98,7 +98,7 @@
     width: 22px;
     height: 22px;
     flex-shrink: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     background: var(--success-light);
     color: var(--success);
   }
@@ -109,7 +109,7 @@
   .toast-action {
     flex-shrink: 0;
     padding: 0.3rem 0.6rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--accent-gold-light);
     color: var(--accent-gold-ink);
     font-size: 0.75rem;
@@ -124,7 +124,7 @@
     width: 22px;
     height: 22px;
     flex-shrink: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
     background: transparent;
     color: var(--text-tertiary);
   }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import { MOTION, motionFade, motionFly } from "#lib/motion";
+  import { MOTION, motionFade, motionFly, prefersReducedMotion } from "#lib/motion";
   import {
     subscribeAllBudgets,
     fetchBudget,
@@ -204,7 +204,12 @@
   $effect(() => {
     if (searchActive && searchResults.length > 0) {
       const target = document.getElementById(`month-${searchResults[0].id}`);
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (target) {
+        target.scrollIntoView({
+          behavior: prefersReducedMotion() ? "auto" : "smooth",
+          block: "start"
+        });
+      }
     }
   });
 
@@ -883,17 +888,17 @@
     /* Phones only, like the month page's jump-to-section button. */
     display: none; place-items: center;
     width: 3.4rem; height: 3.4rem;
-    border-radius: 50%; color: var(--on-accent);
+    border-radius: var(--radius-circle); color: var(--on-accent);
     background: linear-gradient(135deg, var(--accent-gold), var(--accent-rose));
-    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent-gold) 42%, transparent), 0 4px 10px rgba(26, 23, 20, 0.18);
+    box-shadow: var(--shadow-fab);
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .quick-add-fab:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 14px 32px color-mix(in srgb, var(--accent-gold) 50%, transparent), 0 6px 14px rgba(26, 23, 20, 0.2);
+    box-shadow: var(--shadow-fab-hover);
   }
   .quick-add-fab:active { transform: scale(0.96); }
-  .quick-add-fab:focus-visible { outline: 2px solid var(--accent-gold); outline-offset: 3px; }
+  .quick-add-fab:focus-visible { outline: var(--focus-outline); outline-offset: 3px; }
   .quick-add-icon { width: 1.4rem; height: 1.4rem; transition: transform var(--dur-base) var(--ease-spring); }
   .quick-add-fab:hover .quick-add-icon { transform: rotate(90deg); }
   /* Must follow the base rule so the equal-specificity override wins on phones. */
@@ -921,7 +926,7 @@
   .overview-toggle {
     margin-left: auto; display: inline-flex; align-items: center; justify-content: center;
     width: 1.9rem; height: 1.9rem; flex-shrink: 0; padding: 0;
-    border: 1px solid var(--surface-border); border-radius: 50%; background: transparent;
+    border: 1px solid var(--surface-border); border-radius: var(--radius-circle); background: transparent;
     color: var(--text-secondary); cursor: pointer;
     transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
   }
@@ -973,7 +978,7 @@
     border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
   }
   .filter-toggle.active { color: var(--accent-gold-ink); border-color: var(--accent-teal); }
-  .filter-toggle.active::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-teal); }
+  .filter-toggle.active::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-circle); background: var(--accent-teal); }
   .filter-toggle-chevron { font-size: 0.7rem; transition: transform var(--dur-base) var(--ease-out); }
   .filter-toggle-chevron.open { transform: rotate(180deg); }
   .filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.75rem; }
@@ -1006,10 +1011,10 @@
   .months-toggle { display: flex; justify-content: center; }
   .toggle-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 1.1rem; border-radius: 999px;
+    padding: 0.5rem 1.1rem; border-radius: var(--radius-pill);
     background: var(--bg-muted); border: 1.5px solid var(--surface-border);
     color: var(--text-secondary); font-size: 0.82rem; font-weight: 700;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--dur-fast) var(--ease-out);
   }
   .toggle-btn:hover { background: var(--surface); border-color: var(--accent-gold); color: var(--accent-gold-ink); }
   .toggle-arrow { font-size: 0.8rem; line-height: 1; }
@@ -1044,9 +1049,9 @@
   .card-period { font-size: 0.74rem; color: var(--text-tertiary); }
 
   .card-badge {
-    flex-shrink: 0; font-size: 0.62rem; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    padding: 0.22rem 0.6rem; border-radius: 999px;
+    flex-shrink: 0; font-size: var(--fs-caption); font-weight: 800;
+    text-transform: uppercase; letter-spacing: var(--tracking-caption);
+    padding: 0.22rem 0.6rem; border-radius: var(--radius-pill);
   }
   .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold-ink); }
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
@@ -1056,7 +1061,7 @@
 
   .card-matches { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
   .card-match { display: flex; flex-direction: column; gap: 0.1rem; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem; }
-  .card-match-section { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); }
+  .card-match-section { font-size: var(--fs-caption); font-weight: 800; text-transform: uppercase; letter-spacing: var(--tracking-caption); color: var(--text-tertiary); }
   .card-match-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); overflow-wrap: anywhere; }
   /* Highlight for matched text inside item names. */
   .card-matches :global(mark) {
@@ -1100,7 +1105,7 @@
   .info-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out); }
   .info-item:hover { transform: translateX(3px); color: var(--text-primary); }
   .info-item b { color: var(--text-primary); font-weight: 700; }
-  .info-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; transition: transform var(--dur-base) var(--ease-spring); }
+  .info-dot { width: 9px; height: 9px; border-radius: var(--radius-circle); flex-shrink: 0; transition: transform var(--dur-base) var(--ease-spring); }
   .info-item:hover .info-dot { transform: scale(1.4); }
   .info-dot.blue { background: var(--accent-blue); }
   .info-dot.rose { background: var(--accent-rose); }

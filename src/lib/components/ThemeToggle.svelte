@@ -37,15 +37,14 @@
   .theme-toggle {
     width: 32px; height: 32px; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--bg-muted); border: 1px solid var(--surface-border);
     color: var(--text-secondary);
-    transition: color var(--dur-fast, 0.18s) ease, border-color var(--dur-fast, 0.18s) ease, background var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
   .theme-toggle:hover { color: var(--accent-gold); border-color: var(--accent-gold); transform: rotate(12deg) scale(1.08); }
   .theme-toggle:active { transform: rotate(12deg) scale(0.94); }
 
   /* Inline variant sits on the glassy login card. */
-  .theme-toggle.inline { background: rgba(255, 255, 255, 0.75); border-color: rgba(255, 255, 255, 0.8); }
-  :root[data-theme="dark"] .theme-toggle.inline { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.12); }
+  .theme-toggle.inline { background: var(--surface-glass); border-color: var(--border-glass); }
 </style>

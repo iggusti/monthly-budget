@@ -102,7 +102,7 @@
     width: 100%;
     max-width: 360px;
     font-size: 0.875rem;
-    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, transform var(--dur-base, 0.28s) var(--ease-out, ease);
+    transition: background-color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-out);
   }
   .search-bar:hover {
     border-color: var(--accent-gold);
@@ -110,7 +110,7 @@
   .search-bar:focus-within {
     background: var(--surface);
     border-color: var(--accent-gold);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent);
+    box-shadow: var(--focus-ring-gold);
     outline: none;
     transform: translateY(-1px);
   }
@@ -119,7 +119,6 @@
     height: 1rem;
     flex-shrink: 0;
     color: var(--text-tertiary);
-    flex-shrink: 0;
   }
   .search-bar-input {
     flex: 1;
@@ -147,11 +146,11 @@
     padding: 0;
     color: var(--text-tertiary);
     cursor: pointer;
-    transition: color 0.15s ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease);
+    transition: color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--radius-circle);
   }
   .search-bar-clear-icon {
     width: 1rem;

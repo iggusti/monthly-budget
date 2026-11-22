@@ -1193,15 +1193,15 @@
 </div>
 
 <style>
-  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); scroll-margin-top: 4.5rem; transition: box-shadow var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease); }
+  .section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); scroll-margin-top: 4.5rem; transition: box-shadow var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
   .section:hover { box-shadow: var(--shadow-md); }
 
   .section-head { display: flex; align-items: center; gap: 0.65rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .section-title { flex: 1; font-size: 0.88rem; font-weight: 700; }
   .section-total { font-size: 0.9rem; font-weight: 700; }
-  .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
+  .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base) var(--ease-spring); }
   .section:hover .badge { transform: scale(1.08) rotate(-4deg); }
-  .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast, 0.18s) ease, color var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
+  .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring); }
   @media (hover: hover) {
     .add-btn:hover { background: var(--text-primary); color: var(--bg); transform: scale(1.08); }
   }
@@ -1227,7 +1227,7 @@
   /* Only the field's own label; hints and date details keep their gold colour. */
   .field > span:first-child { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
   .field input { width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.875rem; color: var(--text-primary); }
-  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
+  .field input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
   .field input.amount-input { font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: 0.01em; }
 
   /* Payment method: two native selects (method, then bank / e-wallet). The
@@ -1248,7 +1248,7 @@
     cursor: pointer;
     text-overflow: ellipsis;
   }
-  .field select:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
+  .field select:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
@@ -1261,7 +1261,7 @@
     display: inline-flex; align-items: center; justify-content: center;
     padding: 0.4rem 0.15rem;
     border: 1px solid var(--surface-border);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--bg-muted);
     color: var(--text-secondary);
     font-size: 0.7rem; font-weight: 700;
@@ -1274,9 +1274,9 @@
     color: var(--text-primary);
   }
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
-  .date-custom-label { font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
+  .date-custom-label { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
   .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
-  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent); }
+  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
   /* The hint look comes from the shared `.field-hint` (app.css); this only
      holds the layout. "No date" and a picked date share it, so only the text
      and the icon tell them apart. */
@@ -1286,7 +1286,7 @@
      field is empty, so a filled field leaves no extra gap; `fade` animates
      the appearance without animating layout height. */
   .editor-hint {
-    font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
+    font-size: var(--fs-caption); font-weight: 600; color: var(--accent-gold);
   }
   .btn-save { padding: 0.5rem 1.05rem; border-radius: var(--radius-sm); background: var(--text-primary); color: var(--bg); font-size: 0.8rem; font-weight: 600; }
   .btn-save:hover { opacity: 0.88; }
@@ -1295,7 +1295,7 @@
   .btn-cancel:hover { background: var(--bg-muted); }
 
   .items { list-style: none; }
-  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background var(--dur-fast, 0.18s) ease, padding-left var(--dur-base, 0.28s) var(--ease-out, ease); }
+  .item { display: flex; align-items: center; justify-content: space-between; gap: 0.85rem; padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--bg-muted); transition: background var(--dur-fast) var(--ease-out), padding-left var(--dur-base) var(--ease-out); }
   .item.draggable { cursor: grab; }
   .item.draggable:active { cursor: grabbing; }
   .item:last-child { border-bottom: none; }
@@ -1315,7 +1315,7 @@
     width: 22px; height: 22px; border-radius: 6px;
     color: var(--text-tertiary); font-size: 15px; line-height: 1;
     cursor: grab; touch-action: none; user-select: none;
-    transition: background 0.15s, color 0.15s;
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
   }
   .drag-handle:hover { background: var(--bg-muted); color: var(--text-primary); }
   .check { display: inline-flex; align-items: center; cursor: pointer; flex-shrink: 0; }
@@ -1324,19 +1324,19 @@
     width: 18px; height: 18px; border-radius: 5px;
     border: 2px solid var(--surface-border); background: var(--surface);
     display: inline-flex; align-items: center; justify-content: center;
-    transition: background var(--dur-base, 0.28s) var(--ease-out, ease), border-color var(--dur-base, 0.28s) var(--ease-out, ease), transform var(--dur-base, 0.28s) var(--ease-spring, ease); font-size: 11px; color: var(--on-accent);
+    transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-spring); font-size: 11px; color: var(--on-accent);
   }
   .check:hover .checkmark { border-color: var(--accent-gold); transform: scale(1.08); }
   .check:active .checkmark { transform: scale(0.92); }
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
-  .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base, 0.28s) var(--ease-spring, ease) backwards; }
+  .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base) var(--ease-spring) backwards; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
   .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: color-mix(in srgb, var(--accent-blue) 10%, transparent); color: var(--accent-blue); }
   .date-badge {
     display: inline-flex; align-items: center; gap: 0.35rem;
     font-size: 0.66rem; font-weight: 600;
     padding: 0.12rem 0.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--accent-gold) 12%, transparent);
     color: var(--accent-gold);
     border: 1px solid color-mix(in srgb, var(--accent-gold) 30%, transparent);
@@ -1375,7 +1375,7 @@
     background: var(--bg-muted); color: var(--text-secondary);
     font-size: 0.78rem; font-weight: 700;
     border-top: 1px solid var(--surface-border);
-    transition: all 0.2s;
+    transition: all var(--dur-fast) var(--ease-out);
   }
   .more-btn:hover { background: var(--surface); color: var(--accent-gold); }
   .more-arrow { font-size: 0.8rem; line-height: 1; }
@@ -1386,7 +1386,7 @@
     padding: 0.7rem 1.25rem; font-size: 0.8rem; font-weight: 600;
     border-top: 1px solid var(--surface-border);
     border-left: 4px solid var(--footer-accent, var(--surface-border));
-    background: var(--footer-bg, rgba(0, 0, 0, 0.015));
+    background: var(--footer-bg, var(--bg-muted));
   }
   .section-footer .negative { color: var(--danger); }
   .footer-check-stats { display: flex; align-items: baseline; gap: 0.6rem; }
@@ -1444,21 +1444,21 @@
   .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
   .switch-track {
     position: relative; width: 36px; height: 20px; flex-shrink: 0;
-    border-radius: 99px; background: var(--bg-muted);
+    border-radius: var(--radius-pill); background: var(--bg-muted);
     border: 1px solid var(--surface-border);
-    transition: background 0.2s ease, border-color 0.2s ease;
+    transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
   }
   .switch-thumb {
     position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
-    border-radius: 50%; background: var(--surface);
+    border-radius: var(--radius-circle); background: var(--surface);
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease;
+    transition: transform var(--dur-fast) var(--ease-out);
   }
   .switch input:checked + .switch-track { background: var(--accent-teal); border-color: var(--accent-teal); }
   .switch input:checked + .switch-track .switch-thumb { transform: translateX(16px); }
-  .switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-teal) 25%, transparent); }
+  .switch input:focus-visible + .switch-track { box-shadow: var(--focus-ring-teal); }
   .switch-label { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); }
-  .switch-hint { font-size: 0.72rem; color: var(--text-tertiary); margin-left: auto; }
+  .switch-hint { font-size: var(--fs-caption); color: var(--text-tertiary); margin-left: auto; }
 
   .gold .section-footer { --footer-accent: var(--accent-gold-ink); --footer-bg: color-mix(in srgb, var(--accent-gold) 8%, transparent); }
   .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: color-mix(in srgb, var(--accent-rose) 8%, transparent); }
@@ -1468,7 +1468,7 @@
   .modal-overlay {
     position: fixed; inset: 0; z-index: var(--z-modal);
     display: flex; align-items: center; justify-content: center;
-    background: rgba(26, 23, 20, 0.45);
+    background: var(--scrim);
     backdrop-filter: blur(3px);
     padding: 1.25rem;
   }

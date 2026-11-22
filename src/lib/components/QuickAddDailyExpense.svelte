@@ -353,7 +353,7 @@
     /* Phones only, like the month page's jump-to-section button. */
     display: none; align-items: center; justify-content: center;
     padding: 1.25rem;
-    background: rgba(26, 23, 20, 0.5);
+    background: var(--scrim);
     backdrop-filter: blur(3px);
   }
   .sheet {
@@ -375,7 +375,7 @@
   .close-btn {
     flex-shrink: 0; margin-left: auto;
     display: grid; place-items: center;
-    width: 1.9rem; height: 1.9rem; border-radius: 50%;
+    width: 1.9rem; height: 1.9rem; border-radius: var(--radius-circle);
     background: var(--bg-muted); color: var(--text-secondary);
   }
   .close-btn:hover { background: var(--surface-border); color: var(--text-primary); }
@@ -423,12 +423,12 @@
   }
   .sheet input:focus, .sheet select:focus {
     outline: none; border-color: var(--accent-gold);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-gold) 15%, transparent);
+    box-shadow: var(--focus-ring-gold);
   }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
-    padding: 0.4rem 0.15rem; border-radius: 999px;
+    padding: 0.4rem 0.15rem; border-radius: var(--radius-pill);
     border: 1px solid var(--surface-border); background: var(--bg-muted);
     color: var(--text-secondary); font-size: 0.7rem; font-weight: 700;
   }
@@ -441,7 +441,7 @@
      description of the chosen day. */
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
   .date-custom-label {
-    font-size: 0.7rem; font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
+    font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
   }
   .date-custom input { flex: 1; min-width: 0; }
   .date-preview { margin-top: 0.45rem; }
@@ -449,7 +449,7 @@
   /* Mounted only while the field is empty, so filled fields keep normal
      spacing; `fade` handles the appearance without animating layout height. */
   .editor-hint {
-    font-size: 0.72rem; font-weight: 600; color: var(--accent-gold);
+    font-size: var(--fs-caption); font-weight: 600; color: var(--accent-gold);
   }
 
   .sheet-actions { display: flex; gap: 0.6rem; justify-content: flex-end; padding-top: 0.2rem; }
@@ -465,7 +465,7 @@
 
   .close-btn:focus-visible, .destination:focus-visible, .date-chip:focus-visible,
   .btn-cancel:focus-visible, .btn-save:focus-visible {
-    outline: 2px solid var(--accent-gold); outline-offset: 2px;
+    outline: var(--focus-outline); outline-offset: 2px;
   }
 
   @media (max-width: 768px) {

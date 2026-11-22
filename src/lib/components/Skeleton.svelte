@@ -26,7 +26,7 @@
 
   const dims = $derived(
     circle
-      ? `width:${size}px;height:${size}px;border-radius:50%;`
+      ? `width:${size}px;height:${size}px;border-radius:var(--radius-circle);`
       : `width:${width};height:${height};border-radius:${radius};`
   );
 </script>
@@ -60,7 +60,7 @@
     background: linear-gradient(
       90deg,
       transparent 0%,
-      var(--skeleton-sheen, rgba(255, 255, 255, 0.7)) 50%,
+      var(--skeleton-sheen) 50%,
       transparent 100%
     );
     transform: translateX(-100%);

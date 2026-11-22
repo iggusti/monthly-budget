@@ -71,19 +71,19 @@
           <svg class="logo-mark" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true" focusable="false">
             <defs>
               <linearGradient id="logo-body" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" style="stop-color: #f0c9a0" />
-                <stop offset="0.55" style="stop-color: #d98a8a" />
-                <stop offset="1" style="stop-color: var(--accent-rose)" />
+                <stop offset="0" style="stop-color: color-mix(in srgb, var(--accent-gold), white 20%)" />
+                <stop offset="0.55" style="stop-color: var(--accent-rose)" />
+                <stop offset="1" style="stop-color: color-mix(in srgb, var(--accent-rose), var(--text-primary) 12%)" />
               </linearGradient>
               <linearGradient id="logo-roof" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" style="stop-color: var(--accent-gold)" />
-                <stop offset="1" style="stop-color: #a07050" />
+                <stop offset="0" style="stop-color: color-mix(in srgb, var(--accent-gold), white 10%)" />
+                <stop offset="1" style="stop-color: color-mix(in srgb, var(--accent-gold), var(--text-primary) 12%)" />
               </linearGradient>
             </defs>
             <rect x="2" y="2" width="60" height="60" rx="16" style="fill: var(--accent-teal)" />
             <rect x="15" y="29" width="34" height="24" rx="3" fill="url(#logo-body)" />
             <path d="M10 30 L32 11 L54 30 Z" fill="url(#logo-roof)" />
-            <rect x="27" y="37" width="10" height="16" rx="2" fill="#faf9f7" />
+            <rect x="27" y="37" width="10" height="16" rx="2" style="fill: var(--logo-door)" />
             <path d="M32 39.5c-1-1.5-3.4-1.4-4.2 0.2-0.8 1.6 0.6 2.8 4.2 4.8 3.6-2 5-3.2 4.2-4.8-0.8-1.6-3.2-1.7-4.2-0.2z" style="fill: var(--accent-rose)" />
           </svg>
           <span class="logo-text">Nia & Ilham</span>
@@ -141,13 +141,13 @@
     transition: transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
   }
   .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.06); box-shadow: 0 6px 16px color-mix(in srgb, var(--accent-teal) 35%, transparent); }
-  .logo-text { font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo-text { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
   .nav-logout {
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
-    padding: 0.3rem 0.75rem; border-radius: 20px;
+    padding: 0.3rem 0.75rem; border-radius: var(--radius-pill);
     background: transparent; border: 1px solid var(--surface-border);
-    transition: all 0.2s;
+    transition: all var(--dur-fast) var(--ease-out);
   }
   .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
   .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: clip; padding: 2rem 2rem 3rem; }

@@ -10,6 +10,7 @@
    *   <CountUp value={totals.totalIncome} />
    */
   import { onDestroy, untrack } from "svelte";
+  import { prefersReducedMotion } from "#lib/motion";
   import { formatCurrency } from "#lib/types";
 
   interface Props {
@@ -25,14 +26,6 @@
 
   let displayed = $state(0);
   let frame: number | null = null;
-
-  function prefersReducedMotion(): boolean {
-    return (
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    );
-  }
 
   /** Ease-out cubic — fast start, gentle settle. */
   function easeOut(t: number): number {
