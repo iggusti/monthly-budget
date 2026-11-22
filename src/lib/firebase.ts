@@ -1,7 +1,11 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { browser } from "$app/env";
 import {
   getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   setDoc,
   getDoc,
@@ -18,7 +22,11 @@ const FCM_VAPID_KEY =
   "BIX8u3qPcruCgaPbOSNVwWqlG7Ojgx42LXh_pOkYDLrr9xtO2s08ISlV1wmFEHMMnXYmi6EMBI26ZhT5IPTQKTI";
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = browser
+  ? initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    })
+  : getFirestore(app);
 const auth = getAuth(app);
 
 const BUDGET_COLLECTION = "budget";

@@ -15,6 +15,8 @@ import { deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { app, auth, db, DEVICES_COLLECTION, FCM_VAPID_KEY } from "./firebase";
 
+export const PUSH_NOTIFICATIONS_ENABLED = false;
+
 const SERVICE_WORKER_URL = "/firebase-messaging-sw.js";
 const ENABLED_KEY = "fhb-notify-enabled";
 const TOKEN_KEY = "fhb-notify-token";
@@ -68,7 +70,7 @@ export function refreshStatus(): void {
   notify.status = detectStatus();
 }
 
-async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
+export async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
   const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: "/" });
   await navigator.serviceWorker.ready;
   return registration;

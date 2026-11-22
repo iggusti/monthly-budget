@@ -10,6 +10,8 @@
   } from "#lib/budget-store";
   import { buildBackupJson, parseBackup, toBudgetsCsv } from "#lib/backup";
   import { downloadBudgetsPdf } from "#lib/backup-pdf";
+  import { installPrompt } from "#lib/install-prompt.svelte";
+  import { buildInsights } from "#lib/insights";
   import {
     BUDGET_SECTION_KEYS,
     computeTotals,
@@ -24,7 +26,15 @@
   import { isAuthenticated } from "#lib/auth";
   import { toastAction, toastError, toastSuccess } from "#lib/toast.svelte";
   import { currentPeriodId, listedPeriodIds, monthLabel, previousMonthId } from "#lib/period";
-  import { highlightText, matchesQuery } from "#lib/search";
+  import {
+    EMPTY_FILTERS,
+    filtersActive,
+    highlightText,
+    itemMatchesFilters,
+    matchesQuery,
+    sectionMatchesFilters,
+    type SearchFilters
+  } from "#lib/search";
   import { monthPageSize } from "#lib/month-grid";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
   import { t, lang } from "#lib/i18n.svelte";
@@ -39,9 +49,23 @@
   let busy = $state(false);
   let showAllMonths = $state(false);
   let searchQuery = $state("");
+  let filters = $state<SearchFilters>({ ...EMPTY_FILTERS });
   let quickAddOpen = $state(false);
   let importInput = $state<HTMLInputElement | null>(null);
   let exportingPdf = $state(false);
+  let restorePreview = $state<{ budgets: MonthBudget[]; skipped: number } | null>(null);
+
+  const methodOptions = $derived(
+    [t("expense.methodQris"), t("expense.methodTransfer"), t("expense.methodCash")].map((label) => ({
+      value: label,
+      label
+    }))
+  );
+
+  function clearFilters(): void {
+    filters = { ...EMPTY_FILTERS };
+    searchQuery = "";
+  }
 
   const LAST_OPEN_KEY = "fhb-last-open";
 
@@ -127,20 +151,20 @@
     section: string;
   }
 
-  /** Collect every item in a budget that matches `query`, with section labels. */
-  function findMatchingItems(budget: MonthBudget, query: string): ItemMatch[] {
+  function findMatchingItems(budget: MonthBudget, query: string, current: SearchFilters): ItemMatch[] {
     const matches: ItemMatch[] = [];
-    if (matchesQuery(t("month.husbandIncome"), undefined, query)) {
+    if (sectionMatchesFilters(0, current) && matchesQuery(t("month.husbandIncome"), undefined, query)) {
       matches.push({ id: "husband-income", name: t("month.husbandIncome"), section: t("month.section1") });
     }
-    if (matchesQuery(t("month.wifeIncome"), undefined, query)) {
+    if (sectionMatchesFilters(1, current) && matchesQuery(t("month.wifeIncome"), undefined, query)) {
       matches.push({ id: "wife-income", name: t("month.wifeIncome"), section: t("month.section2") });
     }
     BUDGET_SECTION_KEYS.forEach((key, i) => {
       if (key === "husbandIncome" || key === "wifeIncome") return;
-      const items = (budget[key] ?? []) as { id: string; name: string; method?: string }[];
+      if (!sectionMatchesFilters(i, current)) return;
+      const items = (budget[key] ?? []) as DailyExpense[];
       for (const item of items) {
-        if (matchesQuery(item.name, item.method, query)) {
+        if (matchesQuery(item.name, item.method, query) && itemMatchesFilters(item, current)) {
           matches.push({ id: item.id, name: item.name, section: t(`month.section${i + 1}`) });
         }
       }
@@ -152,13 +176,13 @@
    * When a query is active, only months that contain a matching item are shown;
    * each is paired with the matches so they can be listed inside the card.
    */
-  const searchActive = $derived(searchQuery.trim().length > 0);
+  const searchActive = $derived(searchQuery.trim().length > 0 || filtersActive(filters));
 
   const searchResults = $derived(
     orderedMonths
       .map((id) => {
         const budget = monthBudget(id);
-        const items = budget ? findMatchingItems(budget, searchQuery) : [];
+        const items = budget ? findMatchingItems(budget, searchQuery, filters) : [];
         return { id, items };
       })
       .filter((result) => result.items.length > 0)
@@ -179,6 +203,7 @@
 
   // The budget for the current period (may be undefined if not created yet).
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
+  const insights = $derived(buildInsights(budgets, currentMonthId, todayISO()));
   const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
 
   const currentIncome = $derived(currentTotals ? currentTotals.totalIncome : 0);
@@ -380,21 +405,41 @@
       toastError(t("backup.invalidFile"));
       return;
     }
-    if (!confirm(t("backup.confirmReplace", { n: restored.length }))) return;
+    restorePreview = { budgets: restored, skipped };
+  }
+
+  async function confirmRestore(): Promise<void> {
+    const preview = restorePreview;
+    if (!preview) return;
+    restorePreview = null;
+    const snapshot = structuredClone(budgets);
+    const restoredIds = new Set(preview.budgets.map((b) => b.id));
 
     try {
-      for (const budget of restored) await saveBudget(budget);
+      for (const budget of preview.budgets) await saveBudget(budget);
     } catch (error) {
       console.error("Failed to restore backup:", error);
       toastError(t("backup.importFailed"));
       return;
     }
-    const restoredIds = new Set(restored.map((b) => b.id));
-    budgets = [...budgets.filter((b) => !restoredIds.has(b.id)), ...restored].sort((a, b) =>
+    budgets = [...budgets.filter((b) => !restoredIds.has(b.id)), ...preview.budgets].sort((a, b) =>
       b.id.localeCompare(a.id)
     );
-    toastSuccess(t("backup.imported", { n: restored.length }));
-    if (skipped > 0) toastSuccess(t("backup.skipped", { n: skipped }));
+    toastAction(t("backup.restoreUndo"), t("backup.undo"), () => {
+      void (async () => {
+        try {
+          const snapshotIds = new Set(snapshot.map((b) => b.id));
+          for (const id of restoredIds) if (!snapshotIds.has(id)) await deleteBudget(id);
+          for (const budget of snapshot) await saveBudget(budget);
+          budgets = snapshot;
+          toastSuccess(t("backup.restoredUndo"));
+        } catch (error) {
+          console.error("Failed to undo restore:", error);
+          toastError(t("backup.importFailed"));
+        }
+      })();
+    });
+    if (preview.skipped > 0) toastSuccess(t("backup.skipped", { n: preview.skipped }));
   }
 </script>
 
@@ -516,18 +561,98 @@
   {/if}
   </div>
 
+  {#if !loading}
+    <section class="insights-panel" in:fade={motionFade(MOTION.slow, 140)}>
+      <div class="insights-head">
+        <span class="overview-head-title">{t("insights.title")}</span>
+        <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
+      </div>
+      {#if insights.hasExpenses}
+        <div class="insights-grid">
+          <div class="insight-stat">
+            <span>{t("insights.remaining")}</span>
+            <b>{formatCurrency(insights.remaining)}</b>
+          </div>
+          <div class="insight-stat">
+            <span>{t("insights.forecast")}</span>
+            <b>{formatCurrency(insights.forecast)}</b>
+          </div>
+          <div class="insight-block">
+            <span class="insight-label">{t("insights.topCategories")}</span>
+            {#each insights.topCategories as category}
+              <div class="insight-row"><span>{category.name}</span><b>{formatCurrency(category.amount)}</b></div>
+            {/each}
+          </div>
+          <div class="insight-block">
+            <span class="insight-label">{t("insights.trend")}</span>
+            {#each insights.trend as point}
+              <div class="insight-row"><span>{point.title}</span><b>{formatCurrency(point.expense)}</b></div>
+            {/each}
+          </div>
+        </div>
+      {:else}
+        <p class="insights-empty">{t("insights.noData")}</p>
+      {/if}
+    </section>
+  {/if}
+
   <div class="section-label" in:fly={motionFly(10, MOTION.slow, 90)}>
     <span>{t("dashboard.budgetPeriods")}</span>
   </div>
 
   {#if !loading}
-    <div class="search-row" in:fade={motionFade(MOTION.base)}>
-      <SearchBar
-        query={searchQuery}
-        onQueryChange={(q: string) => (searchQuery = q)}
-        onClear={() => (searchQuery = "")}
-        placeholderKey="dashboard.searchPlaceholder"
-      />
+    <div class="search-controls" in:fade={motionFade(MOTION.base)}>
+      <div class="search-row">
+        <SearchBar
+          query={searchQuery}
+          onQueryChange={(q: string) => (searchQuery = q)}
+          onClear={() => (searchQuery = "")}
+          placeholderKey="dashboard.searchPlaceholder"
+        />
+      </div>
+      <div class="filter-row" aria-label={t("dashboard.filters")}>
+        <label class="filter-field">
+          <span>{t("filter.person")}</span>
+          <select bind:value={filters.person}>
+            <option value="all">{t("filter.personAll")}</option>
+            <option value="husband">{t("common.husband")}</option>
+            <option value="wife">{t("common.wife")}</option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>{t("filter.kind")}</span>
+          <select bind:value={filters.kind}>
+            <option value="all">{t("filter.kindAll")}</option>
+            <option value="fixed">{t("filter.kindFixed")}</option>
+            <option value="salary">{t("filter.kindSalary")}</option>
+            <option value="savings">{t("filter.kindSavings")}</option>
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>{t("filter.method")}</span>
+          <select bind:value={filters.method}>
+            <option value="">{t("filter.methodAll")}</option>
+            {#each methodOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="filter-field">
+          <span>{t("filter.from")}</span>
+          <input type="date" bind:value={filters.from} />
+        </label>
+        <label class="filter-field">
+          <span>{t("filter.to")}</span>
+          <input type="date" bind:value={filters.to} />
+        </label>
+        <button
+          class="filter-clear"
+          onclick={clearFilters}
+          disabled={!filtersActive(filters) && searchQuery.trim().length === 0}
+        >
+          {t("filter.clear")}
+        </button>
+      </div>
     </div>
   {:else}
     <!-- Search skeleton keeps the grid from jumping when the real bar appears. -->
@@ -703,6 +828,9 @@
         <button class="backup-btn" onclick={() => downloadBackup(buildBackupJson(budgets), "json", "application/json")} disabled={budgets.length === 0}>{t("backup.exportJson")}</button>
         <button class="backup-btn" onclick={() => downloadBackup(toBudgetsCsv(budgets), "csv", "text/csv;charset=utf-8")} disabled={budgets.length === 0}>{t("backup.exportCsv")}</button>
         <button class="backup-btn" onclick={exportPdf} disabled={budgets.length === 0 || exportingPdf}>{exportingPdf ? "…" : t("backup.exportPdf")}</button>
+        {#if installPrompt.available}
+          <button class="backup-btn" onclick={() => void installPrompt.prompt()}>{t("install.app")}</button>
+        {/if}
         <button class="backup-btn primary" onclick={() => importInput?.click()}>{t("backup.import")}</button>
         <input
           bind:this={importInput}
@@ -713,6 +841,19 @@
           onchange={restoreBackup}
         />
       </div>
+      {#if restorePreview}
+        <div class="restore-preview" aria-label={t("backup.restorePreview")} in:fade={motionFade(MOTION.base)}>
+          <div class="restore-copy">
+            <strong>{t("backup.restorePreview")}</strong>
+            <p>{t("backup.restorePreviewText", { n: restorePreview.budgets.length })}</p>
+            <small>{restorePreview.budgets.map((b) => b.title).join(" · ")}</small>
+          </div>
+          <div class="restore-actions">
+            <button class="backup-btn" onclick={() => (restorePreview = null)}>{t("backup.restoreCancel")}</button>
+            <button class="backup-btn primary" onclick={confirmRestore}>{t("backup.restoreConfirm")}</button>
+          </div>
+        </div>
+      {/if}
     </section>
   {/if}
 </div>
@@ -833,11 +974,49 @@
   .overview-item :global(.overview-value.indigo) { color: var(--accent-indigo); }
   .overview-item :global(.overview-value.olive) { color: var(--accent-olive); }
 
+  .insights-panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.15rem 1.5rem; box-shadow: var(--shadow-sm); }
+  .insights-head { display: flex; align-items: center; gap: 0.6rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--surface-border); }
+  .insights-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 0.9rem; }
+  .insight-stat { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--text-secondary); }
+  .insight-stat b { font-size: 1.05rem; color: var(--text-primary); }
+  .insight-block { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+  .insight-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); }
+  .insight-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.78rem; }
+  .insight-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .insight-row b { font-weight: 700; white-space: nowrap; }
+  .insights-empty { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--text-secondary); }
+
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
   .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; transform: scaleX(1); animation: underlineGrow var(--dur-slower) var(--ease-out) backwards; animation-delay: 0.2s; }
 
+  .search-controls { display: flex; flex-direction: column; gap: 0.65rem; max-width: 720px; }
   .search-row { display: flex; justify-content: flex-start; }
   .search-row :global(.search-bar) { max-width: 420px; }
+  .filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.75rem; }
+  .filter-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--text-secondary); }
+  .filter-field select,
+  .filter-field input {
+    min-height: 2.25rem;
+    padding: 0.35rem 0.55rem;
+    color: var(--text-primary);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 0.85rem;
+  }
+  .filter-field input { max-width: 11rem; }
+  .filter-clear {
+    min-height: 2.25rem;
+    padding: 0.35rem 0.8rem;
+    color: var(--accent-gold-ink);
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .filter-clear:disabled { opacity: 0.5; cursor: default; }
   .months-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
 
   .months-toggle { display: flex; justify-content: center; }
@@ -952,6 +1131,11 @@
   .backup-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent-teal); }
   .backup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .backup-btn.primary { background: var(--accent-teal); border-color: var(--accent-teal); color: var(--on-accent); }
+  .restore-preview { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem 1rem; padding: 0.9rem 1rem; background: var(--accent-teal-light); border: 1px solid var(--accent-teal); border-radius: var(--radius-sm); }
+  .restore-copy { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.82rem; }
+  .restore-copy p { margin: 0; }
+  .restore-copy small { color: var(--text-secondary); }
+  .restore-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
   @media (max-width: 1000px) {
     .overview-body-clip { grid-template-columns: repeat(2, 1fr); }
@@ -959,6 +1143,7 @@
 
   @media (max-width: 640px) {
     .overview-body-clip { grid-template-columns: 1fr; }
+    .insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .months-grid { grid-template-columns: 1fr; }
     .hero { padding: 2rem 0 1rem; }
   }

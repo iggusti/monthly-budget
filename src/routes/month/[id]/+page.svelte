@@ -18,7 +18,7 @@
     type DailyExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { currentPeriodId, isUpcomingPeriod, monthLabel } from "#lib/period";
+  import { currentPeriodId, isPastPeriodId, isUpcomingPeriod, monthLabel } from "#lib/period";
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -28,7 +28,7 @@
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
   import CountUp from "#lib/components/CountUp.svelte";
-  import { toastError, toastSuccess } from "#lib/toast.svelte";
+  import { toastAction, toastError, toastSuccess } from "#lib/toast.svelte";
 
   const monthId = $derived(page.params.id ?? "");
 
@@ -66,6 +66,7 @@
   let showHeaderEditor = $state(false);
   let showSectionNav = $state(false);
   let searchQuery = $state("");
+  let activeBar = $state<string | null>(null);
 
   const visibleItemsPerSection = $derived(
     BUDGET_SECTION_KEYS.map((sectionKey, index) => {
@@ -349,6 +350,25 @@
     return persist({ ...budget, [key]: value });
   }
 
+  const isLocked = $derived(budget.locked === true);
+  const canLock = $derived(isPastPeriodId(monthId) && !isLocked);
+
+  function toggleBar(key: string): void {
+    activeBar = activeBar === key ? null : key;
+  }
+
+  async function setLocked(locked: boolean): Promise<void> {
+    if (!(await update("locked", locked))) {
+      toastError(t("toast.saveFailed"));
+      return;
+    }
+    if (locked) {
+      toastAction(t("month.lockedToast"), t("backup.undo"), () => void setLocked(false));
+    } else {
+      toastSuccess(t("month.unlockedToast"));
+    }
+  }
+
   /** Record whether the wife-to-husband equal-split transfer has arrived. */
   async function setTransferReceived(received: boolean) {
     // Only meaningful for Wife → Husband; ignore any stale call when the
@@ -449,6 +469,7 @@
   }
 
   function openHeaderEditor() {
+    if (isLocked) return;
     headerDraft = {
       title: budget.title,
       periodStart: budget.periodStart ?? "",
@@ -458,6 +479,10 @@
   }
 
   function saveHeader() {
+    if (isLocked) {
+      showHeaderEditor = false;
+      return;
+    }
     const period = headerPeriodPreview || budget.period;
     persist({
       ...budget,
@@ -508,12 +533,17 @@
       {:else}
         <h1 class="page-title">{budget.title}</h1>
         <p class="page-subtitle">{budget.period}</p>
-        <button class="edit-btn" onclick={openHeaderEditor}>
+        <button class="edit-btn" onclick={openHeaderEditor} disabled={isLocked}>
           <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
           {t("month.editHeader")}
         </button>
+        {#if isLocked}
+          <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
+        {:else if canLock}
+          <button class="lock-btn" onclick={() => void setLocked(true)}>{t("month.lock")}</button>
+        {/if}
 
         <!-- Header editor: inside the header block so it reads as the header
              opening up, not as a card floating between the header and the
@@ -727,19 +757,34 @@
           <span class="bar-chart-title">{t("month.chartIncomeTitle")}</span>
           <span class="bar-chart-total">{formatCurrency(totals.totalIncome)}</span>
         </div>
-        <div class="bar-chart-plot" role="img" aria-label={t("month.chartIncomeAria")}>
+        <div class="bar-chart-plot" aria-label={t("month.chartIncomeAria")}>
           {#each incomeBars as bar, i}
-            <div class="bar-col" class:combined={bar.combined} style:--bar-index={i}>
+            <div
+              class="bar-col"
+              class:combined={bar.combined}
+              class:active={activeBar === `income-${i}`}
+              style:--bar-index={i}
+              role="button"
+              tabindex="0"
+              aria-label={`${bar.label}: ${t("common.husband")} ${formatCurrency(bar.husband)}, ${t("common.wife")} ${formatCurrency(bar.wife)}, ${t("common.total")} ${formatCurrency(bar.total)}`}
+              onclick={() => toggleBar(`income-${i}`)}
+              onkeydown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleBar(`income-${i}`);
+                }
+              }}
+            >
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / incomeMax) * 100}%`}>
                   <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
                   <div class="bar-fill">
-                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}>
+                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`} title={`${t("common.husband")}: ${formatCurrency(bar.husband)}`}>
                       {#if bar.husband > 0 && bar.wife > 0}
                         <span class="bar-seg-value">{formatInBarIDR(bar.husband)}</span>
                       {/if}
                     </div>
-                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}>
+                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`} title={`${t("common.wife")}: ${formatCurrency(bar.wife)}`}>
                       {#if bar.husband > 0 && bar.wife > 0}
                         <span class="bar-seg-value">{formatInBarIDR(bar.wife)}</span>
                       {/if}
@@ -767,19 +812,33 @@
           <span class="bar-chart-title">{t("month.chartExpenseTitle")}</span>
           <span class="bar-chart-total">{formatCurrency(totalExpense)}</span>
         </div>
-        <div class="bar-chart-plot" role="img" aria-label={t("month.chartExpenseAria")}>
+        <div class="bar-chart-plot" aria-label={t("month.chartExpenseAria")}>
           {#each expenseBars as bar, i}
-            <div class="bar-col" style:--bar-index={i}>
+            <div
+              class="bar-col"
+              class:active={activeBar === `expense-${i}`}
+              style:--bar-index={i}
+              role="button"
+              tabindex="0"
+              aria-label={`${bar.label}: ${t("common.husband")} ${formatCurrency(bar.husband)}, ${t("common.wife")} ${formatCurrency(bar.wife)}, ${t("common.total")} ${formatCurrency(bar.total)}`}
+              onclick={() => toggleBar(`expense-${i}`)}
+              onkeydown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  toggleBar(`expense-${i}`);
+                }
+              }}
+            >
               <div class="bar-col-track">
                 <div class="bar-stack" style:height={`${(bar.total / expenseMax) * 100}%`}>
                   <span class="bar-value">{isNarrow ? formatCompactIDR(bar.total) : formatCurrency(bar.total)}</span>
                   <div class="bar-fill">
-                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`}>
+                    <div class="bar-seg blue" style:height={`${bar.total ? (bar.husband / bar.total) * 100 : 0}%`} title={`${t("common.husband")}: ${formatCurrency(bar.husband)}`}>
                       {#if bar.husband > 0 && bar.wife > 0}
                         <span class="bar-seg-value">{formatInBarIDR(bar.husband)}</span>
                       {/if}
                     </div>
-                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`}>
+                    <div class="bar-seg rose" style:height={`${bar.total ? (bar.wife / bar.total) * 100 : 0}%`} title={`${t("common.wife")}: ${formatCurrency(bar.wife)}`}>
                       {#if bar.husband > 0 && bar.wife > 0}
                         <span class="bar-seg-value">{formatInBarIDR(bar.wife)}</span>
                       {/if}
@@ -801,6 +860,38 @@
         </div>
       </div>
     </div>
+
+    <table class="sr-only">
+      <caption>{t("month.chartDataTable")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t("expense.nameLabel")}</th>
+          <th scope="col">{t("common.husband")}</th>
+          <th scope="col">{t("common.wife")}</th>
+          <th scope="col">{t("common.total")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th scope="rowgroup" colspan="4">{t("month.chartIncomeTitle")}</th></tr>
+        {#each incomeBars as bar}
+          <tr>
+            <th scope="row">{bar.label}</th>
+            <td>{formatCurrency(bar.husband)}</td>
+            <td>{formatCurrency(bar.wife)}</td>
+            <td>{formatCurrency(bar.total)}</td>
+          </tr>
+        {/each}
+        <tr><th scope="rowgroup" colspan="4">{t("month.chartExpenseTitle")}</th></tr>
+        {#each expenseBars as bar}
+          <tr>
+            <th scope="row">{bar.label}</th>
+            <td>{formatCurrency(bar.husband)}</td>
+            <td>{formatCurrency(bar.wife)}</td>
+            <td>{formatCurrency(bar.total)}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
 
     <div class="chart-note">
       <span class="chart-note-icon">💡</span>
@@ -840,6 +931,13 @@
     </div>
   </div>
 
+  {#if isLocked}
+    <div class="lock-notice" in:fade={motionFade(MOTION.base, 110)}>
+      <strong>{t("month.lockedTitle")}</strong>
+      <p>{t("month.lockedText")}</p>
+      <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
+    </div>
+  {:else}
   <div class="sections animate-stagger" in:fade={motionFade(MOTION.base, 110)}>
     {#if !searchActive || matchedSections[0]}
     <ExpenseSection
@@ -1051,6 +1149,7 @@
     />
     {/if}
   </div>
+  {/if}
 
   {#if searchActive && firstMatchedIndex === -1}
     <div class="search-empty" in:fade={motionFade(MOTION.base)}>
@@ -1247,6 +1346,11 @@
   .edit-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
   .edit-btn:active { transform: translateY(0) scale(0.97); }
+  .edit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .lock-btn { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm); cursor: pointer; }
+  .lock-btn:hover { border-color: var(--accent-gold); }
+  .lock-notice { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 1.25rem 1.5rem; background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
+  .lock-notice p { margin: 0; color: var(--text-secondary); font-size: 0.85rem; }
 
   /* Header editor panel (title + period), opened from the "Edit header" button
      and kept inside the header block. `.header-meta` is a plain block, so the
@@ -1353,6 +1457,9 @@
      below and dim the hovered column too. */
   .bar-chart-plot:has(.bar-col:hover) .bar-col:not(:hover) { opacity: 0.55; }
   .bar-chart-plot .bar-col:hover { opacity: 1; transform: translateY(-3px); }
+  .bar-chart-plot:has(.bar-col.active) .bar-col:not(.active) { opacity: 0.55; }
+  .bar-chart-plot .bar-col.active { opacity: 1; transform: translateY(-3px); }
+  .bar-col.active .bar-seg { filter: brightness(1.07) saturate(1.06); }
   .bar-col-track { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 
   .bar-chart-labels {

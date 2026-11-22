@@ -1,25 +1,33 @@
 <script lang="ts">
   import "../app.css";
+  import { onMount } from "svelte";
   import { fly } from "svelte/transition";
   import { page } from "$app/state";
   import { MOTION, motionFly, takeNavOffset } from "#lib/motion";
   import { logout, isAuthenticated } from "#lib/auth";
   import { t, lang } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
-  import { initNotifications } from "#lib/notifications.svelte";
+  import {
+    initNotifications,
+    PUSH_NOTIFICATIONS_ENABLED,
+    registerServiceWorker
+  } from "#lib/notifications.svelte";
+  import { checkAppUpdate } from "#lib/app-update.svelte";
+  import { installPrompt } from "#lib/install-prompt.svelte";
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";
   import NotificationToggle from "#lib/components/NotificationToggle.svelte";
   import ThemeToggle from "#lib/components/ThemeToggle.svelte";
   import Toasts from "#lib/components/Toasts.svelte";
 
-  /**
-   * Push notifications are hidden until the sender Cloud Function can be
-   * deployed (the project is still on the Firebase Spark plan, so nothing would
-   * be delivered). Flip this flag back to `true` once the function is live.
-   */
-  const PUSH_NOTIFICATIONS_ENABLED = false;
-
   let { children } = $props();
+
+  onMount(() => {
+    installPrompt.init();
+    void registerServiceWorker().catch((error) =>
+      console.error("Service worker registration failed:", error)
+    );
+    checkAppUpdate();
+  });
 
   /** Month changes slide in from their direction; other routes just rise. */
   function pageEnter() {

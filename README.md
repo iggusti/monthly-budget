@@ -100,21 +100,24 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   working.
 - **Installable PWA** — Add to Home Screen uses the bundled manifest and icons;
   Android installs it fullscreen (no title bar), while iOS falls back to
-  standalone. The service worker is FCM-only, so the app still needs a
-  connection.
+  standalone. The service worker caches the app shell for offline reads, and an
+  "Install app" button appears in the backup panel when the browser allows it.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
 - **Push notifications** — the delivery pipeline is wired up so an expense
-  edit notifies the other phone, but the bell is hidden until the sender Cloud
-  Function can be deployed. See [Push notifications](#push-notifications).
+  edit notifies the other phone, but the bell stays hidden until the sender
+  Cloud Function can be deployed. See [Push notifications](#push-notifications).
+- **Offline & updates** — Firestore keeps a persistent IndexedDB cache and the
+  service worker serves cached pages/assets offline. After a new deploy a
+  "Versi baru tersedia" toast offers a reload.
 
 ## Push notifications
 
 Each phone can register an FCM token through the bell button in the topbar; the
 token is stored in the `devices` collection together with the anonymous
-Firebase uid and the UI language. The bell is currently hidden in
-`+layout.svelte` (`PUSH_NOTIFICATIONS_ENABLED = false`) because nothing would be
-delivered yet.
+Firebase uid and the UI language. The bell is currently hidden via
+`PUSH_NOTIFICATIONS_ENABLED = false` in `src/lib/notifications.svelte.ts`
+because nothing would be delivered yet.
 
 Every budget write is stamped with `lastEditBy = <anonymous uid>` (see
 `saveBudget()` / `deleteBudget()`). A Firestore-triggered Cloud Function
@@ -137,9 +140,9 @@ Details:
 
 > Sending pushes requires Cloud Functions, and Cloud Functions require the
 > Firebase **Blaze** plan. The project is currently on Spark, so no notification
-> is sent yet and the bell is hidden. Flip `PUSH_NOTIFICATIONS_ENABLED` back to
-> `true` after the function is deployed. See
-> [Support & donations](#support--donations).
+> is sent yet and the bell is hidden. Flip `PUSH_NOTIFICATIONS_ENABLED` in
+> `src/lib/notifications.svelte.ts` to `true` after the function is deployed.
+> See [Support & donations](#support--donations).
 
 ### Notification setup
 

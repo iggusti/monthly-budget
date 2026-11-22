@@ -116,6 +116,8 @@ export interface MonthBudget {
    */
   transferReceived?: boolean;
 
+  locked?: boolean;
+
   updatedAt?: string;
 
   /**

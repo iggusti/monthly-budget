@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { escapeRegExp, highlightText, matchesQuery } from "./search";
+import {
+  EMPTY_FILTERS,
+  escapeRegExp,
+  filtersActive,
+  highlightText,
+  itemMatchesFilters,
+  matchesQuery,
+  sectionMatchesFilters
+} from "./search";
 
 describe("matchesQuery", () => {
   it("matches everything for an empty query", () => {
@@ -19,6 +27,30 @@ describe("matchesQuery", () => {
 
   it("does not match unrelated text", () => {
     expect(matchesQuery("Kopi", "QRIS", "listrik")).toBe(false);
+  });
+});
+
+describe("search filters", () => {
+  it("reports whether any filter is set", () => {
+    expect(filtersActive(EMPTY_FILTERS)).toBe(false);
+    expect(filtersActive({ ...EMPTY_FILTERS, person: "wife" })).toBe(true);
+  });
+
+  it("matches sections by person and kind", () => {
+    expect(sectionMatchesFilters(0, { ...EMPTY_FILTERS, person: "husband" })).toBe(true);
+    expect(sectionMatchesFilters(1, { ...EMPTY_FILTERS, person: "husband" })).toBe(false);
+    expect(sectionMatchesFilters(2, { ...EMPTY_FILTERS, kind: "fixed" })).toBe(true);
+    expect(sectionMatchesFilters(4, { ...EMPTY_FILTERS, kind: "savings" })).toBe(false);
+    expect(sectionMatchesFilters(2, { ...EMPTY_FILTERS, method: "QRIS" })).toBe(false);
+  });
+
+  it("matches items by method and date range", () => {
+    const item = { method: "QRIS · BRI", date: "2026-11-10" };
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, method: "QRIS" })).toBe(true);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, method: "Transfer" })).toBe(false);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, from: "2026-11-11" })).toBe(false);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, to: "2026-11-09" })).toBe(false);
+    expect(itemMatchesFilters(item, { ...EMPTY_FILTERS, to: "2026-11-10" })).toBe(true);
   });
 });
 

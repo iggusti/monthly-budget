@@ -1,21 +1,66 @@
-/**
- * Query matching and highlighting shared by the dashboard's cross-month search
- * and the month page's per-section filter.
- */
+import { parseMethod } from "./expense-methods";
 
-/** True when an item's name or payment method contains the query. */
+export type FilterPerson = "all" | "husband" | "wife";
+export type FilterKind = "all" | "fixed" | "salary" | "savings";
+
+export interface SearchFilters {
+  person: FilterPerson;
+  kind: FilterKind;
+  method: string;
+  from: string;
+  to: string;
+}
+
+export const EMPTY_FILTERS: SearchFilters = {
+  person: "all",
+  kind: "all",
+  method: "",
+  from: "",
+  to: ""
+};
+
+export function filtersActive(filters: SearchFilters): boolean {
+  return (
+    filters.person !== "all" ||
+    filters.kind !== "all" ||
+    filters.method !== "" ||
+    filters.from !== "" ||
+    filters.to !== ""
+  );
+}
+
 export function matchesQuery(name: string, method: string | undefined, query: string): boolean {
   if (!query.trim()) return true;
   const lowered = query.toLowerCase();
   return name.toLowerCase().includes(lowered) || (method ?? "").toLowerCase().includes(lowered);
 }
 
-/** Escape a string for safe use inside a RegExp. */
+export function sectionMatchesFilters(index: number, filters: SearchFilters): boolean {
+  const person = index % 2 === 0 ? "husband" : "wife";
+  if (filters.person !== "all" && filters.person !== person) return false;
+
+  const kind = index < 4 ? "fixed" : index === 4 || index === 6 ? "salary" : "savings";
+  if (index < 2 && filters.kind !== "all") return false;
+  if (filters.kind !== "all" && filters.kind !== kind) return false;
+
+  if (index < 4 && (filters.method !== "" || filters.from !== "" || filters.to !== "")) return false;
+  return true;
+}
+
+export function itemMatchesFilters(
+  item: { method?: string; date?: string },
+  filters: SearchFilters
+): boolean {
+  if (filters.method !== "" && parseMethod(item.method).baseLabel !== filters.method) return false;
+  if (filters.from && (!item.date || item.date < filters.from)) return false;
+  if (filters.to && (!item.date || item.date > filters.to)) return false;
+  return true;
+}
+
 export function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Wrap the matching part of a name in `<mark>` for highlighting. */
 export function highlightText(name: string, query: string): string {
   if (!query.trim()) return name;
   const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");

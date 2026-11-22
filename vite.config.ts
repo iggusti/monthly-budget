@@ -6,6 +6,7 @@ import { firebaseConfig } from './src/lib/firebase-config.ts';
 
 const SERVICE_WORKER_FILE = 'firebase-messaging-sw.js';
 const SERVICE_WORKER_TEMPLATE = 'src/service-worker/firebase-messaging-sw.js';
+const APP_VERSION = process.env.APP_VERSION ?? String(Date.now());
 
 /**
  * Render the FCM service worker from its template.
@@ -21,9 +22,10 @@ function renderServiceWorker(): string {
 
 	const output = template
 		.replaceAll('__FIREBASE_SDK_VERSION__', sdkVersion)
-		.replaceAll('__FIREBASE_CONFIG__', JSON.stringify(firebaseConfig, null, 2));
+		.replaceAll('__FIREBASE_CONFIG__', JSON.stringify(firebaseConfig, null, 2))
+		.replaceAll('__APP_VERSION__', APP_VERSION);
 
-	if (output.includes('__FIREBASE')) {
+	if (output.includes('__FIREBASE') || output.includes('__APP_VERSION__')) {
 		throw new Error('Unreplaced placeholder left in the generated service worker');
 	}
 
@@ -64,6 +66,7 @@ function firebaseServiceWorker(): Plugin {
 }
 
 export default defineConfig({
+	define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
 	plugins: [
 		sveltekit({
 			compilerOptions: {
