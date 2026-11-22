@@ -102,6 +102,7 @@ export const en: Dict = {
   "dashboard.budgetPeriods": "Budget periods",
   "dashboard.active": "Active",
   "dashboard.past": "Past",
+  "dashboard.upcoming": "Upcoming",
   "dashboard.new": "New",
   "dashboard.noBudgetYetTap": "No budget yet — tap to create",
   "dashboard.viewMore": "View {n} more",
@@ -277,6 +278,7 @@ export const en: Dict = {
   "month.lockedText": "Unlock it to edit income or expenses.",
   "month.lockedToast": "Period locked",
   "month.unlockedToast": "Period unlocked",
+  "month.upcomingDailyNotice": "Daily expenses open when the period starts on the 25th.",
 };
 
 export const id: Dict = {
@@ -380,6 +382,7 @@ export const id: Dict = {
   "dashboard.budgetPeriods": "Periode anggaran",
   "dashboard.active": "Aktif",
   "dashboard.past": "Sebelumnya",
+  "dashboard.upcoming": "Akan datang",
   "dashboard.new": "Baru",
   "dashboard.noBudgetYetTap": "Belum ada anggaran — ketuk untuk membuat",
   "dashboard.viewMore": "Lihat {n} lagi",
@@ -555,6 +558,7 @@ export const id: Dict = {
   "month.lockedText": "Buka kuncinya untuk mengubah pemasukan atau pengeluaran.",
   "month.lockedToast": "Periode dikunci",
   "month.unlockedToast": "Periode dibuka",
+  "month.upcomingDailyNotice": "Pengeluaran harian dibuka saat periode mulai tanggal 25.",
 };
 
 export const dictionaries: Record<"en" | "id", Dict> = { en, id };

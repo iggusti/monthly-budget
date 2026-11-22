@@ -13,6 +13,7 @@
     key: string;
     group: string | undefined;
     rootEl: HTMLElement | null;
+    readOnly: boolean;
     onExternalDrop?: (item: DragItem, fromKey: string) => void;
   }
 
@@ -120,6 +121,7 @@
     const target = key ? sectionRegistry.get(key) : undefined;
     if (
       target &&
+      !target.readOnly &&
       target.group === dragState.group &&
       target.key !== dragState.fromKey &&
       target.onExternalDrop &&
@@ -165,10 +167,11 @@
     key: string | undefined,
     group: string | undefined,
     rootEl: HTMLElement | null,
+    readOnly: boolean,
     onExternalDrop?: (item: DragItem, fromKey: string) => void
   ) {
     if (!key) return;
-    sectionRegistry.set(key, { key, group, rootEl, onExternalDrop });
+    sectionRegistry.set(key, { key, group, rootEl, readOnly, onExternalDrop });
   }
 
   function unregisterSection(key: string | undefined) {
@@ -270,6 +273,8 @@
     confirmChanges?: boolean;
     /** When true, rows do not slide right on hover (used by the income sections). */
     noRowShift?: boolean;
+    /** When true, the section is view-only: no add, edit, delete, check or drag. */
+    readOnly?: boolean;
   }
 
   let {
@@ -297,7 +302,8 @@
     onExternalDrop,
     highlightedQuery = "",
     confirmChanges = false,
-    noRowShift = false
+    noRowShift = false,
+    readOnly = false
   }: Props = $props();
 
   /** Reactive labels so they follow the active language unless overridden. */
@@ -457,14 +463,23 @@
 
   $effect(() => {
     if (sectionKey) {
-      registerSection(sectionKey, dragGroup, rootEl, onExternalDrop);
+      registerSection(sectionKey, dragGroup, rootEl, readOnly, onExternalDrop);
       return () => unregisterSection(sectionKey);
     }
+  });
+
+  $effect(() => {
+    if (!readOnly) return;
+    adding = false;
+    editingId = null;
+    pendingChange = null;
+    confirmDeleteId = null;
   });
 
   function onRowPointerDown(e: PointerEvent, item: ExpenseItem) {
     // Only start a drag from the drag handle, so scrolling/tapping elsewhere on
     // the row still behaves normally (important on touch devices).
+    if (readOnly) return;
     if (!(e.target as HTMLElement).closest(".drag-handle")) return;
     if (!rootEl) return;
     const rowEl = e.currentTarget as HTMLElement;
@@ -528,6 +543,7 @@
   const hiddenCount = $derived(showAll ? 0 : Math.max(items.length - visibleItems.length, 0));
 
   function startAdd() {
+    if (readOnly) return;
     draft = {
       id: makeId(),
       name: "",
@@ -547,6 +563,7 @@
   }
 
   function startEdit(item: ExpenseItem) {
+    if (readOnly) return;
     draft = { ...item };
     amountInput = formatAmountInput(item.amount);
     const { baseLabel, channel } = parseMethod(item.method);
@@ -698,6 +715,7 @@
     action: "add" | "edit" | "delete",
     undo?: UndoDelete
   ) {
+    if (readOnly) return;
     let result: unknown;
     try {
       result = onChange(nextItems);
@@ -743,7 +761,7 @@
   }
 
   function commit() {
-    if (!canCommit) return;
+    if (readOnly || !canCommit) return;
     const existingItem = items.find((item) => item.id === draft.id);
     const clean: ExpenseItem = {
       id: draft.id || makeId(),
@@ -772,7 +790,7 @@
 
   /** Apply the pending add/edit after the user confirms. */
   function confirmPending() {
-    if (!pendingChange) return;
+    if (readOnly || !pendingChange) return;
     applyChange(pendingChange.items, pendingChange.action);
     pendingChange = null;
     adding = false;
@@ -789,6 +807,7 @@
   }
 
   function remove(id: string) {
+    if (readOnly) return;
     const target = items.find((item) => item.id === id);
     if (!target) return;
     const before = [...items];
@@ -801,6 +820,7 @@
   }
 
   function askRemove(id: string) {
+    if (readOnly) return;
     confirmDeleteId = id;
   }
 
@@ -809,6 +829,7 @@
   }
 
   function toggleCheck(id: string) {
+    if (readOnly) return;
     onChange(
       items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item))
     );
@@ -826,10 +847,17 @@
     </span>
     <span class="section-title">{title}</span>
     <span class="section-total">{formatCurrency(total)}</span>
-    <button class="add-btn" onclick={startAdd} aria-label={t("expense.addItem")}>+</button>
+    {#if !readOnly}
+      <button
+        class="add-btn"
+        class:open={adding}
+        onclick={() => (adding ? cancel() : startAdd())}
+        aria-label={adding ? t("expense.cancel") : t("expense.addItem")}
+      >{adding ? "×" : "+"}</button>
+    {/if}
   </div>
 
-  {#if adding}
+  {#if adding && !readOnly}
     <div class="editor" in:slide={motionFade(MOTION.fast)}>
       <div class="editor-fields">
         <label class="field">
@@ -935,16 +963,16 @@
           class:editing={editingId === item.id}
           class:checked={item.checked}
           class:no-shift={noRowShift}
-          class:draggable={!!sectionKey && !!dragGroup}
+          class:draggable={!readOnly && !!sectionKey && !!dragGroup}
           onpointerdown={(e) => onRowPointerDown(e, item)}
         >
           <span class="item-left">
-            {#if sectionKey && dragGroup}
+            {#if !readOnly && sectionKey && dragGroup}
               <span class="drag-handle" aria-hidden="true" title={t("expense.dragToMove")}>⠿</span>
             {/if}
             {#if checkboxable}
               <label class="check" title={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
-                <input type="checkbox" checked={item.checked} onchange={() => toggleCheck(item.id)} />
+                <input type="checkbox" checked={item.checked} disabled={readOnly} onchange={() => toggleCheck(item.id)} />
                 <span class="checkmark"></span>
               </label>
             {/if}
@@ -961,16 +989,18 @@
           </span>
           <span class="item-right">
             <span class="item-amount">{formatCurrency(item.amount)}</span>
-            <button class="icon-btn" title={t("expense.edit")} aria-label={t("expense.edit")} onclick={() => startEdit(item)}>
-              <svg viewBox="0 0 24 24" class="icon-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-              </svg>
-            </button>
-            <button class="icon-btn danger" title={t("expense.delete")} onclick={() => askRemove(item.id)}>✕</button>
+            {#if !readOnly}
+              <button class="icon-btn" title={t("expense.edit")} aria-label={t("expense.edit")} onclick={() => startEdit(item)}>
+                <svg viewBox="0 0 24 24" class="icon-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+              </button>
+              <button class="icon-btn danger" title={t("expense.delete")} onclick={() => askRemove(item.id)}>✕</button>
+            {/if}
           </span>
         </li>
 
-        {#if editingId === item.id}
+        {#if editingId === item.id && !readOnly}
           <li class="editor-item" in:slide={motionFade(MOTION.fast)}>
             <div class="editor">
               <div class="editor-fields">
@@ -1097,7 +1127,7 @@
       <span>{footerPlan.label}</span>
       <span class="section-note-value">{formatCurrency(footerPlan.value)}</span>
     </div>
-    {#if footerPlan.toggle}
+    {#if footerPlan.toggle && !readOnly}
       <div class="section-note plan-toggle">
         <label class="switch" title={footerPlan.toggle.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
           <input
@@ -1172,8 +1202,11 @@
   .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
   .section:hover .badge { transform: scale(1.08) rotate(-4deg); }
   .add-btn { width: 28px; height: 28px; border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-secondary); font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast, 0.18s) ease, color var(--dur-fast, 0.18s) ease, transform var(--dur-base, 0.28s) var(--ease-spring, ease); }
-  .add-btn:hover { background: var(--text-primary); color: var(--bg); transform: rotate(90deg) scale(1.08); }
-  .add-btn:active { transform: rotate(90deg) scale(0.96); }
+  @media (hover: hover) {
+    .add-btn:hover { background: var(--text-primary); color: var(--bg); transform: scale(1.08); }
+  }
+  .add-btn:active { transform: scale(0.96); }
+  .add-btn.open { background: var(--bg-muted); color: var(--text-primary); transform: none; font-size: 1.15rem; }
 
   .blue .section-head { background: color-mix(in srgb, var(--accent-blue) 7%, transparent); }
   .blue .badge { background: color-mix(in srgb, var(--accent-blue) 15%, transparent); color: var(--accent-blue); }

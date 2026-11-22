@@ -96,16 +96,21 @@ every push to `main`; that workflow does **not** touch functions or rules.
 - Periods roll on the 25th → 24th cycle (`currentPeriodId` in `period.ts`), but
   the dashboard lists one period ahead from the 21st (`latestPeriodId`,
   `PERIOD_CARD_DAY`) so the upcoming card appears early. Between the 21st and the
-  24th the new card is listed yet not yet active (`isUpcomingPeriod`).
+  24th the new card is listed yet not yet active (`isUpcomingPeriod`): it gets an
+  "Upcoming" badge, never "Past" — past styling must use `isPastPeriodId`, not
+  `!isCurrent`.
 - **The month page only opens real periods.** `month/[id]/+page.ts` gates the
   route: a malformed id, a future period (`isFuturePeriodId`) or a past period
   with no stored budget (`isPastPeriodId` + `budgetExists`) throws a 404 and
   renders `+error.svelte`. The current and upcoming periods stay reachable before
   they exist because their dashboard card creates the budget first.
-- On the month page, the upcoming period's fixed sections (3–4) skip the
-  inactive-month confirmation (`confirmFixedChanges`) so their carried-over
-  fixed expenses can be edited, moved and deleted before the period starts;
-  every other section still uses `confirmChanges={!isActiveMonth}`.
+- On the month page, past periods are locked automatically unless a document
+  has `locked: false` (an explicit unlock); `isPeriodLocked()` decides this.
+  The upcoming period's fixed sections (3–4) skip the inactive-month
+  confirmation (`confirmFixedChanges`) so their carried-over fixed expenses can
+  be edited, moved and deleted before the period starts. Its daily sections
+  (5–8) are `readOnly` until the period starts, so no daily expense can be
+  added, edited or moved early; there is a notice explaining this.
 - Daily items also carry an optional `date` (`YYYY-MM-DD`, local calendar day;
   use the `todayISO()` / `parseISODate()` / `daysBetween()` helpers, not raw
   `Date` math). Documents created before the field existed have none.

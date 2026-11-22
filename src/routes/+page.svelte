@@ -24,7 +24,14 @@
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
   import { toastAction, toastError, toastSuccess } from "#lib/toast.svelte";
-  import { currentPeriodId, listedPeriodIds, monthLabel, previousMonthId } from "#lib/period";
+  import {
+    currentPeriodId,
+    isPastPeriodId,
+    isUpcomingPeriod,
+    listedPeriodIds,
+    monthLabel,
+    previousMonthId
+  } from "#lib/period";
   import {
     EMPTY_FILTERS,
     filtersActive,
@@ -674,13 +681,15 @@
         {@const budget = monthBudget(id)}
         {@const totals = budget ? computeTotals(budget) : null}
         {@const isCurrent = id === currentMonthId}
+        {@const isPast = isPastPeriodId(id)}
+        {@const isUpcoming = isUpcomingPeriod(id)}
         {@const matches = searchActive ? searchResults.find((result) => result.id === id)?.items ?? [] : []}
         <div
           class="month-card"
           id="month-{id}"
           class:current={isCurrent}
           class:exists={exists}
-          class:past={exists && !isCurrent}
+          class:past={exists && isPast}
         >
           <a
             href="/month/{id}"
@@ -701,7 +710,9 @@
                 <span class="card-badge match">{matches.length}</span>
               {:else if isCurrent && exists}
                 <span class="card-badge current">{t("dashboard.active")}</span>
-              {:else if exists}
+              {:else if isUpcoming}
+                <span class="card-badge upcoming">{t("dashboard.upcoming")}</span>
+              {:else if isPast && exists}
                 <span class="card-badge past">{t("dashboard.past")}</span>
               {:else}
                 <span class="card-badge new">{t("dashboard.new")}</span>
@@ -1039,6 +1050,7 @@
   }
   .card-badge.new { background: var(--accent-gold-light); color: var(--accent-gold-ink); }
   .card-badge.past { background: var(--bg-muted); color: var(--text-tertiary); }
+  .card-badge.upcoming { background: var(--accent-teal-light); color: var(--accent-teal); }
   .card-badge.current { background: var(--success-light); color: var(--success); }
   .card-badge.match { background: var(--accent-gold-light); color: var(--accent-gold-ink); }
 

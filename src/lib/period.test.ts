@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   allMonthsTo,
+  canEditDailyExpenses,
   currentPeriodId,
   isFuturePeriodId,
   isPastPeriodId,
+  isPeriodLocked,
   isUpcomingPeriod,
   latestPeriodId,
   listedPeriodIds,
@@ -105,6 +107,35 @@ describe("isPastPeriodId", () => {
     const day = new Date(2026, 10, 16);
     expect(isPastPeriodId("2026-10", day)).toBe(false);
     expect(isPastPeriodId("2026-11", day)).toBe(false);
+  });
+});
+
+describe("isPeriodLocked", () => {
+  const day = new Date(2026, 10, 16);
+
+  it("locks past periods without needing a stored flag", () => {
+    expect(isPeriodLocked("2026-09", undefined, day)).toBe(true);
+  });
+
+  it("honours an explicit unlock on a past period", () => {
+    expect(isPeriodLocked("2026-09", false, day)).toBe(false);
+  });
+
+  it("allows an early lock on the active period", () => {
+    expect(isPeriodLocked("2026-10", true, day)).toBe(true);
+    expect(isPeriodLocked("2026-10", undefined, day)).toBe(false);
+  });
+});
+
+describe("canEditDailyExpenses", () => {
+  it("is false only for the upcoming period", () => {
+    const day = new Date(2026, 9, 22);
+    expect(canEditDailyExpenses("2026-10", day)).toBe(false);
+    expect(canEditDailyExpenses("2026-09", day)).toBe(true);
+  });
+
+  it("becomes true once the period starts on the 25th", () => {
+    expect(canEditDailyExpenses("2026-10", new Date(2026, 9, 25))).toBe(true);
   });
 });
 

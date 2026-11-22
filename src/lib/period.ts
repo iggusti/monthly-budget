@@ -86,6 +86,23 @@ export function isPastPeriodId(id: string, now: Date = new Date()): boolean {
   return id < currentPeriodId(now);
 }
 
+/**
+ * Past periods default to locked. `locked: false` is an explicit unlock and
+ * keeps the period open; `locked: true` locks one early.
+ */
+export function isPeriodLocked(
+  id: string,
+  locked: boolean | undefined,
+  now: Date = new Date()
+): boolean {
+  return locked === true || (locked !== false && isPastPeriodId(id, now));
+}
+
+/** Daily expenses stay read-only until their upcoming period becomes active. */
+export function canEditDailyExpenses(id: string, now: Date = new Date()): boolean {
+  return !isUpcomingPeriod(id, now);
+}
+
 /** ID of the calendar month before `id` (`YYYY-MM`). */
 export function previousMonthId(id: string): string {
   const [year, month] = id.split("-").map(Number);

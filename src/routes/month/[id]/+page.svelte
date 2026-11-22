@@ -18,7 +18,14 @@
     type DailyExpense
   } from "#lib/types";
   import { isAuthenticated } from "#lib/auth";
-  import { currentPeriodId, isPastPeriodId, isUpcomingPeriod, monthLabel } from "#lib/period";
+  import {
+    canEditDailyExpenses,
+    currentPeriodId,
+    isPastPeriodId,
+    isPeriodLocked,
+    isUpcomingPeriod,
+    monthLabel
+  } from "#lib/period";
   import { matchesQuery } from "#lib/search";
   import { splitEmphasis } from "#lib/emphasis";
   import { equalSplitCardKind, isPeriodStartDay } from "#lib/equal-split";
@@ -350,8 +357,10 @@
     return persist({ ...budget, [key]: value });
   }
 
-  const isLocked = $derived(budget.locked === true);
-  const canLock = $derived(isPastPeriodId(monthId) && !isLocked);
+  const isPastMonth = $derived(isPastPeriodId(monthId));
+  const isLocked = $derived(isPeriodLocked(monthId, budget.locked));
+  const canLock = $derived(isPastMonth && budget.locked === false);
+  const canEditDaily = $derived(canEditDailyExpenses(monthId));
 
   function toggleBar(key: string): void {
     activeBar = activeBar === key ? null : key;
@@ -531,19 +540,25 @@
         <Skeleton width="160px" height="1.1rem" style="margin-top:0.35rem;" />
         <Skeleton width="118px" height="2.4rem" radius="var(--radius-sm)" style="margin-top:0.75rem;" />
       {:else}
-        <h1 class="page-title">{budget.title}</h1>
-        <p class="page-subtitle">{budget.period}</p>
-        <button class="edit-btn" onclick={openHeaderEditor} disabled={isLocked}>
-          <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-          </svg>
-          {t("month.editHeader")}
-        </button>
-        {#if isLocked}
-          <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
-        {:else if canLock}
-          <button class="lock-btn" onclick={() => void setLocked(true)}>{t("month.lock")}</button>
-        {/if}
+        <div class="header-titleblock">
+          <h1 class="page-title">{budget.title}</h1>
+          <p class="page-subtitle">{budget.period}</p>
+        </div>
+        <div class="header-actions">
+          {#if !isLocked}
+            <button class="edit-btn" onclick={openHeaderEditor}>
+              <svg viewBox="0 0 24 24" class="edit-btn-svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+              {t("month.editHeader")}
+            </button>
+          {/if}
+          {#if isLocked}
+            <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
+          {:else if canLock}
+            <button class="lock-btn" onclick={() => void setLocked(true)}>{t("month.lock")}</button>
+          {/if}
+        </div>
 
         <!-- Header editor: inside the header block so it reads as the header
              opening up, not as a card floating between the header and the
@@ -938,6 +953,9 @@
       <button class="lock-btn" onclick={() => void setLocked(false)}>{t("month.unlock")}</button>
     </div>
   {:else}
+  {#if isUpcomingMonth}
+    <p class="upcoming-daily-notice">{t("month.upcomingDailyNotice")}</p>
+  {/if}
   <div class="sections animate-stagger" in:fade={motionFade(MOTION.base, 110)}>
     {#if !searchActive || matchedSections[0]}
     <ExpenseSection
@@ -1018,6 +1036,7 @@
     <ExpenseSection
       sectionId="section-5"
       confirmChanges={!isActiveMonth}
+      readOnly={!canEditDaily}
       title={t("month.section5")}
       badge="○"
       icon="wallet"
@@ -1064,6 +1083,7 @@
     <ExpenseSection
       sectionId="section-6"
       confirmChanges={!isActiveMonth}
+      readOnly={!canEditDaily}
       title={t("month.section6")}
       badge="↓"
       icon="savings"
@@ -1091,6 +1111,7 @@
     <ExpenseSection
       sectionId="section-7"
       confirmChanges={!isActiveMonth}
+      readOnly={!canEditDaily}
       title={t("month.section7")}
       badge="○"
       icon="wallet"
@@ -1126,6 +1147,7 @@
     <ExpenseSection
       sectionId="section-8"
       confirmChanges={!isActiveMonth}
+      readOnly={!canEditDaily}
       title={t("month.section8")}
       badge="↓"
       icon="savings"
@@ -1337,8 +1359,12 @@
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; }
   .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-base) var(--ease-out); }
   .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); transform: translateX(-3px); }
+  .header-titleblock { min-width: 0; }
   .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.75rem; }
+  .header-actions > button { flex: 1 1 auto; }
+  .upcoming-daily-notice { margin: 0; padding: 0.75rem 1rem; font-size: 0.8rem; color: var(--text-secondary); background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
   .header-side { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
   .header-side :global(.search-bar),
   .header-side :global(.search-bar-input) { min-width: 0; }
@@ -1349,7 +1375,6 @@
   .edit-btn:hover { background: color-mix(in srgb, var(--accent-gold) 20%, transparent); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .edit-btn:hover .edit-btn-svg { transform: rotate(-8deg) scale(1.1); }
   .edit-btn:active { transform: translateY(0) scale(0.97); }
-  .edit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .lock-btn { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-sm); cursor: pointer; }
   .lock-btn:hover { border-color: var(--accent-gold); }
   .lock-notice { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 1.25rem 1.5rem; background: var(--accent-gold-light); border: 1px solid var(--accent-gold); border-radius: var(--radius-md); }
@@ -1869,6 +1894,8 @@
 
   @media (max-width: 768px) {
     .page { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
+    .header-actions { flex-direction: column; }
+    .header-actions > button { width: 100%; }
     .section-nav { display: block; }
     .summary-row { grid-template-columns: 1fr; }
     .income-fields { grid-template-columns: 1fr; }
