@@ -64,6 +64,8 @@ every push to `main`; that workflow does **not** touch functions or rules.
   (expense name/date, budget period) all share the `.field-hint` class in
   `app.css`; use it instead of restyling a hint.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
+- Husband sections and chart segments use `--accent-blue`; wife ones use
+  `--accent-rose`. Keep that mapping across cards, the legend and section tones.
 - Loading states use `src/lib/components/Skeleton.svelte` inside the real
   layout wrappers. Set each placeholder's height to the line box of the text it
   replaces (e.g. a `0.9rem` value is ~`1.44rem` tall) so the page does not jump
@@ -138,6 +140,27 @@ every push to `main`; that workflow does **not** touch functions or rules.
   period report (jsPDF/autoTable are lazy-loaded on button press). The dashboard
   panel is the only UI; imports are validated/normalised before `saveBudget()`
   writes them, so the notification stamps are never bypassed.
+
+## Domain rules
+
+- A period id `YYYY-MM` covers the 25th of the previous month through the 24th of
+  `YYYY-MM`. Its title and `monthLabel()` name the **ending** month
+  (`2026-10` → "November 2026"); `createEmptyBudget()` derives both from
+  `periodEnd`.
+- New periods come from `createBudgetFromPrevious()`: fixed expenses are copied
+  with `checked: false`, nonzero incomes are kept, and the routine
+  `Sedekah Jariyah` 30,000 with method `Auto Donate` is seeded into
+  `husbandDailyFromSalary`.
+- Drag & drop is limited to same-group sections: fixed `3 ↔ 4`, husband daily
+  `5 ↔ 6`, wife daily `7 ↔ 8`. Dragging starts only from `.drag-handle`, and the
+  move must be persisted through the normal `saveBudget()` path.
+- For Wife → Husband (`equalSplitTransfer < 0`), section 5's `transferReceived`
+  toggle records arrival. Until it is checked, the husband's salary plan and
+  "Remaining money" are reduced by the pending transfer. The toggle is hidden and
+  no extra reduction happens for Husband → Wife; the summary card follows
+  `equalSplitCardKind()` in `src/lib/equal-split.ts`.
+- Firestore rules require authentication (`request.auth != null`); deploy them
+  with `npx firebase-tools deploy --only firestore:rules`.
 
 ## Notifications (do not break)
 
