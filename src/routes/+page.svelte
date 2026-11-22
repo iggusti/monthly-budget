@@ -11,7 +11,6 @@
   import { buildBackupJson, parseBackup, toBudgetsCsv } from "#lib/backup";
   import { downloadBudgetsPdf } from "#lib/backup-pdf";
   import { installPrompt } from "#lib/install-prompt.svelte";
-  import { buildInsights } from "#lib/insights";
   import {
     BUDGET_SECTION_KEYS,
     computeTotals,
@@ -50,6 +49,7 @@
   let showAllMonths = $state(false);
   let searchQuery = $state("");
   let filters = $state<SearchFilters>({ ...EMPTY_FILTERS });
+  let filtersExpanded = $state(false);
   let quickAddOpen = $state(false);
   let importInput = $state<HTMLInputElement | null>(null);
   let exportingPdf = $state(false);
@@ -203,7 +203,6 @@
 
   // The budget for the current period (may be undefined if not created yet).
   const currentBudget = $derived(budgets.find((b) => b.id === currentMonthId));
-  const insights = $derived(buildInsights(budgets, currentMonthId, todayISO()));
   const currentTotals = $derived(currentBudget ? computeTotals(currentBudget) : null);
 
   const currentIncome = $derived(currentTotals ? currentTotals.totalIncome : 0);
@@ -561,41 +560,6 @@
   {/if}
   </div>
 
-  {#if !loading}
-    <section class="insights-panel" in:fade={motionFade(MOTION.slow, 140)}>
-      <div class="insights-head">
-        <span class="overview-head-title">{t("insights.title")}</span>
-        <span class="overview-head-sub">{monthLabel(currentMonthId, locale)}</span>
-      </div>
-      {#if insights.hasExpenses}
-        <div class="insights-grid">
-          <div class="insight-stat">
-            <span>{t("insights.remaining")}</span>
-            <b>{formatCurrency(insights.remaining)}</b>
-          </div>
-          <div class="insight-stat">
-            <span>{t("insights.forecast")}</span>
-            <b>{formatCurrency(insights.forecast)}</b>
-          </div>
-          <div class="insight-block">
-            <span class="insight-label">{t("insights.topCategories")}</span>
-            {#each insights.topCategories as category}
-              <div class="insight-row"><span>{category.name}</span><b>{formatCurrency(category.amount)}</b></div>
-            {/each}
-          </div>
-          <div class="insight-block">
-            <span class="insight-label">{t("insights.trend")}</span>
-            {#each insights.trend as point}
-              <div class="insight-row"><span>{point.title}</span><b>{formatCurrency(point.expense)}</b></div>
-            {/each}
-          </div>
-        </div>
-      {:else}
-        <p class="insights-empty">{t("insights.noData")}</p>
-      {/if}
-    </section>
-  {/if}
-
   <div class="section-label" in:fly={motionFly(10, MOTION.slow, 90)}>
     <span>{t("dashboard.budgetPeriods")}</span>
   </div>
@@ -610,7 +574,18 @@
           placeholderKey="dashboard.searchPlaceholder"
         />
       </div>
-      <div class="filter-row" aria-label={t("dashboard.filters")}>
+      <button
+        class="filter-toggle"
+        class:active={filtersActive(filters)}
+        type="button"
+        aria-expanded={filtersExpanded}
+        aria-controls="dashboard-filters"
+        onclick={() => (filtersExpanded = !filtersExpanded)}
+      >
+        {t("dashboard.filters")}
+        <span class="filter-toggle-chevron" class:open={filtersExpanded} aria-hidden="true">▾</span>
+      </button>
+      <div class="filter-row" id="dashboard-filters" class:collapsed={!filtersExpanded} aria-label={t("dashboard.filters")}>
         <label class="filter-field">
           <span>{t("filter.person")}</span>
           <select bind:value={filters.person}>
@@ -974,24 +949,22 @@
   .overview-item :global(.overview-value.indigo) { color: var(--accent-indigo); }
   .overview-item :global(.overview-value.olive) { color: var(--accent-olive); }
 
-  .insights-panel { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.15rem 1.5rem; box-shadow: var(--shadow-sm); }
-  .insights-head { display: flex; align-items: center; gap: 0.6rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--surface-border); }
-  .insights-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 0.9rem; }
-  .insight-stat { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--text-secondary); }
-  .insight-stat b { font-size: 1.05rem; color: var(--text-primary); }
-  .insight-block { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-  .insight-label { font-size: 0.75rem; font-weight: 700; color: var(--text-tertiary); }
-  .insight-row { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.78rem; }
-  .insight-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .insight-row b { font-weight: 700; white-space: nowrap; }
-  .insights-empty { margin: 0.9rem 0 0; font-size: 0.85rem; color: var(--text-secondary); }
-
   .section-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
   .section-label::after { content: ""; flex: 1; height: 1px; background: var(--surface-border); transform-origin: left; transform: scaleX(1); animation: underlineGrow var(--dur-slower) var(--ease-out) backwards; animation-delay: 0.2s; }
 
   .search-controls { display: flex; flex-direction: column; gap: 0.65rem; max-width: 720px; }
   .search-row { display: flex; justify-content: flex-start; }
   .search-row :global(.search-bar) { max-width: 420px; }
+  .filter-toggle {
+    display: none; align-items: center; gap: 0.4rem; align-self: flex-start;
+    padding: 0.45rem 0.8rem; color: var(--text-secondary);
+    background: var(--surface); border: 1px solid var(--surface-border);
+    border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;
+  }
+  .filter-toggle.active { color: var(--accent-gold-ink); border-color: var(--accent-teal); }
+  .filter-toggle.active::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-teal); }
+  .filter-toggle-chevron { font-size: 0.7rem; transition: transform var(--dur-base) var(--ease-out); }
+  .filter-toggle-chevron.open { transform: rotate(180deg); }
   .filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.75rem; }
   .filter-field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--text-secondary); }
   .filter-field select,
@@ -1141,9 +1114,16 @@
     .overview-body-clip { grid-template-columns: repeat(2, 1fr); }
   }
 
+  @media (max-width: 768px) {
+    .filter-toggle { display: inline-flex; }
+    .filter-row.collapsed { display: none; }
+    .filter-field { flex: 1 1 45%; }
+    .filter-field input { max-width: none; width: 100%; }
+    .filter-clear { flex: 1 1 100%; }
+  }
+
   @media (max-width: 640px) {
     .overview-body-clip { grid-template-columns: 1fr; }
-    .insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .months-grid { grid-template-columns: 1fr; }
     .hero { padding: 2rem 0 1rem; }
   }

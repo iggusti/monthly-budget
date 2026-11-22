@@ -1330,7 +1330,8 @@
 </div>
 
 <style>
-  .page { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; overflow-x: clip; }
+  .page { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; }
+  @supports (overflow-x: clip) { .page { overflow-x: clip; } }
 
   .page-header { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; }

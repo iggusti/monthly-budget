@@ -277,13 +277,6 @@ export const en: Dict = {
   "month.lockedText": "Unlock it to edit income or expenses.",
   "month.lockedToast": "Period locked",
   "month.unlockedToast": "Period unlocked",
-  "insights.title": "Spending insights",
-  "insights.remaining": "Remaining this period",
-  "insights.forecast": "Projected spending",
-  "insights.topCategories": "Top categories",
-  "insights.trend": "6-period trend",
-  "insights.noData": "Add expenses to see insights.",
-  "insights.perDay": "per day"
 };
 
 export const id: Dict = {
@@ -562,13 +555,6 @@ export const id: Dict = {
   "month.lockedText": "Buka kuncinya untuk mengubah pemasukan atau pengeluaran.",
   "month.lockedToast": "Periode dikunci",
   "month.unlockedToast": "Periode dibuka",
-  "insights.title": "Wawasan pengeluaran",
-  "insights.remaining": "Sisa periode ini",
-  "insights.forecast": "Estimasi pengeluaran",
-  "insights.topCategories": "Kategori terbesar",
-  "insights.trend": "Tren 6 periode",
-  "insights.noData": "Tambahkan pengeluaran untuk melihat wawasan.",
-  "insights.perDay": "per hari"
 };
 
 export const dictionaries: Record<"en" | "id", Dict> = { en, id };

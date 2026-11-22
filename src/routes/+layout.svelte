@@ -150,9 +150,9 @@
     transition: all 0.2s;
   }
   .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
-  .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; padding: 2rem 2rem 3rem; }
+  .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: clip; padding: 2rem 2rem 3rem; }
 
-  .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; max-width: 100%; overflow-x: clip; }
   .footer { text-align: center; padding: 1.5rem; color: var(--text-tertiary); font-size: 0.8rem; border-top: 1px solid var(--surface-border); }
 
   @media (max-width: 640px) {

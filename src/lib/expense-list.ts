@@ -1,13 +1,4 @@
-import { BUDGET_SECTION_KEYS, type ExpenseItem, type MonthBudget } from "./types";
-
-export function allExpenseItems(budget: MonthBudget): ExpenseItem[] {
-  const items: ExpenseItem[] = [];
-  for (const key of BUDGET_SECTION_KEYS) {
-    if (key === "husbandIncome" || key === "wifeIncome") continue;
-    items.push(...((budget[key] ?? []) as ExpenseItem[]));
-  }
-  return items;
-}
+import type { ExpenseItem } from "./types";
 
 /** Collapse settings shared by the list helpers below. */
 export interface CollapseOptions {
