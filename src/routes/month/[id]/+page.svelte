@@ -1330,15 +1330,17 @@
 </div>
 
 <style>
-  .page { display: flex; flex-direction: column; gap: 1.5rem; }
+  .page { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; overflow-x: clip; }
 
-  .page-header { display: flex; flex-direction: column; gap: 0.75rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
-  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+  .page-header { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; padding-bottom: 1.25rem; border-bottom: 1px solid var(--surface-border); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-width: 0; }
   .back-btn { display: flex; align-items: center; gap: 0.35rem; text-decoration: none; color: var(--text-tertiary); font-size: 0.85rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); transition: color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-base) var(--ease-out); }
   .back-btn:hover { color: var(--text-primary); background: var(--bg-muted); transform: translateX(-3px); }
   .page-title { font-size: 1.55rem; letter-spacing: -0.02em; line-height: 1.2; }
   .page-subtitle { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.1rem; }
-  .header-side { display: flex; align-items: center; gap: 0.75rem; }
+  .header-side { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+  .header-side :global(.search-bar),
+  .header-side :global(.search-bar-input) { min-width: 0; }
   .save-state { font-size: 0.72rem; font-weight: 600; color: var(--text-tertiary); transition: color var(--dur-base) var(--ease-out); }
   .save-state.saving { color: var(--accent-gold-ink); animation: pulse 1.2s var(--ease-in-out) infinite; }
   .edit-btn { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold-ink); background: var(--accent-gold-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--accent-gold) 20%, transparent); transition: background var(--dur-fast) ease, transform var(--dur-base) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out); }
@@ -1380,11 +1382,11 @@
   .btn-cancel { padding: 0.55rem 1.15rem; border-radius: var(--radius-sm); background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); font-size: 0.825rem; font-weight: 600; }
   .btn-cancel:hover { background: var(--bg-muted); }
 
-  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-  .stat-card { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+  .summary-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; min-width: 0; }
+  .stat-card { min-width: 0; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); transition: transform var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
   .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .stat-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); display: block; margin-bottom: 0.5rem; }
-  .stat-sub { font-size: 0.78rem; color: var(--text-tertiary); display: block; line-height: 1.5; }
+  .stat-sub { font-size: 0.78rem; color: var(--text-tertiary); display: block; line-height: 1.5; overflow-wrap: anywhere; }
   /* The split transfer amount is the key number of that caption, so it gets
      weight and the body text colour while the rest stays muted. */
   .stat-sub .split-amount {
@@ -1401,16 +1403,16 @@
   .stat-card.split :global(.stat-value) { color: var(--accent-teal); }
   .stat-card.split.negative :global(.stat-value) { color: var(--danger); }
 
-  .chart-section { background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); }
+  .chart-section { min-width: 0; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; box-shadow: var(--shadow-sm); }
   .chart-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
   .chart-title { font-size: 0.9rem; font-weight: 800; color: var(--text-primary); }
 
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; min-width: 0; }
 
   /* Per-bar entrance rhythm: `--bar-start` waits for the section to settle in,
      `--bar-stagger` walks the bars left to right. Both are inherited by the
      bars and their labels. */
-  .bar-chart { display: flex; flex-direction: column; --bar-start: 160ms; --bar-stagger: 80ms; }
+  .bar-chart { display: flex; flex-direction: column; min-width: 0; --bar-start: 160ms; --bar-stagger: 80ms; }
   .bar-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.85rem; }
   .bar-chart-title { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); }
   .bar-chart-total { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); font-variant-numeric: tabular-nums; }
@@ -1418,7 +1420,7 @@
   .bar-chart-plot {
     position: relative;
     display: flex; align-items: flex-end; justify-content: space-around;
-    gap: 0.75rem; height: 210px; padding: 0.5rem 0.25rem 0;
+    gap: 0.75rem; height: 210px; min-width: 0; padding: 0.5rem 0.25rem 0;
   }
   /* The axis draws in from the left while the bars rise. A `border-bottom`
      would be painted at full width straight away, so it is a pseudo-element. */
@@ -1447,7 +1449,7 @@
    * immediately readable. */
   .bar-col {
     display: flex; align-items: flex-end; justify-content: center;
-    flex: 1; height: 100%; max-width: 96px;
+    flex: 1; min-width: 0; height: 100%; max-width: 96px;
     transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out);
   }
   /* Only dim the other columns while one is actually hovered, so moving over the
@@ -1464,10 +1466,10 @@
 
   .bar-chart-labels {
     display: flex; justify-content: space-around;
-    gap: 0.75rem; padding: 0 0.25rem; margin-top: 0.55rem;
+    gap: 0.75rem; min-width: 0; padding: 0 0.25rem; margin-top: 0.55rem;
   }
   .bar-label {
-    flex: 1; max-width: 96px;
+    flex: 1; min-width: 0; max-width: 96px; overflow-wrap: anywhere;
     font-size: 0.74rem; font-weight: 600;
     color: var(--text-tertiary); text-align: center; line-height: 1.25;
     animation: barTextIn var(--dur-base) var(--ease-out) backwards;
@@ -1568,7 +1570,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; align-items: start; }
+  .sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; min-width: 0; align-items: start; }
 
   /* Section skeleton mirrors the real `.section` card: surface, border, radius. */
   .section-skeleton {
@@ -1871,13 +1873,13 @@
     .income-fields { grid-template-columns: 1fr; }
     .period-dates { flex-direction: column; align-items: stretch; gap: 0.4rem; }
     .period-arrow { display: none; }
-    .charts-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+    .charts-grid { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
     .chart-section { padding: 1rem 0.85rem; }
-    .bar-chart-plot { height: 180px; gap: 0.4rem; padding-left: 0; padding-right: 0; }
-    .bar-chart-labels { gap: 0.4rem; padding-left: 0; padding-right: 0; }
+    .bar-chart-plot { height: 180px; gap: 0.25rem; padding-left: 0; padding-right: 0; }
+    .bar-chart-labels { gap: 0.25rem; padding-left: 0; padding-right: 0; }
     .bar-col { max-width: none; }
     .bar-label { max-width: none; font-size: 0.66rem; }
-    .bar-value { font-size: 0.56rem; }
+    .bar-value { font-size: 0.52rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
     .back-text { display: none; }
     .back-btn { padding: 0.4rem 0.5rem; font-size: 1rem; }
     .save-state { display: none; }
