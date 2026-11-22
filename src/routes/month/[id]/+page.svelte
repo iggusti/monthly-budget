@@ -733,7 +733,6 @@
             <div
               class="bar-col"
               class:combined={bar.combined}
-              class:active={activeBars.income === `income-${i}`}
               style:--bar-index={i}
               role="button"
               tabindex="0"
@@ -788,7 +787,6 @@
           {#each expenseBars as bar, i}
             <div
               class="bar-col"
-              class:active={activeBars.expense === `expense-${i}`}
               style:--bar-index={i}
               role="button"
               tabindex="0"
@@ -1428,30 +1426,15 @@
    * animation support at all the bars simply render at full height, because
    * the animation never owns the layout height.
    *
-   * Hovering or selecting a column lifts it with a soft spotlight underneath,
-   * so the highlighted bar is readable without fading its neighbours' numbers. */
+   * Clicking a bar changes only its accessible pressed state — no hover lift,
+   * dimming or spotlight. Any of those made the numbers look like they reloaded
+   * when the selection moved between the two charts. */
   .bar-col {
     display: flex; align-items: flex-end; justify-content: center;
     flex: 1; min-width: 0; height: 100%; max-width: 96px;
-    transition: transform var(--dur-base) var(--ease-out);
   }
-  /* Selection is a local spotlight, not a chart-wide fade. Dimming every other
-     column also faded its number, which read as the labels reloading when the
-     selection moved to the other chart. Each chart keeps its own pick. */
-  .bar-chart-plot .bar-col:hover { transform: translateY(-3px); }
-  .bar-chart-plot .bar-col.active { transform: translateY(-4px); }
-  .bar-col.active .bar-seg { filter: brightness(1.07) saturate(1.06); }
   .bar-col:focus-visible { outline: 2px solid var(--accent-teal); outline-offset: 2px; border-radius: var(--radius-sm); }
   .bar-col-track { position: relative; width: 100%; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
-  .bar-col-track::before {
-    content: ""; position: absolute; inset: -0.35rem -0.2rem 0;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-    background: color-mix(in srgb, var(--accent-teal) 12%, transparent);
-    opacity: 0; transform: scale(0.94); transform-origin: bottom center;
-    transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
-    pointer-events: none;
-  }
-  .bar-col.active .bar-col-track::before { opacity: 1; transform: scale(1); }
 
   .bar-chart-labels {
     display: flex; justify-content: space-around;
@@ -1506,10 +1489,8 @@
     width: 100%; position: relative;
     container-type: size; container-name: barseg;
     display: flex; align-items: center; justify-content: center;
-    filter: brightness(1) saturate(1);
-    transition: height var(--dur-slower) var(--ease-in-out), filter var(--dur-base) var(--ease-out);
+    transition: height var(--dur-slower) var(--ease-in-out);
   }
-  .bar-col:hover .bar-seg { filter: brightness(1.07) saturate(1.06); }
   .bar-seg.blue { background: linear-gradient(180deg, var(--accent-blue), color-mix(in srgb, var(--accent-blue), var(--text-primary) 18%)); }
   .bar-seg.rose { background: linear-gradient(180deg, var(--accent-rose), color-mix(in srgb, var(--accent-rose), var(--text-primary) 18%)); }
 
@@ -1535,16 +1516,11 @@
     font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
     white-space: nowrap; font-variant-numeric: tabular-nums;
     pointer-events: none;
-    transition: transform var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
     animation: barTextIn var(--dur-base) var(--ease-out) backwards;
     animation-delay: calc(
       var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + var(--dur-slower)
     );
   }
-  /* A transition (not a second keyframe animation) keeps the entrance fade
-     untouched: swapping animation names would restart its backwards fill and
-     briefly hide the number every time the selection changed. */
-  .bar-col.active .bar-value { transform: translateX(-50%) scale(1.07); color: var(--text-primary); }
 
   .bar-legend { display: flex; gap: 1rem; margin-top: 0.85rem; justify-content: center; }
   .legend-chip { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); }
