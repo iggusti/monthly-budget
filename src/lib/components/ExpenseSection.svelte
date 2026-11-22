@@ -853,7 +853,7 @@
         class:open={adding}
         onclick={() => (adding ? cancel() : startAdd())}
         aria-label={adding ? t("expense.cancel") : t("expense.addItem")}
-      >{adding ? "×" : "+"}</button>
+      >{adding ? "−" : "+"}</button>
     {/if}
   </div>
 
