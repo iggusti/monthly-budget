@@ -43,6 +43,10 @@
     syncTheme();
   });
 
+  $effect(() => {
+    if (typeof document !== "undefined") document.documentElement.lang = lang.value;
+  });
+
   // The login screen is a standalone, full-screen page: no topbar/footer.
   const isLogin = $derived(page.url.pathname === "/login");
 

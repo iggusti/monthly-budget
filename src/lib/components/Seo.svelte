@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
+  import { lang } from "#lib/i18n.svelte";
 
   interface Props {
     title: string;
@@ -10,10 +11,12 @@
   let { title, description, path }: Props = $props();
 
   const SITE_NAME = "Monthly Budget Nia Ilham";
-  const BASE_URL = "https://nia-ilham.web.app";
+  const BASE_URL = "https://monthly-budget-nia-ilham.web.app";
   const OG_IMAGE = `${BASE_URL}/og-image.png`;
 
   const canonical = $derived(`${BASE_URL}${path ?? page.url.pathname}`);
+  const locale = $derived(lang.value === "id" ? "id_ID" : "en_US");
+  const alternateLocale = $derived(lang.value === "id" ? "en_US" : "id_ID");
 
   const jsonLd = $derived({
     "@context": "https://schema.org",
@@ -48,8 +51,8 @@
   <meta property="og:image" content={OG_IMAGE} />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="og:locale:alternate" content="id_ID" />
+  <meta property="og:locale" content={locale} />
+  <meta property="og:locale:alternate" content={alternateLocale} />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={title} />

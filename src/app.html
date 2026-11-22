@@ -24,6 +24,7 @@
 					if (icon) icon.setAttribute("href", "%sveltekit.assets%/" + (dark ? "favicon-dark.svg" : "favicon.svg"));
 					var themeColor = document.getElementById("theme-color");
 					if (themeColor) themeColor.setAttribute("content", dark ? "#79acac" : "#5b8a8a");
+					if (localStorage.getItem("fhb-lang") === "id") document.documentElement.lang = "id";
 				} catch (e) {
 					document.documentElement.dataset.theme = "light";
 				}
