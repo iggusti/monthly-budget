@@ -47,6 +47,7 @@
   import { t, lang } from "#lib/i18n.svelte";
   import Seo from "#lib/components/Seo.svelte";
   import Skeleton from "#lib/components/Skeleton.svelte";
+  import BackupIcon from "#lib/components/BackupIcon.svelte";
   import SearchBar from "#lib/components/SearchBar.svelte";
   import CountUp from "#lib/components/CountUp.svelte";
   import QuickAddDailyExpense from "#lib/components/QuickAddDailyExpense.svelte";
@@ -863,13 +864,28 @@
         <small>{t("backup.importHint")}</small>
       </div>
       <div class="backup-actions">
-        <button class="backup-btn" onclick={() => downloadBackup(buildBackupJson(budgets), "json", "application/json")} disabled={budgets.length === 0}>{t("backup.exportJson")}</button>
-        <button class="backup-btn" onclick={() => downloadBackup(toBudgetsCsv(budgets), "csv", "text/csv;charset=utf-8")} disabled={budgets.length === 0}>{t("backup.exportCsv")}</button>
-        <button class="backup-btn" onclick={exportPdf} disabled={budgets.length === 0 || exportingPdf}>{exportingPdf ? "…" : t("backup.exportPdf")}</button>
+        <button class="backup-btn" onclick={() => downloadBackup(buildBackupJson(budgets), "json", "application/json")} disabled={budgets.length === 0}>
+          <BackupIcon name="json" />
+          {t("backup.exportJson")}
+        </button>
+        <button class="backup-btn" onclick={() => downloadBackup(toBudgetsCsv(budgets), "csv", "text/csv;charset=utf-8")} disabled={budgets.length === 0}>
+          <BackupIcon name="csv" />
+          {t("backup.exportCsv")}
+        </button>
+        <button class="backup-btn" onclick={exportPdf} disabled={budgets.length === 0 || exportingPdf}>
+          <BackupIcon name="pdf" />
+          {exportingPdf ? "…" : t("backup.exportPdf")}
+        </button>
         {#if installPrompt.available}
-          <button class="backup-btn" onclick={() => void installPrompt.prompt()}>{t("install.app")}</button>
+          <button class="backup-btn" onclick={() => void installPrompt.prompt()}>
+            <BackupIcon name="install" />
+            {t("install.app")}
+          </button>
         {/if}
-        <button class="backup-btn primary" onclick={() => importInput?.click()}>{t("backup.import")}</button>
+        <button class="backup-btn primary" onclick={() => importInput?.click()}>
+          <BackupIcon name="restore" />
+          {t("backup.import")}
+        </button>
         <input
           bind:this={importInput}
           class="sr-only"
@@ -887,8 +903,14 @@
             <small>{restorePreview.budgets.map((b) => b.title).join(" · ")}</small>
           </div>
           <div class="restore-actions">
-            <button class="backup-btn" onclick={() => (restorePreview = null)}>{t("backup.restoreCancel")}</button>
-            <button class="backup-btn primary" onclick={confirmRestore}>{t("backup.restoreConfirm")}</button>
+            <button class="backup-btn" onclick={() => (restorePreview = null)}>
+              <BackupIcon name="cancel" />
+              {t("backup.restoreCancel")}
+            </button>
+            <button class="backup-btn primary" onclick={confirmRestore}>
+              <BackupIcon name="confirm" />
+              {t("backup.restoreConfirm")}
+            </button>
           </div>
         </div>
       {/if}
@@ -904,8 +926,8 @@
         <Skeleton width="220px" height="1.15rem" style="margin-top:0.15rem;" />
       </div>
       <div class="backup-actions">
-        {#each [130, 122, 119, 126] as width}
-          <Skeleton width="{width}px" height="2.16rem" radius="var(--radius-sm)" />
+        {#each [152, 144, 142, 148] as width}
+          <Skeleton width="{width}px" height="2.225rem" radius="var(--radius-sm)" />
         {/each}
       </div>
     </section>
@@ -1207,12 +1229,14 @@
   .info-dot.gold { background: var(--accent-gold); }
 
   .backup-panel { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 1.5rem; padding: 1.1rem 1.5rem; background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+  .backup-copy { flex: 1 1 280px; min-width: 0; }
+  .backup-actions { flex: 0 1 auto; }
   .backup-copy h2 { font-size: 0.9rem; font-weight: 800; margin-bottom: 0.2rem; }
   .backup-copy p, .backup-copy small { display: block; font-size: 0.78rem; color: var(--text-tertiary); }
   .backup-copy small { margin-top: 0.15rem; font-size: 0.72rem; }
-  .backup-copy-extra { display: none; }
+  .backup-copy-extra { display: block; }
   .backup-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .backup-btn { padding: 0.55rem 0.9rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
+  .backup-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.55rem 0.9rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
   .backup-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent-teal); }
   .backup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .backup-btn.primary { background: var(--accent-teal); border-color: var(--accent-teal); color: var(--on-accent); }
@@ -1224,6 +1248,7 @@
 
   @media (max-width: 1000px) {
     .overview-body-clip { grid-template-columns: repeat(2, 1fr); }
+    .backup-copy-extra { display: none; }
     .filter-row { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
     .filter-field:nth-child(1) { grid-row: 1; grid-column: 1; }
     .filter-field:nth-child(2) { grid-row: 1; grid-column: 2; }
