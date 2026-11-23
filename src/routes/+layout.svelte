@@ -97,11 +97,12 @@
           <ThemeToggle />
           {#if authed}
             <button class="nav-logout" onclick={handleLogout} aria-label={t("nav.signOut")} title={t("nav.signOut")}>
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg class="logout-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                 <path d="m16 17 5-5-5-5" />
                 <path d="M21 12H9" />
               </svg>
+              <span class="logout-label">{t("nav.signOut")}</span>
             </button>
           {/if}
         </nav>
@@ -160,6 +161,20 @@
   }
   .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); transform: scale(1.06); }
   .nav-logout:active { transform: scale(0.94); }
+  .logout-label { display: none; }
+
+  /* Tablets and desktops keep the original labelled sign-out pill. */
+  @media (min-width: 769px) {
+    .nav-logout {
+      width: auto; padding: 0.3rem 0.75rem;
+      background: transparent;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
+    .logout-icon { display: none; }
+    .logout-label { display: inline; }
+  }
+
   .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: clip; padding: 2rem 2rem 3rem; }
 
   .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; max-width: 100%; overflow-x: clip; }
