@@ -33,8 +33,6 @@ export const en: Dict = {
   "notify.cancel": "Cancel",
   "notify.enable": "Enable",
   "notify.enabled": "Notifications enabled for this phone.",
-  "notify.current": "This phone is registered as",
-  "notify.turnOff": "Turn off",
   "notify.error": "Could not enable notifications. Please try again.",
   "notify.disabled": "Notifications turned off for this device.",
   "footer.tagline": "Monthly Budget Nia Ilham · Stay balanced, save together",
@@ -315,8 +313,6 @@ export const id: Dict = {
   "notify.cancel": "Batal",
   "notify.enable": "Aktifkan",
   "notify.enabled": "Notifikasi aktif untuk ponsel ini.",
-  "notify.current": "Ponsel ini terdaftar sebagai",
-  "notify.turnOff": "Matikan",
   "notify.error": "Gagal mengaktifkan notifikasi. Coba lagi.",
   "notify.disabled": "Notifikasi dimatikan untuk perangkat ini.",
   "footer.tagline":

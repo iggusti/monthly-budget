@@ -1,8 +1,9 @@
 <script lang="ts">
   /**
-   * Bell in the topbar. Its popover registers this browser for Pushover:
-   * pick "Husband" or "Wife" to enable, or turn it off again. There is no
-   * browser permission prompt — pushes arrive in the Pushover app.
+   * Bell in the topbar. When off, it opens a small popover to pick this
+   * phone's owner and register for Pushover. When on, one click unregisters it
+   * immediately — no confirmation popup. Pushes arrive in the Pushover app, so
+   * there is no browser permission prompt.
    */
   import { t, lang } from "#lib/i18n.svelte";
   import { toastError, toastSuccess } from "#lib/toast.svelte";
@@ -20,7 +21,6 @@
 
   const enabled = $derived(notify.status === "enabled");
   const label = $derived(enabled ? t("nav.notificationsOn") : t("nav.notificationsOff"));
-  const choiceLabel = $derived(choice === "wife" ? t("common.wife") : t("common.husband"));
 
   function report() {
     const message: NotificationMessage = notify.message;
@@ -31,8 +31,19 @@
     }
   }
 
+  async function handleDisable() {
+    if (notify.busy) return;
+    await disableNotifications();
+    open = false;
+    report();
+  }
+
   function handleBell() {
     if (notify.busy) return;
+    if (enabled) {
+      void handleDisable();
+      return;
+    }
     choice = notify.recipient;
     open = !open;
   }
@@ -45,13 +56,6 @@
       open = false;
       toastSuccess(t("notify.enabled"));
     }
-  }
-
-  async function handleDisable() {
-    if (notify.busy) return;
-    await disableNotifications();
-    open = false;
-    report();
   }
 
   function handlePointerDown(event: PointerEvent) {
@@ -70,10 +74,11 @@
     type="button"
     class="notify-toggle"
     class:active={enabled}
+    class:off={!enabled}
     class:busy={notify.busy}
     aria-pressed={enabled}
-    aria-expanded={open}
-    aria-haspopup="dialog"
+    aria-expanded={enabled ? undefined : open}
+    aria-haspopup={enabled ? undefined : "dialog"}
     aria-label={label}
     title={label}
     onclick={handleBell}
@@ -84,41 +89,31 @@
         <path d="M9.5 18a2.5 2.5 0 0 0 5 0Z" />
       </svg>
     {:else}
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 8a6 6 0 0 0-9.3-5" />
         <path d="M6.3 6.3A6 6 0 0 0 6 8v3.6l-1.7 3A1 1 0 0 0 5.2 16h9.3" />
         <path d="M9.5 20a2.5 2.5 0 0 0 5 0" />
+        <path d="M3.5 3.5 20.5 20.5" />
       </svg>
     {/if}
     {#if notify.busy}<span class="notify-spinner" aria-hidden="true"></span>{/if}
   </button>
 
-  {#if open}
+  {#if open && !enabled}
     <div class="notify-panel" role="dialog" aria-label={t("notify.title")}>
       <p class="notify-title">{t("notify.title")}</p>
-
-      {#if enabled}
-        <p class="notify-note">{t("notify.current")} {choiceLabel}.</p>
-        <div class="notify-actions">
-          <button type="button" class="notify-cancel" onclick={() => (open = false)}>{t("common.close")}</button>
-          <button type="button" class="notify-save" onclick={handleDisable} disabled={notify.busy}>
-            {t("notify.turnOff")}
-          </button>
-        </div>
-      {:else}
-        <p class="notify-note">{t("notify.note")}</p>
-        <label class="notify-field" for="notify-recipient">{t("notify.recipient")}</label>
-        <select id="notify-recipient" bind:value={choice} disabled={notify.busy}>
-          <option value="husband">{t("common.husband")}</option>
-          <option value="wife">{t("common.wife")}</option>
-        </select>
-        <div class="notify-actions">
-          <button type="button" class="notify-cancel" onclick={() => (open = false)}>{t("notify.cancel")}</button>
-          <button type="button" class="notify-save" onclick={handleEnable} disabled={notify.busy}>
-            {t("notify.enable")}
-          </button>
-        </div>
-      {/if}
+      <p class="notify-note">{t("notify.note")}</p>
+      <label class="notify-field" for="notify-recipient">{t("notify.recipient")}</label>
+      <select id="notify-recipient" bind:value={choice} disabled={notify.busy}>
+        <option value="husband">{t("common.husband")}</option>
+        <option value="wife">{t("common.wife")}</option>
+      </select>
+      <div class="notify-actions">
+        <button type="button" class="notify-cancel" onclick={() => (open = false)}>{t("notify.cancel")}</button>
+        <button type="button" class="notify-save" onclick={handleEnable} disabled={notify.busy}>
+          {t("notify.enable")}
+        </button>
+      </div>
     </div>
   {/if}
 </div>
@@ -135,7 +130,10 @@
     color: var(--text-secondary);
     transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
+  /* The crossed-out bell needs the strongest contrast in both themes. */
+  .notify-toggle.off { color: var(--text-primary); }
   .notify-toggle:hover { color: var(--accent-gold); border-color: var(--accent-gold); transform: scale(1.06); }
+  .notify-toggle.off:hover { color: var(--accent-rose); border-color: var(--accent-rose); }
   .notify-toggle:active { transform: scale(0.94); }
   .notify-toggle.active {
     background: var(--accent-gold-light);
@@ -193,7 +191,7 @@
   .notify-cancel { background: transparent; border: 1px solid var(--surface-border); color: var(--text-secondary); }
   .notify-save {
     background: var(--accent-gold); border: 1px solid var(--accent-gold);
-    color: var(--accent-gold-ink);
+    color: var(--on-accent);
   }
   .notify-save:disabled { opacity: 0.6; cursor: default; }
 </style>
