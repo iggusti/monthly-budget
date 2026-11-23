@@ -678,19 +678,21 @@
               </div>
               <Skeleton width="52px" height="1.4rem" radius="999px" />
             </div>
-            <div class="card-person">
-              <Skeleton width="60px" height="1.1rem" />
-              <Skeleton width="80px" height="1.4rem" />
-            </div>
-            <div class="card-groups">
-              {#each Array(2) as _}
-                <div class="card-group">
-                  <Skeleton width="50px" height="1.05rem" style="margin-bottom:0.3rem;" />
-                  <div class="card-group-row"><Skeleton width="45px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
-                  <div class="card-group-row"><Skeleton width="55px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
-                  <div class="card-group-row"><Skeleton width="50px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
-                </div>
-              {/each}
+            <div class="card-expenses">
+              <div class="card-person">
+                <Skeleton width="60px" height="1.1rem" />
+                <Skeleton width="80px" height="1.4rem" />
+              </div>
+              <div class="card-groups">
+                {#each Array(2) as _}
+                  <div class="card-group">
+                    <Skeleton width="50px" height="1.05rem" style="margin-bottom:0.3rem;" />
+                    <div class="card-group-row"><Skeleton width="45px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                    <div class="card-group-row"><Skeleton width="55px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                    <div class="card-group-row"><Skeleton width="50px" height="1.2rem" /><Skeleton width="70px" height="1.2rem" /></div>
+                  </div>
+                {/each}
+              </div>
             </div>
           </div>
         </div>
@@ -751,22 +753,24 @@
                 {/each}
               </ul>
             {:else if exists && totals}
-              <div class="card-person">
-                <span class="card-person-label">{t("dashboard.expense")}</span>
-                <span class="card-person-value">{formatCurrency(totalExpenses(totals))}</span>
-              </div>
-              <div class="card-groups">
-                <div class="card-group">
-                  <span class="card-group-title">{t("common.husband")}</span>
-                  <div class="card-group-row"><span>{t("common.fixed")}</span><b class="blue">{formatCurrency(totals.husbandFixedTotal)}</b></div>
-                  <div class="card-group-row"><span>{t("common.salary")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
-                  <div class="card-group-row"><span>{t("common.savings")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
+              <div class="card-expenses">
+                <div class="card-person">
+                  <span class="card-person-label">{t("dashboard.expense")}</span>
+                  <span class="card-person-value">{formatCurrency(totalExpenses(totals))}</span>
                 </div>
-                <div class="card-group">
-                  <span class="card-group-title">{t("common.wife")}</span>
-                  <div class="card-group-row"><span>{t("common.fixed")}</span><b class="rose">{formatCurrency(totals.wifeFixedTotal)}</b></div>
-                  <div class="card-group-row"><span>{t("common.salary")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
-                  <div class="card-group-row"><span>{t("common.savings")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+                <div class="card-groups">
+                  <div class="card-group">
+                    <span class="card-group-title">{t("common.husband")}</span>
+                    <div class="card-group-row"><span>{t("common.fixed")}</span><b class="blue">{formatCurrency(totals.husbandFixedTotal)}</b></div>
+                    <div class="card-group-row"><span>{t("common.salary")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSalaryTotal)}</b></div>
+                    <div class="card-group-row"><span>{t("common.savings")}</span><b class="blue">{formatCurrency(totals.husbandDailyFromSavingsTotal)}</b></div>
+                  </div>
+                  <div class="card-group">
+                    <span class="card-group-title">{t("common.wife")}</span>
+                    <div class="card-group-row"><span>{t("common.fixed")}</span><b class="rose">{formatCurrency(totals.wifeFixedTotal)}</b></div>
+                    <div class="card-group-row"><span>{t("common.salary")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSalaryTotal)}</b></div>
+                    <div class="card-group-row"><span>{t("common.savings")}</span><b class="rose">{formatCurrency(totals.wifeDailyFromSavingsTotal)}</b></div>
+                  </div>
                 </div>
               </div>
             {:else}
@@ -1099,11 +1103,21 @@
     font-weight: 600;
   }
 
-  .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; margin-top: auto; }
+  /* One bottom-anchored block keeps the expense total and both groups on the
+     same baseline across every card in a grid row. */
+  .card-expenses { display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+  @media (max-width: 768px) {
+    .card-expenses { gap: 0.6rem; }
+  }
+  @media (min-width: 769px) {
+    .card-expenses { margin-top: auto; }
+  }
+
+  .card-person { display: flex; align-items: baseline; justify-content: space-between; background: linear-gradient(135deg, var(--accent-teal-light), var(--surface)); border-radius: var(--radius-md); padding: 0.45rem 0.7rem; }
   .card-person-label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
   .card-person-value { font-size: 0.9rem; font-weight: 800; color: var(--accent-teal); }
 
-  .card-groups { display: flex; flex-direction: column; gap: 0.5rem; margin-top: auto; }
+  .card-groups { display: flex; flex-direction: column; gap: 0.5rem; }
   .card-group { min-width: 0; background: var(--bg-muted); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; }
   .card-group-title { display: block; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem; }
   .card-group-row { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; min-width: 0; font-size: 0.76rem; color: var(--text-tertiary); padding: 0.12rem 0; }
