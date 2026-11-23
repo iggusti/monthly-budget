@@ -136,6 +136,11 @@ export async function disableNotifications(): Promise<void> {
  */
 export async function initNotifications(lang: string): Promise<void> {
   if (typeof window === "undefined") return;
+  refreshStatus();
+  // No local flag means there is nothing to verify; skip the Firestore read
+  // for users who never enabled notifications.
+  if (localStorage.getItem(ENABLED_KEY) !== "true") return;
+
   const uid = await waitForUid();
   if (!uid) {
     refreshStatus();

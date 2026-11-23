@@ -42,7 +42,7 @@
   }
 </script>
 
-<div class="search-bar" aria-expanded="true">
+<div class="search-bar" role="search">
   <svg
     viewBox="0 0 24 24"
     class="search-bar-icon"

@@ -6,7 +6,8 @@
  * offline.
  */
 
-const CACHE = `monthly-budget-${__APP_VERSION__}`;
+// The placeholder is inside a string so a raw git hash stays valid JavaScript.
+const CACHE = "monthly-budget-__APP_VERSION__";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./favicon.svg", "./favicon-dark.svg"];
 
 self.addEventListener("install", (event) => {

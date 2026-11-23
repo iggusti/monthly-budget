@@ -16,6 +16,12 @@ function renderServiceWorker(): string {
 		throw new Error('Unreplaced placeholder left in the generated service worker');
 	}
 
+	try {
+		new Function(output);
+	} catch (error) {
+		throw new Error(`Generated service worker is invalid: ${String(error)}`);
+	}
+
 	return output;
 }
 

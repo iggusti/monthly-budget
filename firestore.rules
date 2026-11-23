@@ -10,8 +10,11 @@ service cloud.firestore {
     // uid. A device may only read and manage its own entry; the scheduled
     // sender reads these through the Admin SDK (which bypasses these rules).
     match /devices/{uid} {
-      allow read: if request.auth != null
-        && resource.data.uid == request.auth.uid;
+      // `resource` is null for a get on a document that does not exist yet,
+      // which is the normal first-run case for a fresh anonymous uid.
+      allow get: if request.auth != null
+        && (resource == null || resource.data.uid == request.auth.uid);
+      allow list: if false;
       allow create: if request.auth != null
         && request.resource.data.uid == request.auth.uid;
       allow update: if request.auth != null
