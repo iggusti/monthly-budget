@@ -458,6 +458,13 @@
 <Seo title={t("dashboard.pageTitle")} description={t("seo.dashboardDescription")} path="/" />
 
 <div class="page">
+  {#snippet filterSkeletonField(labelWidth: string)}
+    <div class="filter-field">
+      <Skeleton width={labelWidth} height="1.2rem" />
+      <Skeleton width="100%" height="2.25rem" radius="var(--radius-sm)" />
+    </div>
+  {/snippet}
+
   {#if loading}
     <span class="sr-only" role="status">{t("common.loading")}</span>
   {/if}
@@ -659,9 +666,24 @@
       </div>
     </div>
   {:else}
-    <!-- Search skeleton keeps the grid from jumping when the real bar appears. -->
-    <div class="search-row" aria-hidden="true">
-      <Skeleton width="100%" height="3.5rem" radius="var(--radius-md)" style="max-width:420px;" />
+    <!-- Mirror the full filter block so the grid never jumps when controls land.
+         The fields stay collapsed on phones, matching the default real state. -->
+    <div class="search-controls" aria-hidden="true">
+      <div class="search-row">
+        <Skeleton width="100%" height="3.5rem" radius="var(--radius-md)" style="max-width:420px;" />
+      </div>
+      <div class="filter-toggle">
+        <Skeleton width="72px" height="0.95rem" />
+      </div>
+      <div class="filter-row skeleton">
+        {@render filterSkeletonField("64px")}
+        {@render filterSkeletonField("52px")}
+        {@render filterSkeletonField("68px")}
+        {@render filterSkeletonField("72px")}
+        {@render filterSkeletonField("46px")}
+        {@render filterSkeletonField("40px")}
+        <div class="filter-clear"><Skeleton width="56px" height="1.1rem" /></div>
+      </div>
     </div>
   {/if}
 
@@ -793,7 +815,11 @@
     {/if}
   {/if}
 
-  {#if !loading && hasMoreMonths && !searchActive}
+  {#if loading}
+    <div class="months-toggle" aria-hidden="true">
+      <Skeleton width="134px" height="2.125rem" radius="var(--radius-pill)" />
+    </div>
+  {:else if hasMoreMonths && !searchActive}
     <div class="months-toggle">
       <button class="toggle-btn" onclick={() => (showAllMonths = !showAllMonths)}>
         {showAllMonths ? t("common.viewLess") : t("dashboard.viewMore", { n: orderedMonths.length - monthLimit })}
@@ -867,10 +893,30 @@
         </div>
       {/if}
     </section>
+  {:else}
+    <section class="backup-panel" aria-hidden="true">
+      <div class="backup-copy">
+        <Skeleton width="150px" height="1.44rem" />
+        <div style="margin-top:0.2rem;">
+          <Skeleton width="280px" height="1.25rem" />
+          <div class="backup-copy-extra"><Skeleton width="240px" height="1.25rem" /></div>
+        </div>
+        <Skeleton width="220px" height="1.15rem" style="margin-top:0.15rem;" />
+      </div>
+      <div class="backup-actions">
+        {#each [130, 122, 119, 126] as width}
+          <Skeleton width="{width}px" height="2.16rem" radius="var(--radius-sm)" />
+        {/each}
+      </div>
+    </section>
   {/if}
 </div>
 
-{#if !loading}
+{#if loading}
+  <div class="quick-add-fab skeleton-fab" aria-hidden="true">
+    <Skeleton circle size={24} />
+  </div>
+{:else}
   <!-- One always-reachable entry point for daily spending on the dashboard. -->
   <button
     class="quick-add-fab"
@@ -922,6 +968,12 @@
   .quick-add-fab:focus-visible { outline: var(--focus-outline); outline-offset: 3px; }
   .quick-add-icon { width: 1.4rem; height: 1.4rem; transition: transform var(--dur-base) var(--ease-spring); }
   .quick-add-fab:hover .quick-add-icon { transform: rotate(90deg); }
+  .quick-add-fab.skeleton-fab {
+    pointer-events: none;
+    background: var(--bg-muted);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--shadow-sm);
+  }
   /* Must follow the base rule so the equal-specificity override wins on phones. */
   @media (max-width: 768px) {
     .quick-add-fab { display: grid; }
@@ -1158,6 +1210,7 @@
   .backup-copy h2 { font-size: 0.9rem; font-weight: 800; margin-bottom: 0.2rem; }
   .backup-copy p, .backup-copy small { display: block; font-size: 0.78rem; color: var(--text-tertiary); }
   .backup-copy small { margin-top: 0.15rem; font-size: 0.72rem; }
+  .backup-copy-extra { display: none; }
   .backup-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .backup-btn { padding: 0.55rem 0.9rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--bg-muted); color: var(--text-primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: transform var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out); }
   .backup-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent-teal); }
@@ -1185,8 +1238,10 @@
     .filter-toggle { display: inline-flex; }
     .filter-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.75rem; }
     .filter-row.collapsed { display: none; }
+    .filter-row.skeleton { display: none; }
     .filter-field { flex: 1 1 45%; grid-row: auto; grid-column: auto; }
     .filter-clear { flex: 1 1 100%; grid-row: auto; grid-column: auto; }
+    .backup-copy-extra { display: block; }
   }
 
   @media (max-width: 640px) {

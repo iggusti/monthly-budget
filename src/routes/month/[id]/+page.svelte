@@ -67,6 +67,7 @@
 
   let budget = $state<MonthBudget>(createEmptyBudget("2026-01"));
   let loading = $state(true);
+  let navLoading = $state(true);
   let saving = $state(false);
   let savedAt = $state<string>("");
   let showSectionNav = $state(false);
@@ -308,8 +309,12 @@
     if (!monthId) return;
 
     // Know which months exist in DB so navigation can stop at the edges.
+    // Keep the nav in its skeleton state until this resolves, otherwise the
+    // arrows render disabled for a beat and look broken.
+    navLoading = true;
     fetchAllBudgets().then((bs) => {
       allMonthIds = bs.map((b) => b.id).sort();
+      navLoading = false;
     });
 
     // Start from a correctly-titled empty budget until the live data arrives.
@@ -523,11 +528,15 @@
     <div class="header-top">
       <a href="/" class="back-btn" aria-label={t("month.allMonths")}>← <span class="back-text">{t("month.allMonths")}</span></a>
       <div class="header-side">
-        <SearchBar
-          query={searchQuery}
-          onQueryChange={(q: string) => (searchQuery = q)}
-          onClear={() => (searchQuery = "")}
-        />
+        {#if loading}
+          <Skeleton width="100%" height="3.5rem" radius="var(--radius-md)" style="max-width:360px;" />
+        {:else}
+          <SearchBar
+            query={searchQuery}
+            onQueryChange={(q: string) => (searchQuery = q)}
+            onClear={() => (searchQuery = "")}
+          />
+        {/if}
         <span class="save-state" class:saving aria-live="polite">
           {#if loading}{t("common.loading")}{:else if saving}{t("month.saving")}{:else if savedAt}{t("month.saved", { time: savedAt })}{/if}
         </span>
@@ -572,19 +581,20 @@
     </div>
 
     <!-- Chart skeleton: same plot height, bar widths and text sizes as the
-         real charts. Heights are in px so no engine has to resolve a
-         percentage inside a flex item. -->
+         real charts. Bar heights are static percentages of the track, so the
+         180px mobile and 210px desktop plots both keep their proportions. -->
     <div class="chart-section" aria-hidden="true">
       <div class="chart-header">
-        <Skeleton width="200px" height="1.1rem" />
+        <Skeleton width="200px" height="1.44rem" />
       </div>
       <div class="charts-grid">
-        <!-- Mirror the two real charts: 3 income bars, 5 expense bars. -->
-        {#each [{ bars: 3, h: [190, 122, 82] }, { bars: 5, h: [186, 146, 112, 78, 50] }] as chart}
+        <!-- Mirror the two real charts: 3 income bars, 5 expense bars. Expense
+             labels wrap to four lines on phones, so the placeholder does too. -->
+        {#each [{ bars: 3, h: [0.9, 0.58, 0.39], labelLines: 1 }, { bars: 5, h: [0.89, 0.7, 0.53, 0.37, 0.24], labelLines: 4 }] as chart}
           <div class="bar-chart">
             <div class="bar-chart-head">
-              <Skeleton width="55%" height="1rem" />
-              <Skeleton width="72px" height="1.15rem" />
+              <Skeleton width="55%" height="1.5rem" />
+              <Skeleton width="72px" height="1.5rem" />
             </div>
             <div class="bar-chart-plot">
               {#each chart.h as barHeight}
@@ -592,9 +602,8 @@
                   <div class="bar-col-track">
                     <Skeleton
                       width="100%"
-                      height="{barHeight}px"
                       radius="8px 8px 0 0"
-                      style="max-width:62px;"
+                      style="height:{barHeight * 100}%;max-width:62px;"
                     />
                   </div>
                 </div>
@@ -602,17 +611,23 @@
             </div>
             <div class="bar-chart-labels">
               {#each Array(chart.bars) as _}
-                <Skeleton width="60%" height="1rem" style="margin:0 auto;max-width:60px;" />
+                <div class="bar-label-skeleton">
+                  {#each Array(chart.labelLines) as _, lineIndex}
+                    <div class="bar-label-line" class:extra={chart.labelLines === 4 && lineIndex === 3}>
+                      <Skeleton width="90%" height="var(--bar-label-skeleton-line)" style="margin:0 auto;max-width:60px;" />
+                    </div>
+                  {/each}
+                </div>
               {/each}
             </div>
             <div class="bar-legend">
               <span class="legend-chip">
                 <Skeleton width="12px" height="12px" radius="4px" />
-                <Skeleton width="34px" height="1.1rem" />
+                <Skeleton width="34px" height="1.2rem" />
               </span>
               <span class="legend-chip">
                 <Skeleton width="12px" height="12px" radius="4px" />
-                <Skeleton width="34px" height="1.1rem" />
+                <Skeleton width="34px" height="1.2rem" />
               </span>
             </div>
           </div>
@@ -622,9 +637,15 @@
       <div class="chart-note">
         <Skeleton circle size={18} />
         <div class="chart-note-body" style="flex:1;">
-          <Skeleton width="100%" height="1.1rem" />
-          <Skeleton width="92%" height="1.1rem" />
-          <Skeleton width="68%" height="1.1rem" />
+          {#each [[100, 92, 64], [100, 96, 88, 58], [100, 90, 52]] as lineWidths}
+            <div class="chart-note-lines">
+              {#each lineWidths as width, lineIndex}
+                <div class="chart-note-line" class:extra={lineIndex > 0}>
+                  <Skeleton width="{width}%" height="1.31rem" />
+                </div>
+              {/each}
+            </div>
+          {/each}
         </div>
       </div>
     </div>
@@ -659,16 +680,6 @@
         </div>
       {/each}
     </div>
-
-    <!-- Month navigation skeleton (the real nav renders with the content). -->
-    <nav class="month-nav" aria-hidden="true">
-      <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
-      <div class="month-nav-label">
-        <Skeleton width="120px" height="1.2rem" />
-        <Skeleton width="96px" height="1.05rem" style="margin-top:0.15rem;" />
-      </div>
-      <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
-    </nav>
   {:else}
   <div class="summary-row animate-stagger" in:fly={motionFly(10, MOTION.slow, 60)}>
     <div class="stat-card income">
@@ -1280,40 +1291,53 @@
     </button>
   </div>
 
-  <!-- Month-to-month navigation: left → previous month, right → next month. -->
-  <nav class="month-nav" aria-label={t("month.navAria")}>
-    <button
-      class="month-nav-btn"
-      type="button"
-      aria-label={t("month.prevMonth")}
-      disabled={!canGoPrevious}
-      onclick={() => goToMonth(prevMonthId)}
-    >
-      <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M15 18l-6-6 6-6" />
-      </svg>
-    </button>
-    <div class="month-nav-label">
-      <span class="month-nav-month">
-        {#if isActiveMonth}<span class="month-nav-dot" aria-hidden="true"></span>{/if}
-        <span class="month-nav-name">{navMonthLabel}</span>
-      </span>
-      {#if budget.period}
-        <span class="month-nav-range">{budget.period}</span>
-      {/if}
-    </div>
-    <button
-      class="month-nav-btn"
-      type="button"
-      aria-label={t("month.nextMonth")}
-      disabled={!canGoNext}
-      onclick={() => goToMonth(nextMonthId)}
-    >
-      <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M9 18l6-6-6-6" />
-      </svg>
-    </button>
-  </nav>
+  {/if}
+
+  <!-- Month-to-month navigation. Waits for the month list as well as the
+       budget, so the arrows never flash disabled before they know the edges. -->
+  {#if navLoading}
+    <nav class="month-nav" aria-hidden="true">
+      <Skeleton width="var(--month-nav-btn-size)" height="var(--month-nav-btn-size)" radius="50%" />
+      <div class="month-nav-label">
+        <Skeleton width="120px" height="var(--month-nav-label-line1)" />
+        <Skeleton width="96px" height="var(--month-nav-label-line2)" />
+      </div>
+      <Skeleton width="var(--month-nav-btn-size)" height="var(--month-nav-btn-size)" radius="50%" />
+    </nav>
+  {:else}
+    <nav class="month-nav" aria-label={t("month.navAria")}>
+      <button
+        class="month-nav-btn"
+        type="button"
+        aria-label={t("month.prevMonth")}
+        disabled={!canGoPrevious}
+        onclick={() => goToMonth(prevMonthId)}
+      >
+        <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <div class="month-nav-label">
+        <span class="month-nav-month">
+          {#if isActiveMonth}<span class="month-nav-dot" aria-hidden="true"></span>{/if}
+          <span class="month-nav-name">{navMonthLabel}</span>
+        </span>
+        {#if budget.period}
+          <span class="month-nav-range">{budget.period}</span>
+        {/if}
+      </div>
+      <button
+        class="month-nav-btn"
+        type="button"
+        aria-label={t("month.nextMonth")}
+        disabled={!canGoNext}
+        onclick={() => goToMonth(nextMonthId)}
+      >
+        <svg class="month-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 18l6-6-6-6" />
+        </svg>
+      </button>
+    </nav>
   {/if}
 </div>
 
@@ -1448,6 +1472,11 @@
     animation-delay: calc(var(--bar-index, 0) * var(--bar-stagger) + var(--bar-start) + 120ms);
   }
   .bar-label.combined { color: var(--text-primary); font-weight: 800; }
+  .bar-label-skeleton {
+    --bar-label-skeleton-line: 0.825rem;
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center;
+  }
+  .bar-label-line.extra { display: none; }
 
   .bar-stack {
     width: 100%; max-width: 62px; min-height: 3px;
@@ -1532,6 +1561,8 @@
   .chart-note-icon { font-size: 1.1rem; flex-shrink: 0; }
   .chart-note-body { display: flex; flex-direction: column; gap: 0.35rem; }
   .chart-note-body p { margin: 0; }
+  .chart-note-lines { display: flex; flex-direction: column; }
+  .chart-note-line.extra { display: none; }
   /* Only the takeaway figures are emphasised (income total, unspent balance,
      savings-paid expenses), so the note can be skimmed at a glance. */
   .chart-note-body strong {
@@ -1759,6 +1790,9 @@
      Spacing below is left to `.main-content` so the gap to the footer matches
      the other pages instead of stacking a second margin. */
   .month-nav {
+    --month-nav-btn-size: 2.3rem;
+    --month-nav-label-line1: 1.1rem;
+    --month-nav-label-line2: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1845,6 +1879,15 @@
     text-overflow: ellipsis;
   }
 
+  @media (min-width: 769px) {
+    .bar-label-skeleton { --bar-label-skeleton-line: 0.925rem; }
+    .month-nav {
+      --month-nav-btn-size: 2.6rem;
+      --month-nav-label-line1: 1.225rem;
+      --month-nav-label-line2: 1.09rem;
+    }
+  }
+
   @media (max-width: 1000px) {
     .summary-row { grid-template-columns: repeat(2, 1fr); }
     .sections { grid-template-columns: 1fr; }
@@ -1861,6 +1904,7 @@
     .chart-section { padding: 1rem 0.85rem; }
     .bar-chart-plot { height: 180px; gap: 0.25rem; padding-left: 0; padding-right: 0; }
     .bar-chart-labels { gap: 0.25rem; padding-left: 0; padding-right: 0; }
+    .bar-label-line.extra, .chart-note-line.extra { display: block; }
     .bar-col { max-width: none; }
     .bar-label { max-width: none; font-size: 0.66rem; }
     .bar-value { font-size: 0.52rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }

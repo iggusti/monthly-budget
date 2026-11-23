@@ -247,6 +247,12 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   endless loop (which also restarts the summary `CountUp`). `CountUp` likewise
   reads `displayed` via `untrack()` and only tweens when its target changes.
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).
+- **Skeleton fidelity:** placeholders must mirror the real wrappers *and* their
+  responsive wrapping. On the month page the expense chart labels and takeaway
+  note wrap to 4/10 lines on phones but only 3/3 on desktop; the extra
+  placeholder lines are hidden at `>=769px` instead of using one fixed height.
+  Do not add a margin to a skeleton line when the parent already has a `gap` —
+  that double-counts and makes the page jump when data lands.
 - **Overflow clamp:** keep `overflow-x: clip` on `html` and `body`, not
   `hidden`. `hidden` makes the root a scroll container and silently breaks the
   sticky topbar on mobile browsers; `clip` gives the same horizontal clamp
