@@ -11,7 +11,7 @@
     "send-push": "node send-push.js"
   },
   "dependencies": {
-    "firebase-admin": "^13.0.0",
+    "firebase-admin": "^14.5.1",
     "monthly-budget": "file:.."
   }
 }
