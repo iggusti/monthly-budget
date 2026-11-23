@@ -1,9 +1,8 @@
 /**
  * Firebase project configuration.
  *
- * Single source of truth: `src/lib/firebase.ts` consumes it directly, and the
- * build injects it into the generated `firebase-messaging-sw.js` (see the
- * `firebaseServiceWorker()` plugin in `vite.config.ts`). The values are public
+ * Single source of truth: `src/lib/firebase.ts` consumes it directly. The
+ * values are public
  * by design — they identify the project, they do not grant access. Read/write
  * control lives in `firestore.rules`.
  */

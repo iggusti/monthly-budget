@@ -10,6 +10,8 @@ const src = join(root, "static", "pwa-icon.svg");
 const outDir = join(root, "static", "icons");
 
 const targets = [
+  // Also used when registering the Pushover application (128x128 PNG).
+  { name: "icon-128.png", size: 128 },
   { name: "icon-192.png", size: 192 },
   { name: "icon-512.png", size: 512 },
   // Maskable icon: extra padding so non-critical art stays inside the safe zone.

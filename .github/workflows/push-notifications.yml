@@ -1,0 +1,45 @@
+name: Send budget pushes
+
+# Pushover replaces Firebase Cloud Functions, so the sender runs as a free
+# scheduled GitHub Action instead of needing the Firebase Blaze plan.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: budget-push-sender
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install sender dependencies
+        run: npm ci --prefix functions
+
+      - name: Write Firebase service account
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Send queued notifications
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          APP_URL: https://monthly-budget-nia-ilham.web.app
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_USER_KEY_HUSBAND: ${{ secrets.PUSHOVER_USER_KEY_HUSBAND }}
+          PUSHOVER_USER_KEY_WIFE: ${{ secrets.PUSHOVER_USER_KEY_WIFE }}
+        run: npm run send-push --prefix functions

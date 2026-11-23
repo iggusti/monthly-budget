@@ -24,7 +24,9 @@ changing code; the rules below are easy to break accidentally.
   a reload after a new deploy.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
-- **Cloud Functions** (`functions/`, Node 22) + FCM for push notifications.
+- **Pushover** for notifications: the browser writes a job to
+  `notification-outbox` and a free scheduled GitHub Action (`functions/`,
+  Node 22) sends it via the Pushover API. No Cloud Functions and no Blaze plan.
 
 ## Commands
 
@@ -33,21 +35,21 @@ npm run dev            # dev server (long-running: run in background)
 npm run build          # static build to build/
 npm run check          # svelte-check — keep 0 errors AND 0 warnings
 npm run lint           # eslint: plain TS/JS modules (not .svelte files)
-npm test               # vitest: pure helpers in src/lib and functions/changes.js
+npm test               # vitest: pure helpers in src/lib and functions/{changes,notify-helpers}.js
 npm run verify         # check + lint + test, run this before finishing
-npm install --prefix functions   # function deps (separate package)
+npm install --prefix functions   # sender deps (separate package)
 ```
 
 Deploys (Firebase CLI is installed and logged in as the project owner):
 
 ```sh
 npx firebase-tools deploy --only hosting         # after npm run build
-npx firebase-tools deploy --only firestore:rules
-npx firebase-tools deploy --only functions       # requires the Blaze plan
+npx firebase-tools deploy --only firestore:rules  # needed after rules changes
 ```
 
-Hosting is also deployed automatically by `.github/workflows/deploy.yml` on
-every push to `main`; that workflow does **not** touch functions or rules.
+Hosting is deployed automatically by `.github/workflows/deploy.yml` on every
+push to `main`; that workflow does **not** touch rules. The Pushover sender runs
+separately in `.github/workflows/push-notifications.yml` every 5 minutes.
 
 ## Conventions
 
@@ -164,43 +166,50 @@ every push to `main`; that workflow does **not** touch functions or rules.
 
 ## Notifications (do not break)
 
-- `src/lib/notifications.svelte.ts` — permission request, service worker
-  registration, token storage in `devices/{fcmToken}`
-  (`{ uid, lang, platform, enabled, updatedAt }`), foreground `onMessage` and
-  the reactive `notify` state consumed by the bell.
-- `src/lib/components/NotificationToggle.svelte` — topbar bell + toast.
-- `src/service-worker/firebase-messaging-sw.js` — **template** for the FCM
-  worker (background handler and notification taps). Do not put real config in
-  it: `vite.config.ts` emits `/firebase-messaging-sw.js` into the build (and
-  serves it in dev) by injecting `src/lib/firebase-config.ts` and the `firebase`
-  SDK version. No manual sync needed.
-- `saveBudget()` stamps `lastEditBy = auth.currentUser.uid`;
-  `deleteBudget()` stamps the deleter *before* deleting so the delete trigger
-  knows who to exclude. Never remove or bypass these stamps.
-- `functions/index.js` — `onDocumentWritten` trigger on `budget/{monthId}`.
-  Runs in `us-central1` because Firestore is in `nam5`; sends **data-only** FCM
-  messages (the service worker renders them), prunes unregistered tokens, and
-  skips tokens whose `uid` equals `lastEditBy`.
-- `functions/changes.js` — pure diff/format logic (no Firebase imports) with
-  tests in `functions/changes.test.js`; `index.js` must stay a thin adapter
-  around it.
+- `src/lib/notifications.svelte.ts` — registers `devices/{uid}` with
+  `{ uid, recipient, lang, enabled, platform, updatedAt }` and exposes the
+  reactive `notify` state. There is **no browser permission prompt** and no FCM:
+  pushes are delivered by the Pushover app on the phone.
+- `src/lib/components/NotificationToggle.svelte` — topbar bell. Enabling asks
+  the user to pick "Husband" or "Wife" so the sender knows which Pushover user
+  key to use and which devices to skip.
+- `src/lib/service-worker.ts` + `src/service-worker/service-worker.js` — the
+  worker only caches the app shell now. `vite.config.ts` emits
+  `/service-worker.js` (injecting `__APP_VERSION__`) and serves it in dev.
+- `src/lib/budget-store.ts` — `saveBudget()` stamps
+  `lastEditBy = auth.currentUser.uid` and appends one job to
+  `notification-outbox` containing the before/after snapshots. `deleteBudget()`
+  stamps the deleter *before* deleting and queues a `month-delete` job with
+  `after: null`. Never remove or bypass these stamps.
+- `.github/workflows/push-notifications.yml` — free scheduled Action (every 5
+  minutes) with `concurrency` to avoid overlapping runs. Secrets:
+  `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (shared fallback) or
+  `PUSHOVER_USER_KEY_HUSBAND` / `PUSHOVER_USER_KEY_WIFE`, plus the existing
+  `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2`. No `VITE_` keys: credentials
+  must never enter the bundle.
+- `functions/send-push.js` — claims pending jobs in a Firestore transaction,
+  POSTs to Pushover, then marks jobs `sent` / `pending` (retry, max 5) /
+  `error`. Jobs stuck in `processing` for over 10 minutes are reset.
+- `functions/changes.js` and `functions/notify-helpers.js` — pure diff,
+  formatting and recipient-grouping logic with Vitest tests. `send-push.js`
+  must stay a thin adapter around them.
 - Intended behaviour: notify on add/edit/delete of expense items (name, amount,
   payment method). **Do not** notify for `checked`-only toggles on fixed
   expenses or for income edits. Never notify the editor's own device.
 - `sameItem()` in `changes.js` compares only `name`, `amount` and `method`, so a
   date-only edit sends no push today. Include `date` there (and its callers) if
   that should change — keep the function pure and testable with plain `node`.
-- VAPID public key lives in `src/lib/firebase.ts` (`FCM_VAPID_KEY`), overridable
-  via `VITE_FCM_VAPID_KEY` / `.env.local`. It is a public key — safe to commit.
-- Debounce/aggregate awareness: each budget write produces at most one
-  notification per event; multiple events in one write are summarised.
+- Debounce/aggregate awareness: each budget write produces one outbox job and at
+  most one Pushover message per recipient language; multiple events in one write
+  are summarised. Delivery is delayed by up to ~5 minutes by design.
 
 ## Gotchas
 
-- Cloud Functions need the **Blaze** plan; the project is currently on Spark, so
-  the function is not deployed yet and pushes are inactive. See the README
-  "Support & donations" section — do not promise the feature works until the
-  function is deployed.
+- Pushover pushes need GitHub Secrets configured before the scheduled sender can
+  do anything; with only a shared `PUSHOVER_USER_KEY` the editor's own phone also
+  receives pushes, because Pushover cannot target one device of a shared key.
+  Per-person keys avoid that. Pushes are delayed by up to ~5 minutes — do not
+  describe them as instant.
 - `adapter-static` + `fallback: index.html`: dynamic routes like `/month/[id]`
   only work client-side; direct visits are rewritten to the SPA.
 - `.topbar` uses `backdrop-filter`, which makes it the containing block for
@@ -220,9 +229,10 @@ every push to `main`; that workflow does **not** touch functions or rules.
   traps fixed descendants and outranks `:hover` transforms. The bar-chart rise
   is `scaleY` on `.bar-fill`; `prefers-reduced-motion` turns it off in both
   `app.css` and the component.
-- Clearing browser storage creates a new anonymous uid; device documents are
-  refreshed with the current uid on app start, and dead FCM tokens are pruned
-  server-side.
+- Clearing browser storage creates a new anonymous uid; on app start
+  `initNotifications()` re-reads `devices/{uid}` and clears the local "enabled"
+  flag if that record is gone. Old devices keyed by FCM token are simply ignored
+  (they never match the new uid) and can be deleted manually.
 - Native `<input type="date">`: Chrome/Firefox keep the calendar button flush to
   the right border. Do **not** add `padding-right` to "give it breathing room" —
   it drags the arrow away from the border and looks wrong on desktop, while

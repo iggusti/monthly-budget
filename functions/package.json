@@ -1,18 +1,17 @@
 {
   "name": "functions",
-  "description": "Push notification sender for the monthly budget app",
+  "description": "Scheduled Pushover sender for the monthly budget app",
   "private": true,
-  "main": "index.js",
+  "main": "send-push.js",
   "license": "MIT",
   "engines": {
     "node": "22"
   },
   "scripts": {
-    "serve": "firebase emulators:start --only functions",
-    "logs": "firebase functions:log"
+    "send-push": "node send-push.js"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0",
-    "firebase-functions": "^6.1.0"
+    "monthly-budget": "file:.."
   }
 }

@@ -39,7 +39,7 @@ export default tseslint.config(
 		}
 	},
 	{
-		// Cloud Functions and the legacy script are CommonJS.
+		// Sender and legacy scripts under functions/ and scripts/ are CommonJS.
 		files: ['functions/**/*.js', 'scripts/**/*.js'],
 		languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
 		rules: { '@typescript-eslint/no-require-imports': 'off' }

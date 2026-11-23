@@ -6,10 +6,10 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Push notification tokens, one document per device keyed by its FCM token.
-    // A device may only read and manage its own entry; the Cloud Function reads
-    // these through the Admin SDK (which bypasses these rules).
-    match /devices/{token} {
+    // Pushover registration, one document per browser keyed by its anonymous
+    // uid. A device may only read and manage its own entry; the scheduled
+    // sender reads these through the Admin SDK (which bypasses these rules).
+    match /devices/{uid} {
       allow read: if request.auth != null
         && resource.data.uid == request.auth.uid;
       allow create: if request.auth != null
@@ -19,6 +19,13 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid;
       allow delete: if request.auth != null
         && resource.data.uid == request.auth.uid;
+    }
+
+    // One job per budget write. Clients only append; the scheduled sender
+    // claims jobs and updates their status with the Admin SDK.
+    match /notification-outbox/{job} {
+      allow read, create, delete: if request.auth != null;
+      allow update: if false;
     }
   }
 }

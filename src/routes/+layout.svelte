@@ -7,11 +7,8 @@
   import { logout, isAuthenticated } from "#lib/auth";
   import { t, lang } from "#lib/i18n.svelte";
   import { syncTheme } from "#lib/theme.svelte";
-  import {
-    initNotifications,
-    PUSH_NOTIFICATIONS_ENABLED,
-    registerServiceWorker
-  } from "#lib/notifications.svelte";
+  import { initNotifications, PUSH_NOTIFICATIONS_ENABLED } from "#lib/notifications.svelte";
+  import { registerServiceWorker } from "#lib/service-worker";
   import { checkAppUpdate } from "#lib/app-update.svelte";
   import { installPrompt } from "#lib/install-prompt.svelte";
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";

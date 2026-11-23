@@ -3,14 +3,10 @@
 A monthly family budget app that keeps husband and wife spending in balance,
 tracks daily expenses, and shows how money is funded from salary or savings.
 
-Built with SvelteKit, TypeScript, Firebase Firestore, Firebase Anonymous
-Authentication, and Firebase Cloud Messaging (with a Cloud Function) for push
-notifications. The data model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
-
-> 💛 **Push notifications need donations.** Everything else runs on Firebase's
-> free plan, but the notification sender requires the paid Blaze plan.
-> [Support the project on Saweria](https://saweria.co/iggusti) to unlock the
-> feature fully.
+Built with SvelteKit, TypeScript, Firebase Firestore and Firebase Anonymous
+Authentication. Push notifications go through Pushover, sent by a free
+scheduled GitHub Action — no Firebase Blaze plan or credit card needed. The data
+model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
 
 ## Login
 
@@ -104,61 +100,62 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   "Install app" button appears in the backup panel when the browser allows it.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
-- **Push notifications** — the delivery pipeline is wired up so an expense
-  edit notifies the other phone, but the bell stays hidden until the sender
-  Cloud Function can be deployed. See [Push notifications](#push-notifications).
+- **Push notifications** — an expense edit notifies the other phone through
+  Pushover, a few minutes later. No Blaze plan needed. See
+  [Push notifications](#push-notifications).
 - **Offline & updates** — Firestore keeps a persistent IndexedDB cache and the
   service worker serves cached pages/assets offline. After a new deploy a
   "Versi baru tersedia" toast offers a reload.
 
 ## Push notifications
 
-Each phone can register an FCM token through the bell button in the topbar; the
-token is stored in the `devices` collection together with the anonymous
-Firebase uid and the UI language. The bell is currently hidden via
-`PUSH_NOTIFICATIONS_ENABLED = false` in `src/lib/notifications.svelte.ts`
-because nothing would be delivered yet.
+Pushover replaces Firebase Cloud Messaging entirely, so the project stays on
+the free Spark plan: no Cloud Functions, no Blaze upgrade, no credit card.
 
-Every budget write is stamped with `lastEditBy = <anonymous uid>` (see
-`saveBudget()` / `deleteBudget()`). A Firestore-triggered Cloud Function
-(`functions/index.js`) diffs the six expense arrays before/after, classifies the
-change as **add**, **edit** or **delete**, and sends a data-only FCM message to
-every token whose uid differs from `lastEditBy` — so you never get a push for
-your own edit.
+| Piece | Role |
+| --- | --- |
+| `src/lib/components/NotificationToggle.svelte` | Bell in the topbar; pick "Husband" or "Wife" once per browser. |
+| `src/lib/notifications.svelte.ts` | Registers `devices/{uid}` with the recipient, language and anonymous uid. |
+| `src/lib/budget-store.ts` | Writes a job to `notification-outbox` on every save/delete, with the before/after snapshots and `lastEditBy`. |
+| `.github/workflows/push-notifications.yml` | Free scheduled Action (every 5 minutes) that runs the sender. |
+| `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.pushover.net/1/messages.json`. |
+| `functions/changes.js` | Pure diff/format helpers, reused by the sender. |
 
 Details:
 
+- The editor's devices are skipped, so you never get a push for your own edit.
 - Notifications arrive in the language selected on each phone (EN / ID).
-- Only field changes matter: name, amount and payment method. Ticking a fixed
-  expense as "settled" (`checked`) does **not** notify, and income edits are
-  ignored too. A date-only change is not part of the diff, so it sends no push
-  either.
+- Only name, amount and payment method changes matter. Ticking a fixed expense
+  (`checked`), editing a date or changing income sends no push.
 - Deleting a whole month sends a "Month deleted" notification to the other
-  phones; `deleteBudget()` stamps the deleter just before removing the
-  document so the delete trigger can exclude them.
-- Dead tokens are pruned automatically when FCM reports them as unregistered.
-
-> Sending pushes requires Cloud Functions, and Cloud Functions require the
-> Firebase **Blaze** plan. The project is currently on Spark, so no notification
-> is sent yet and the bell is hidden. Flip `PUSH_NOTIFICATIONS_ENABLED` in
-> `src/lib/notifications.svelte.ts` to `true` after the function is deployed.
-> See [Support & donations](#support--donations).
+  phones. Each push links straight to that month's page.
+- Failed sends are retried on the next run (up to 5 attempts); jobs are claimed
+  transactionally so overlapping runs cannot double-send.
+- Delivery is not instant: expect a push within about 5 minutes of an edit.
 
 ### Notification setup
 
-1. Firebase Console → Project settings → Cloud Messaging → *Web Push
-   certificates* → generate a key pair and put the public key in
-   `FCM_VAPID_KEY` (`src/lib/firebase.ts`, overridable with
-   `VITE_FCM_VAPID_KEY`).
-2. Enable the Blaze plan (see [Support & donations](#support--donations)).
-3. Install and deploy the function:
+1. Create a Pushover application at <https://pushover.net/apps/build> and copy
+   its **API token/Application token**.
+2. Install the Pushover app on each phone and copy each **User key** from
+   <https://pushover.net/>. A shared key is enough for a simple setup; use one
+   key per person if you want the "Husband"/"Wife" choice to skip the editor.
+3. Add repository secrets (Settings → Secrets and variables → Actions):
+   `PUSHOVER_APP_TOKEN`, and either `PUSHOVER_USER_KEY` or both
+   `PUSHOVER_USER_KEY_HUSBAND` and `PUSHOVER_USER_KEY_WIFE`. The existing
+   `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2` secret is reused to read the
+   outbox.
+4. Deploy the updated Firestore rules so the app can create outbox jobs:
 
    ```sh
-   npm install --prefix functions
-   npx firebase-tools deploy --only functions
+   npx firebase-tools deploy --only firestore:rules
    ```
 
-Full step-by-step notes live in [`NOTIFICATIONS.md`](./NOTIFICATIONS.md).
+5. On each phone, open the app and tap the bell → choose Husband or Wife →
+   **Enable**. Add/edit an expense and wait for the scheduled run.
+
+Full step-by-step notes and troubleshooting live in
+[`NOTIFICATIONS.md`](./NOTIFICATIONS.md).
 
 ## Pages
 
@@ -175,16 +172,17 @@ Full step-by-step notes live in [`NOTIFICATIONS.md`](./NOTIFICATIONS.md).
 src/
   lib/
     types.ts                 data model + calculations
-    firebase.ts              Firebase initialisation (Firestore + Auth + VAPID key)
+    firebase.ts              Firebase initialisation (Firestore + Auth)
     auth.ts                  keyword gate + anonymous sign-in
-    budget-store.ts          Firestore read/write + real-time subscribe helpers
+    budget-store.ts          Firestore read/write + push job queue
     i18n.svelte.ts           EN/ID dictionary and the reactive t() helper
-    notifications.svelte.ts  FCM permission, token registration, foreground push
+    notifications.svelte.ts  Pushover device registration per browser
+    service-worker.ts        app-shell service worker registration
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
       CountUp.svelte         animated rupiah figure for headline totals
       Skeleton.svelte        shimmery placeholder used by loading states
-      NotificationToggle.svelte  topbar bell: enable/disable push per device
+      NotificationToggle.svelte  topbar bell: pick recipient and enable push
       BadgeIcon.svelte       outline SVG category icons
   routes/
     +layout.svelte           shell with navigation and logout
@@ -192,10 +190,11 @@ src/
     +page.svelte             dashboard
     month/[id]/+page.svelte  edit one budget period
 src/service-worker/
-  firebase-messaging-sw.js   template for the generated FCM service worker
+  service-worker.js          template for the generated offline app-shell worker
 functions/
-  index.js                   Firestore trigger that sends the pushes
+  send-push.js               scheduled sender: drains the outbox via Pushover
   changes.js                 pure diff/format helpers (unit-testable)
+  notify-helpers.js          pure recipient grouping / payload helpers
 scripts/                     data seeding / migration / repair helpers
 ```
 
@@ -254,16 +253,18 @@ firebase deploy --only hosting
 npx firebase-tools deploy --only firestore:rules
 ```
 
-The rules allow read/write only for authenticated users, and let each device
-manage only its own notification token:
+The rules allow read/write only for authenticated users, let each device manage
+only its own Pushover registration, and let clients append push jobs while only
+the sender (Admin SDK) updates their status:
 
 ```
 match /budget/{document} {
   allow read, write: if request.auth != null;
 }
 
-match /devices/{token} {
-  allow read: if request.auth != null;
+match /devices/{uid} {
+  allow read: if request.auth != null
+    && resource.data.uid == request.auth.uid;
   allow create: if request.auth != null
     && request.resource.data.uid == request.auth.uid;
   allow update: if request.auth != null
@@ -272,37 +273,34 @@ match /devices/{token} {
   allow delete: if request.auth != null
     && resource.data.uid == request.auth.uid;
 }
+
+match /notification-outbox/{job} {
+  allow read, create, delete: if request.auth != null;
+  allow update: if false;
+}
 ```
 
-## Deploying the notification function
+## Scheduled push sender
 
-Cloud Functions are not part of the GitHub Actions workflow (they need the Blaze
-plan). Deploy them manually after changing anything under `functions/`:
+There is no Cloud Function to deploy. `.github/workflows/push-notifications.yml`
+runs every 5 minutes (and can be triggered manually), installs
+`functions/package-lock.json`, and executes `functions/send-push.js` with the
+Pushover and Firebase secrets. It claims pending outbox jobs transactionally,
+sends one localized message per recipient, and marks each job `sent`, `pending`
+(retry) or `error`. Old `processing` jobs from a crashed run are reset on the
+next run.
 
-```sh
-npm install --prefix functions
-npx firebase-tools deploy --only functions
-```
-
-The function targets `us-central1` because the Firestore database lives in the
-`nam5` multi-region location. Override with `FUNCTION_REGION` if that changes.
+After changing anything under `functions/`, run `npm test` locally — the
+pure helpers are covered by Vitest. No Firebase CLI deploy step is needed.
 
 ## Support & donations
 
-The whole app runs on Firebase's free Spark plan **except push notifications**.
-The sender is a Cloud Function, and Firebase only allows deploying functions
-after switching the project to the paid **Blaze** plan. Real usage stays well
-inside the free monthly allowances, but a payment method must be on file.
-
-That upgrade is the only thing keeping notifications switched off. If this app
-is useful to you, **donations are needed** to enable and run Blaze so the push
-notification feature can be turned on fully:
+The whole app, **including push notifications**, now runs on free plans:
+Firebase Spark, GitHub Actions and Pushover's 7,500 free messages per month.
+No credit card is required. If the app is useful to you, donations are still
+appreciated and help cover future hosting experiments:
 
 > ☕ **Donate via Saweria → [saweria.co/iggusti](https://saweria.co/iggusti)**
-
-- Any amount helps — the goal is simply to keep the Blaze plan active.
-- Once the plan is active, the function is deployed and the bell in the topbar
-  starts delivering notifications to every registered phone.
 
 Maintainer: **Iggusti** — [github.com/iggusti](https://github.com/iggusti).
 

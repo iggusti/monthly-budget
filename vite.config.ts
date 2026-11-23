@@ -2,30 +2,17 @@ import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type Plugin } from 'vite';
 import { readFileSync } from 'node:fs';
-import { firebaseConfig } from './src/lib/firebase-config.ts';
 
-const SERVICE_WORKER_FILE = 'firebase-messaging-sw.js';
-const SERVICE_WORKER_TEMPLATE = 'src/service-worker/firebase-messaging-sw.js';
+const SERVICE_WORKER_FILE = 'service-worker.js';
+const SERVICE_WORKER_TEMPLATE = 'src/service-worker/service-worker.js';
 const APP_VERSION = process.env.APP_VERSION ?? String(Date.now());
 
-/**
- * Render the FCM service worker from its template.
- *
- * The template is committed with placeholders; the Firebase config comes from
- * `src/lib/firebase-config.ts` (the same object the app uses) and the SDK
- * version from the `firebase` dependency, so the worker can never drift.
- */
+/** Render the app-shell service worker from its template. */
 function renderServiceWorker(): string {
-	const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
-	const sdkVersion = String(pkg.dependencies?.firebase ?? '').replace(/^[^\d]*/, '') || '12.9.0';
 	const template = readFileSync(new URL(`./${SERVICE_WORKER_TEMPLATE}`, import.meta.url), 'utf8');
+	const output = template.replaceAll('__APP_VERSION__', APP_VERSION);
 
-	const output = template
-		.replaceAll('__FIREBASE_SDK_VERSION__', sdkVersion)
-		.replaceAll('__FIREBASE_CONFIG__', JSON.stringify(firebaseConfig, null, 2))
-		.replaceAll('__APP_VERSION__', APP_VERSION);
-
-	if (output.includes('__FIREBASE') || output.includes('__APP_VERSION__')) {
+	if (output.includes('__APP_VERSION__')) {
 		throw new Error('Unreplaced placeholder left in the generated service worker');
 	}
 
@@ -33,17 +20,17 @@ function renderServiceWorker(): string {
 }
 
 /**
- * Emit `/firebase-messaging-sw.js` at the site root.
+ * Emit `/service-worker.js` at the site root.
  *
  * It has to be served from the root so its scope covers the whole app. In dev
  * it is generated on request; in a build it is emitted as a client asset, which
  * `adapter-static` then copies into `build/`.
  */
-function firebaseServiceWorker(): Plugin {
+function appServiceWorker(): Plugin {
 	let isSsrBuild = false;
 
 	return {
-		name: 'firebase-service-worker',
+		name: 'app-service-worker',
 		configResolved(config) {
 			isSsrBuild = Boolean(config.build.ssr);
 		},
@@ -87,6 +74,6 @@ export default defineConfig({
 				strict: false
 			})
 		}),
-		firebaseServiceWorker()
+		appServiceWorker()
 	]
 });

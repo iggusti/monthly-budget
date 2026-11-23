@@ -1,97 +1,52 @@
 /**
- * Push notifications (Firebase Cloud Messaging) for the web app.
+ * Push notification registration for Pushover.
  *
- * Each device registers an FCM token and stores it in the `devices`
- * collection together with the anonymous Firebase uid of that browser. Budget
- * writes are stamped with `lastEditBy = uid`, so the sender (a Cloud Function)
- * can skip the tokens that belong to whoever made the change — you never get a
- * notification for your own edit.
+ * The browser does not ask for the Notification permission or talk to a push
+ * service anymore. It only records which family member owns this device in
+ * `devices/{uid}`. Every budget write also drops a job into
+ * `notification-outbox`; a scheduled GitHub Action diffs that job and sends it
+ * through Pushover, skipping the uid that made the change.
  *
- * The module is import-safe during SSR: everything touching `window`,
- * `navigator` or the FCM SDK is guarded or loaded lazily.
+ * Import-safe during SSR: browser globals are only touched behind guards.
  */
 
-import { deleteDoc, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { app, auth, db, DEVICES_COLLECTION, FCM_VAPID_KEY } from "./firebase";
+import { auth, db, DEVICES_COLLECTION } from "./firebase";
 
-export const PUSH_NOTIFICATIONS_ENABLED = false;
+export const PUSH_NOTIFICATIONS_ENABLED = true;
 
-const SERVICE_WORKER_URL = "/firebase-messaging-sw.js";
 const ENABLED_KEY = "fhb-notify-enabled";
-const TOKEN_KEY = "fhb-notify-token";
+const RECIPIENT_KEY = "fhb-notify-recipient";
 
-export type NotificationStatus =
-  | "unsupported"
-  | "unconfigured"
-  | "default"
-  | "denied"
-  | "enabled";
+/** Which family member's Pushover user key should receive this phone's pushes. */
+export type Recipient = "husband" | "wife";
+export type NotificationStatus = "default" | "enabled";
+export type NotificationMessage = "disabled" | "error" | null;
 
-/** Message keys (see `notify.*` in i18n) that the toggle shows as a toast. */
-export type NotificationMessage =
-  | "unsupported"
-  | "unconfigured"
-  | "denied"
-  | "error"
-  | "disabled"
-  | null;
-
-/** Shared, reactive notification state for the UI. */
-export const notify = $state<{ status: NotificationStatus; busy: boolean; message: NotificationMessage }>({
+/** Shared, reactive notification state for the topbar bell. */
+export const notify = $state<{
+  status: NotificationStatus;
+  busy: boolean;
+  message: NotificationMessage;
+  recipient: Recipient;
+}>({
   status: "default",
   busy: false,
-  message: null
+  message: null,
+  recipient: "husband"
 });
 
-function browserSupportsPush(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "Notification" in window &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window
-  );
+function normalizeLang(lang: string): "id" | "en" {
+  return lang === "en" ? "en" : "id";
 }
 
-/** Current status, derived from the browser permission and local flag. */
-export function detectStatus(): NotificationStatus {
-  if (typeof window === "undefined") return "default";
-  if (!browserSupportsPush()) return "unsupported";
-  if (!FCM_VAPID_KEY) return "unconfigured";
-  if (Notification.permission === "denied") return "denied";
-  if (Notification.permission === "granted" && localStorage.getItem(ENABLED_KEY) === "true") {
-    return "enabled";
-  }
-  return "default";
-}
-
-/** Refresh the reactive status from the environment. */
+/** Read the local flag without hitting Firestore (used on first render). */
 export function refreshStatus(): void {
-  notify.status = detectStatus();
-}
-
-export async function registerServiceWorker(): Promise<ServiceWorkerRegistration> {
-  const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: "/" });
-  await navigator.serviceWorker.ready;
-  return registration;
-}
-
-async function getMessagingSafe() {
-  const { getMessaging, isSupported } = await import("firebase/messaging");
-  if (!(await isSupported())) return null;
-  return getMessaging(app);
-}
-
-async function readToken(registration: ServiceWorkerRegistration): Promise<string> {
-  const messaging = await getMessagingSafe();
-  if (!messaging) throw new Error("messaging-unsupported");
-  const { getToken } = await import("firebase/messaging");
-  const token = await getToken(messaging, {
-    vapidKey: FCM_VAPID_KEY,
-    serviceWorkerRegistration: registration
-  });
-  if (!token) throw new Error("no-fcm-token");
-  return token;
+  if (typeof window === "undefined") return;
+  notify.status = localStorage.getItem(ENABLED_KEY) === "true" ? "enabled" : "default";
+  const stored = localStorage.getItem(RECIPIENT_KEY);
+  if (stored === "husband" || stored === "wife") notify.recipient = stored;
 }
 
 /** Resolve the anonymous uid, waiting for Firebase to restore the session. */
@@ -115,115 +70,60 @@ function waitForUid(timeoutMs = 8000): Promise<string | null> {
   });
 }
 
-/** Upsert the device document so the Cloud Function knows who to notify. */
-async function saveDevice(token: string, lang: string): Promise<void> {
-  const uid = await waitForUid();
-  if (!uid) throw new Error("not-signed-in");
-  await setDoc(
-    doc(db, DEVICES_COLLECTION, token),
-    {
-      uid,
-      lang: lang === "en" ? "en" : "id",
-      platform: "web",
-      enabled: true,
-      updatedAt: serverTimestamp()
-    },
-    { merge: true }
-  );
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-let foregroundBound = false;
-
-/**
- * Show a system notification for messages that arrive while the app is open.
- * Clicking it is handled by the service worker's `notificationclick` listener.
- */
-async function bindForegroundHandler(registration: ServiceWorkerRegistration): Promise<void> {
-  if (foregroundBound) return;
-  foregroundBound = true;
-  const messaging = await getMessagingSafe();
-  if (!messaging) return;
-  const { onMessage } = await import("firebase/messaging");
-  onMessage(messaging, (payload) => {
-    const data = payload.data ?? {};
-    const title = data.title || "Monthly Budget";
-    void registration.showNotification(title, {
-      body: data.body || "",
-      tag: data.tag,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: { url: data.url || "/" }
-    });
-  });
-}
-
-/** Ask for permission, register this device and store its token. */
-export async function enableNotifications(lang: string): Promise<void> {
+/** Register this browser so the sender knows who to skip and which key to use. */
+export async function enableNotifications(recipient: Recipient, lang: string): Promise<void> {
   notify.busy = true;
   notify.message = null;
   try {
-    if (!browserSupportsPush()) {
-      notify.status = "unsupported";
-      notify.message = "unsupported";
-      return;
-    }
-    if (!FCM_VAPID_KEY) {
-      notify.status = "unconfigured";
-      notify.message = "unconfigured";
-      return;
-    }
+    const uid = await waitForUid();
+    if (!uid) throw new Error("not-signed-in");
 
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      notify.status = permission === "denied" ? "denied" : "default";
-      notify.message = permission === "denied" ? "denied" : null;
-      return;
-    }
-
-    const registration = await registerServiceWorker();
-    const token = await readToken(registration);
-    await saveDevice(token, lang);
-    await bindForegroundHandler(registration);
+    await setDoc(
+      doc(db, DEVICES_COLLECTION, uid),
+      {
+        uid,
+        recipient,
+        lang: normalizeLang(lang),
+        enabled: true,
+        platform: "web",
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
 
     localStorage.setItem(ENABLED_KEY, "true");
+    localStorage.setItem(RECIPIENT_KEY, recipient);
+    notify.recipient = recipient;
     notify.status = "enabled";
   } catch (error) {
     console.error("Failed to enable notifications:", error);
-    notify.status = detectStatus();
+    refreshStatus();
     notify.message = "error";
   } finally {
     notify.busy = false;
   }
 }
 
-/** Remove this device from `devices` and forget its FCM token. */
+/** Unregister this browser from the device list. */
 export async function disableNotifications(): Promise<void> {
   notify.busy = true;
   notify.message = null;
   try {
     localStorage.removeItem(ENABLED_KEY);
+    localStorage.removeItem(RECIPIENT_KEY);
 
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      await deleteDoc(doc(db, DEVICES_COLLECTION, token)).catch((error) => {
-        console.warn("Failed to remove device token:", error);
-      });
-      localStorage.removeItem(TOKEN_KEY);
-    }
-
-    const messaging = await getMessagingSafe();
-    if (messaging) {
-      const { deleteToken } = await import("firebase/messaging");
-      await deleteToken(messaging).catch((error) => {
-        console.warn("Failed to delete FCM token:", error);
+    const uid = await waitForUid();
+    if (uid) {
+      await deleteDoc(doc(db, DEVICES_COLLECTION, uid)).catch((error) => {
+        console.warn("Failed to remove device record:", error);
       });
     }
 
-    notify.status = detectStatus();
+    notify.status = "default";
     notify.message = "disabled";
   } catch (error) {
     console.error("Failed to disable notifications:", error);
+    refreshStatus();
     notify.message = "error";
   } finally {
     notify.busy = false;
@@ -231,18 +131,37 @@ export async function disableNotifications(): Promise<void> {
 }
 
 /**
- * Call once when the app starts (after sign-in). Refreshes the local status and,
- * when notifications are enabled, re-registers the token so it never goes stale.
+ * Call once when the app starts. Re-reads the device record so a reinstall or
+ * a partially written flag cannot leave the bell claiming to be enabled.
  */
 export async function initNotifications(lang: string): Promise<void> {
-  refreshStatus();
-  if (typeof window === "undefined" || notify.status !== "enabled") return;
+  if (typeof window === "undefined") return;
+  const uid = await waitForUid();
+  if (!uid) {
+    refreshStatus();
+    return;
+  }
+
   try {
-    const registration = await registerServiceWorker();
-    const token = await readToken(registration);
-    await saveDevice(token, lang);
-    await bindForegroundHandler(registration);
+    const ref = doc(db, DEVICES_COLLECTION, uid);
+    const snapshot = await getDoc(ref);
+    const data = snapshot.exists() ? snapshot.data() : null;
+
+    if (localStorage.getItem(ENABLED_KEY) === "true" && data?.enabled !== false && data?.uid === uid) {
+      notify.status = "enabled";
+      notify.recipient = data.recipient === "wife" ? "wife" : "husband";
+      localStorage.setItem(RECIPIENT_KEY, notify.recipient);
+
+      if (data.lang !== normalizeLang(lang)) {
+        await setDoc(ref, { lang: normalizeLang(lang), updatedAt: serverTimestamp() }, { merge: true });
+      }
+    } else {
+      localStorage.removeItem(ENABLED_KEY);
+      localStorage.removeItem(RECIPIENT_KEY);
+      notify.status = "default";
+    }
   } catch (error) {
-    console.error("Failed to refresh notifications:", error);
+    console.error("Failed to refresh notification registration:", error);
+    refreshStatus();
   }
 }

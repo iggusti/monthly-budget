@@ -2,6 +2,7 @@ import {
   db,
   auth,
   BUDGET_COLLECTION,
+  NOTIFICATIONS_COLLECTION,
   collection,
   doc,
   getDoc,
@@ -11,6 +12,33 @@ import {
   onSnapshot
 } from "./firebase";
 import { normalizeBudget, type MonthBudget } from "./types";
+
+/**
+ * Queue one push job for the scheduled sender. This is best-effort: a failed
+ * queue write is logged but never fails the budget write it describes.
+ */
+async function enqueueNotification(job: {
+  monthId: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  editorUid: string | null;
+}): Promise<void> {
+  try {
+    const random =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+    const id = `${job.monthId}-${Date.now()}-${random}`;
+    await setDoc(doc(db, NOTIFICATIONS_COLLECTION, id), {
+      ...job,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+      attempts: 0
+    });
+  } catch (error) {
+    console.error("Failed to queue push notification:", error);
+  }
+}
 
 /** Normalise query results into budgets, newest first. */
 function toBudgetList(docs: { id: string; data: () => Partial<MonthBudget> }[]): MonthBudget[] {
@@ -104,26 +132,50 @@ export function subscribeAllBudgets(
 /**
  * Persist a budget, stamping the update time and the editor's uid.
  *
- * `lastEditBy` is what lets the push notification function avoid notifying the
+ * `lastEditBy` travels with the queued push job so the sender can skip the
  * device that made the change.
  */
 export async function saveBudget(budget: MonthBudget): Promise<void> {
+  const ref = doc(db, BUDGET_COLLECTION, budget.id);
+
+  let before: Record<string, unknown> | null = null;
+  try {
+    const snapshot = await getDoc(ref);
+    if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
+  } catch (error) {
+    console.error(`Failed to read previous state of budget ${budget.id}:`, error);
+  }
+
   const payload: MonthBudget = {
     ...budget,
     updatedAt: new Date().toISOString(),
     lastEditBy: auth.currentUser?.uid ?? null
   };
-  await setDoc(doc(db, BUDGET_COLLECTION, budget.id), payload, { merge: true });
+  await setDoc(ref, payload, { merge: true });
+
+  await enqueueNotification({
+    monthId: budget.id,
+    before,
+    after: payload as unknown as Record<string, unknown>,
+    editorUid: payload.lastEditBy ?? null
+  });
 }
 
 /** Permanently delete a budget. */
 export async function deleteBudget(id: string): Promise<void> {
   const ref = doc(db, BUDGET_COLLECTION, id);
-  const uid = auth.currentUser?.uid;
+  const uid = auth.currentUser?.uid ?? null;
 
-  // Stamp the deleter first: the delete trigger only sees the document as it
-  // was just before removal, so without this the sender could not tell who
-  // removed the month (and would notify the deleter's own phone).
+  let before: Record<string, unknown> | null = null;
+  try {
+    const snapshot = await getDoc(ref);
+    if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
+  } catch (error) {
+    console.error(`Failed to read budget ${id} before deletion:`, error);
+  }
+
+  // Stamp the deleter first: the sender only sees the queued snapshot, so it
+  // needs this to know whose phone to skip.
   if (uid) {
     try {
       await setDoc(
@@ -137,4 +189,6 @@ export async function deleteBudget(id: string): Promise<void> {
   }
 
   await deleteDoc(ref);
+
+  await enqueueNotification({ monthId: id, before, after: null, editorUid: uid });
 }
