@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
-
 :root {
   --bg: #faf9f7;
   --bg-muted: #f3f1ee;
@@ -37,8 +35,8 @@
   --radius-pill: 999px;
   --radius-circle: 50%;
 
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Playfair Display Variable", Georgia, serif;
   --fs-caption: 0.72rem;
   --fs-label: 0.78rem;
   --fs-body: 0.85rem;

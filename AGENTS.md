@@ -70,6 +70,8 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   (expense name/date, budget period) all share the `.field-hint` class in
   `app.css`; use it instead of restyling a hint.
   Mobile breakpoints: `1000px` (two-column collapses) and `768px` (phones).
+  Fonts are self-hosted through the `@fontsource-variable/*` imports in
+  `+layout.svelte`; do not restore the Google Fonts `@import` in `app.css`.
 - Husband sections and chart segments use `--accent-blue`; wife ones use
   `--accent-rose`. Keep that mapping across cards, the legend and section tones.
 - Loading states use `src/lib/components/Skeleton.svelte` inside the real

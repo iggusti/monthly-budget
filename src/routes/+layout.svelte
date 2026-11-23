@@ -1,4 +1,6 @@
 <script lang="ts">
+  import "@fontsource-variable/inter/wght.css";
+  import "@fontsource-variable/playfair-display/wght.css";
   import "../app.css";
   import { onMount } from "svelte";
   import { fly } from "svelte/transition";
