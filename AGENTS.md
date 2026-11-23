@@ -50,6 +50,9 @@ npx firebase-tools deploy --only firestore:rules  # needed after rules changes
 Hosting is deployed automatically by `.github/workflows/deploy.yml` on every
 push to `main`; that workflow does **not** touch rules. The Pushover sender runs
 separately in `.github/workflows/push-notifications.yml` every 5 minutes.
+Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
+`preview.yml`. `release.yml` creates GitHub Releases from `v*` tags;
+`sender-rules.yml` tests the sender and deploys rules on manual dispatch.
 
 ## Conventions
 

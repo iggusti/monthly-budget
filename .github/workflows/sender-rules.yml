@@ -1,0 +1,63 @@
+name: Sender and rules
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - "firestore.rules"
+      - "firestore.indexes.json"
+      - "firebase.json"
+      - ".firebaserc"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sender-rules
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test sender helpers
+        run: npm test
+
+  deploy:
+    name: deploy
+    needs: test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: functions-production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+
+      - name: Select project
+        run: npx --yes firebase-tools@13 use monthly-budget-580b2
+
+      - name: Deploy Firestore rules
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project monthly-budget-580b2 --force --non-interactive

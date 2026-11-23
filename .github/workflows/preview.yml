@@ -1,0 +1,31 @@
+name: Preview
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    name: preview
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup and build
+        uses: ./.github/actions/setup-build
+
+      - name: Deploy preview channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}
+          channelId: pr-${{ github.event.number }}
+          expires: 7d
+          projectId: monthly-budget-580b2
+          target: nia-ilham
