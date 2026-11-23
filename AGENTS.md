@@ -9,9 +9,10 @@ changing code; the rules below are easy to break accidentally.
   + Vite 8. Static build via `@sveltejs/adapter-static` (`fallback: index.html`),
   no server-side data loading — the app is client-rendered on Firebase Hosting.
 - Installable PWA: `static/manifest.webmanifest` plus the icons in `static/icons/`
-  are linked from `src/app.html`. The manifest requests `fullscreen` (no PWA title
-  bar on Android); `viewport-fit=cover` and `env(safe-area-inset-top)` in the
-  layout topbar keep content clear of the cutout. iOS falls back to standalone.
+  are linked from `src/app.html`. The manifest requests `standalone`, so the
+  Android status bar (clock, battery, signal) stays visible; `viewport-fit=cover`
+  and `env(safe-area-inset-top)` in the layout topbar keep content clear of the
+  cutout. Do not switch it back to `fullscreen`, which hides that status bar.
   The PNG icons are generated from `static/pwa-icon.svg` with
   `node scripts/generate-pwa-icons.mjs`; their background is the light-theme
   accent teal `#5b8a8a` (same as the primary/backup button). The header logo is

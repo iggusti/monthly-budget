@@ -95,9 +95,10 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   first and written through the normal budget store, so real-time sync keeps
   working.
 - **Installable PWA** — Add to Home Screen uses the bundled manifest and icons;
-  Android installs it fullscreen (no title bar), while iOS falls back to
-  standalone. The service worker caches the app shell for offline reads, and an
-  "Install app" button appears in the backup panel when the browser allows it.
+  Android installs it standalone, keeping the status bar visible, and iOS uses
+  its standalone mode too. The service worker caches the app shell for offline
+  reads, and an "Install app" button appears in the backup panel when the
+  browser allows it.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
 - **Push notifications** — an expense edit notifies the other phone through
