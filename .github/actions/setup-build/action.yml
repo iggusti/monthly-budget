@@ -1,12 +1,9 @@
 name: Setup and build
-description: Checkout, install dependencies and build the static app with a CI app version.
+description: Install dependencies and build the static app with a CI app version.
 
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
     - name: Setup Node
       uses: actions/setup-node@v4
       with:

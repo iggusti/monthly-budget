@@ -33,6 +33,9 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup and build
         uses: ./.github/actions/setup-build
 
