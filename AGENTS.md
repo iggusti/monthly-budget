@@ -247,6 +247,10 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   endless loop (which also restarts the summary `CountUp`). `CountUp` likewise
   reads `displayed` via `untrack()` and only tweens when its target changes.
 - `#lib/*` path alias maps to `src/lib/*` (see `package.json` and `tsconfig.json`).
+- **Overflow clamp:** keep `overflow-x: clip` on `html` and `body`, not
+  `hidden`. `hidden` makes the root a scroll container and silently breaks the
+  sticky topbar on mobile browsers; `clip` gives the same horizontal clamp
+  without a scrollport.
 - **Mobile keyboard:** `ExpenseSection`'s inline editor focuses its name field
   through the `focusEditor` action (an action, not a `bind:this` ref: swapping
   editors in one flush would let the unmounting editor null the shared ref) with

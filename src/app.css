@@ -139,7 +139,10 @@
 html {
   scroll-behavior: smooth;
   max-width: 100%;
+  /* `clip` clamps horizontal overflow without turning this into a scroll
+     container, which would break the sticky topbar. */
   overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior-x: none;
 }
 
@@ -151,6 +154,7 @@ body {
   min-height: 100vh;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-x: clip;
   overscroll-behavior-x: none;
   -webkit-font-smoothing: antialiased;
   /* Set while an inline editor is open on a phone: the keyboard hides the
