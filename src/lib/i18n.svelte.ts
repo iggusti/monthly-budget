@@ -12,7 +12,7 @@
  * Usage in components:
  *   import { t, lang, setLang } from "#lib/i18n.svelte";
  *   <p>{t("dashboard.title")}</p>
- *   <button onclick={() => setLang("id")}>ID</button>
+ *   <button onclick={toggleLang}>EN / ID</button>
  */
 
 export type Lang = "en" | "id";

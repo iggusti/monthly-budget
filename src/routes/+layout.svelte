@@ -96,7 +96,13 @@
           {/if}
           <ThemeToggle />
           {#if authed}
-            <button class="nav-logout" onclick={handleLogout} title={t("nav.signOut")}>{t("nav.signOut")}</button>
+            <button class="nav-logout" onclick={handleLogout} aria-label={t("nav.signOut")} title={t("nav.signOut")}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <path d="m16 17 5-5-5-5" />
+                <path d="M21 12H9" />
+              </svg>
+            </button>
           {/if}
         </nav>
       </div>
@@ -145,12 +151,15 @@
   .logo-text { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
   .topbar-nav { display: flex; align-items: center; gap: 0.5rem; }
   .nav-logout {
-    font-size: 0.72rem; font-weight: 700; color: var(--text-secondary);
-    padding: 0.3rem 0.75rem; border-radius: var(--radius-pill);
-    background: transparent; border: 1px solid var(--surface-border);
-    transition: all var(--dur-fast) var(--ease-out);
+    width: 32px; height: 32px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-pill);
+    background: var(--bg-muted); border: 1px solid var(--surface-border);
+    color: var(--text-secondary);
+    transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform var(--dur-base) var(--ease-spring);
   }
-  .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: transparent; }
+  .nav-logout:hover { background: var(--danger-light); color: var(--danger); border-color: var(--danger); transform: scale(1.06); }
+  .nav-logout:active { transform: scale(0.94); }
   .main-content { flex: 1; max-width: 1100px; margin: 0 auto; width: 100%; min-width: 0; overflow-x: clip; padding: 2rem 2rem 3rem; }
 
   .page-enter { display: flex; flex-direction: column; flex: 1; min-width: 0; max-width: 100%; overflow-x: clip; }
@@ -160,6 +169,5 @@
     .topbar { padding: 0 1rem; padding-top: env(safe-area-inset-top, 0px); }
     .topbar-nav { gap: 0.3rem; }
     .main-content { padding: 1.25rem 1rem 2rem; }
-    .nav-logout { padding: 0.25rem 0.6rem; font-size: 0.68rem; }
   }
 </style>
