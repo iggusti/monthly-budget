@@ -14,9 +14,11 @@
   --on-accent: #17150f;
   --logo-door: #faf9f7;
   --accent-rose: #c47070;
+  --accent-rose-ink: #9e4a4a;
   --accent-teal: #5b8a8a;
   --accent-teal-light: #edf4f4;
   --accent-blue: #6b7fa3;
+  --accent-blue-ink: #4b5f82;
   --accent-violet: #8a6fa3;
   --accent-indigo: #6d74b5;
   --accent-olive: #93994f;
@@ -110,9 +112,11 @@
   --on-accent: #17150f;
   --logo-door: #f2ede6;
   --accent-rose: #d98a8a;
+  --accent-rose-ink: #d98a8a;
   --accent-teal: #79acac;
   --accent-teal-light: #1e2c2c;
   --accent-blue: #8ea3c6;
+  --accent-blue-ink: #8ea3c6;
   --accent-violet: #a892c0;
   --accent-indigo: #969cd8;
   --accent-olive: #bcc178;

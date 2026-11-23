@@ -972,7 +972,13 @@
             {/if}
             {#if checkboxable}
               <label class="check" title={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
-                <input type="checkbox" checked={item.checked} disabled={readOnly} onchange={() => toggleCheck(item.id)} />
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  disabled={readOnly}
+                  aria-label={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}
+                  onchange={() => toggleCheck(item.id)}
+                />
                 <span class="checkmark"></span>
               </label>
             {/if}
@@ -1331,7 +1337,7 @@
   .check input:checked + .checkmark { background: var(--accent-teal); border-color: var(--accent-teal); }
   .check input:checked + .checkmark::after { content: "✓"; animation: popIn var(--dur-base) var(--ease-spring) backwards; }
   .item-name { font-size: 0.86rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
-  .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: color-mix(in srgb, var(--accent-blue) 10%, transparent); color: var(--accent-blue); }
+  .tag { font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 4px; background: color-mix(in srgb, var(--accent-blue) 10%, transparent); color: var(--accent-blue-ink); }
   .date-badge {
     display: inline-flex; align-items: center; gap: 0.35rem;
     font-size: 0.66rem; font-weight: 600;
@@ -1461,8 +1467,8 @@
   .switch-hint { font-size: var(--fs-caption); color: var(--text-tertiary); margin-left: auto; }
 
   .gold .section-footer { --footer-accent: var(--accent-gold-ink); --footer-bg: color-mix(in srgb, var(--accent-gold) 8%, transparent); }
-  .rose .section-footer { --footer-accent: var(--accent-rose); --footer-bg: color-mix(in srgb, var(--accent-rose) 8%, transparent); }
-  .blue .section-footer { --footer-accent: var(--accent-blue); --footer-bg: color-mix(in srgb, var(--accent-blue) 8%, transparent); }
+  .rose .section-footer { --footer-accent: var(--accent-rose-ink); --footer-bg: color-mix(in srgb, var(--accent-rose) 8%, transparent); }
+  .blue .section-footer { --footer-accent: var(--accent-blue-ink); --footer-bg: color-mix(in srgb, var(--accent-blue) 8%, transparent); }
   .teal .section-footer { --footer-accent: var(--accent-teal); --footer-bg: color-mix(in srgb, var(--accent-teal) 8%, transparent); }
 
   .modal-overlay {
