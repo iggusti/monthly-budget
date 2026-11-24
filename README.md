@@ -254,6 +254,11 @@ firebase deploy --only hosting
 
 ## Deploying Firestore rules
 
+Pushing a change to `firestore.rules`, `firestore.indexes.json`, `firebase.json`
+or `.firebaserc` to `main` deploys the rules automatically after the sender
+tests pass. You can also trigger it manually from
+**Actions → Sender and rules → Run workflow**. To deploy locally:
+
 ```sh
 npx firebase-tools deploy --only firestore:rules
 ```

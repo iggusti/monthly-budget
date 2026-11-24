@@ -53,7 +53,9 @@ push to `main`; that workflow does **not** touch rules. The Telegram sender runs
 separately in `.github/workflows/push-notifications.yml` every 5 minutes.
 Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 `preview.yml`. `release.yml` creates GitHub Releases from `v*` tags;
-`sender-rules.yml` tests the sender and deploys rules on manual dispatch.
+`sender-rules.yml` tests the sender on every relevant push and deploys rules
+automatically when `firestore.rules`, `firestore.indexes.json`, `firebase.json`
+or `.firebaserc` change; manual dispatch still works.
 
 ## Conventions
 

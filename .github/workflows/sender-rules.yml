@@ -22,10 +22,23 @@ concurrency:
 jobs:
   test:
     name: test
+    outputs:
+      rules_changed: ${{ steps.rules.outputs.changed }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Detect rules changes
+        id: rules
+        if: github.event_name == 'push'
+        run: |
+          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
+            | grep -Eq '^(firestore\.rules|firestore\.indexes\.json|firebase\.json|\.firebaserc)$'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v7
@@ -42,7 +55,7 @@ jobs:
   deploy:
     name: deploy
     needs: test
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || needs.test.outputs.rules_changed == 'true'
     runs-on: ubuntu-latest
     environment: functions-production
     steps:
