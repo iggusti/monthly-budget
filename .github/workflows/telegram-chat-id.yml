@@ -1,0 +1,16 @@
+name: Telegram chat id lookup
+
+# Temporary helper to read chat IDs after each person messages the bot.
+on:
+  workflow_dispatch:
+
+jobs:
+  lookup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get chat ids
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates" \
+            | jq -r '.result[]? | [.message.chat.id, (.message.chat.first_name // ""), (.message.text // "")] | @tsv'
