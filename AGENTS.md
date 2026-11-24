@@ -27,7 +27,7 @@ changing code; the rules below are easy to break accidentally.
   hosting site `monthly-budget-nia-ilham`).
 - **Telegram Bot API** for notifications: the browser writes a job to
   `notification-outbox` and a free scheduled GitHub Action (`functions/`,
-  Node 22) sends it via Telegram. No Cloud Functions and no Blaze plan.
+  Node 22) sends it via Telegram. No Cloud Functions or paid Firebase plan.
 
 ## Commands
 
@@ -50,7 +50,7 @@ npx firebase-tools deploy --only firestore:rules  # needed after rules changes
 
 Hosting is deployed automatically by `.github/workflows/deploy.yml` on every
 push to `main`; that workflow does **not** touch rules. The Telegram sender runs
-separately in `.github/workflows/push-notifications.yml` every 5 minutes.
+separately in `.github/workflows/push-notifications.yml` every 2–3 minutes.
 Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 `preview.yml`. `release.yml` creates GitHub Releases from `v*` tags;
 `sender-rules.yml` tests the sender on every relevant push and deploys rules
@@ -216,7 +216,7 @@ without a quota project.
   pure and testable with plain `node`.
 - Debounce/aggregate awareness: each budget write produces one outbox job and at
   most one Telegram message per recipient language; multiple events in one write
-  are summarised. Delivery is delayed by up to ~5 minutes by design.
+  are summarised. Delivery is delayed by up to ~3 minutes by design.
 - Telegram flood control: `send-push.js` spaces every message in a run by
   `SEND_SPACING_MS` (including messages from different jobs). On a 429 it does
   **not** retry in the same run — that keeps re-triggering Telegram's flood
@@ -232,7 +232,7 @@ without a quota project.
 - Telegram delivery needs GitHub Secrets configured before the scheduled sender
   can do anything; with only a shared `TELEGRAM_CHAT_ID` the editor also receives
   the message, because one chat cannot be split per browser. Per-person chat IDs
-  avoid that. Messages are delayed by up to ~5 minutes — do not describe them as
+  avoid that. Messages are delayed by up to ~3 minutes — do not describe them as
   instant.
 - `adapter-static` + `fallback: index.html`: dynamic routes like `/month/[id]`
   only work client-side; direct visits are rewritten to the SPA.

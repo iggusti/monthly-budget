@@ -1,10 +1,13 @@
 name: Send budget pushes
 
 # Telegram replaces Firebase Cloud Functions, so the sender runs as a free
-# scheduled GitHub Action instead of needing the Firebase Blaze plan.
+# scheduled GitHub Action instead of needing a paid Firebase plan.
 on:
   schedule:
     - cron: "*/5 * * * *"
+    # GitHub sometimes drops a scheduled run. A second, offset schedule keeps
+    # delivery reasonably prompt without exceeding the free Actions minutes.
+    - cron: "2-59/5 * * * *"
   workflow_dispatch:
 
 concurrency:

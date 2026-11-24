@@ -6,7 +6,7 @@ month also notifies the other person. Nothing is sent for `checked`-only
 toggles, date-only edits, income edits, or the editor's own browser.
 
 Telegram replaces Firebase Cloud Messaging completely. There is no Cloud
-Function, no Blaze upgrade, and no browser notification permission prompt.
+Function, no paid Firebase plan, and no browser notification permission prompt.
 
 ## How it works
 
@@ -15,7 +15,7 @@ Function, no Blaze upgrade, and no browser notification permission prompt.
 | `src/lib/components/NotificationToggle.svelte` | Bell in the topbar; pick "Husband" or "Wife" once per browser. |
 | `src/lib/notifications.svelte.ts` | Registers `devices/{uid}` with the recipient, language and anonymous uid. |
 | `src/lib/budget-store.ts` | Writes a job to `notification-outbox` on every save/delete, with the before/after snapshots and `lastEditBy`. |
-| `.github/workflows/push-notifications.yml` | Free scheduled Action (every 5 minutes) that runs the sender. |
+| `.github/workflows/push-notifications.yml` | Free scheduled Action (every 2–3 minutes) that runs the sender. |
 | `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.telegram.org/bot<token>/sendMessage`. |
 | `functions/changes.js` and `functions/notify-helpers.js` | Pure diff, formatting and recipient grouping with Vitest tests. |
 
@@ -56,7 +56,7 @@ month and arrives in the language selected on that browser (EN / ID).
 
 ## Testing
 
-- Save an expense and wait up to about 5 minutes, or dispatch the sender now:
+- Save an expense and wait up to about 3 minutes, or dispatch the sender now:
 
   ```sh
   gh workflow run push-notifications.yml

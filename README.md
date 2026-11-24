@@ -5,7 +5,7 @@ tracks daily expenses, and shows how money is funded from salary or savings.
 
 Built with SvelteKit, TypeScript, Firebase Firestore and Firebase Anonymous
 Authentication. Notifications go through Telegram, sent by a free scheduled
-GitHub Action — no Firebase Blaze plan or credit card needed. The data
+GitHub Action — no paid Firebase plan or credit card needed. The data
 model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
 
 ## Login
@@ -102,7 +102,7 @@ becomes the *active* one (badge, overview, month page) on the 25th.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
 - **Notifications** — an expense edit messages the other person on Telegram a
-  few minutes later. No Blaze plan needed. See [Notifications](#notifications).
+  few minutes later. No paid Firebase plan needed. See [Notifications](#notifications).
 - **Offline & updates** — Firestore keeps a persistent IndexedDB cache and the
   service worker serves cached pages/assets offline. After a new deploy a
   "Versi baru tersedia" toast offers a reload.
@@ -110,14 +110,14 @@ becomes the *active* one (badge, overview, month page) on the 25th.
 ## Notifications
 
 Telegram replaces Firebase Cloud Messaging entirely, so the project stays on
-the free Spark plan: no Cloud Functions, no Blaze upgrade, no credit card.
+the free Spark plan: no Cloud Functions and no credit card.
 
 | Piece | Role |
 | --- | --- |
 | `src/lib/components/NotificationToggle.svelte` | Bell in the topbar; pick "Husband" or "Wife" once per browser. |
 | `src/lib/notifications.svelte.ts` | Registers `devices/{uid}` with the recipient, language and anonymous uid. |
 | `src/lib/budget-store.ts` | Writes a job to `notification-outbox` on every save/delete, with the before/after snapshots and `lastEditBy`. |
-| `.github/workflows/push-notifications.yml` | Free scheduled Action (every 5 minutes) that runs the sender. |
+| `.github/workflows/push-notifications.yml` | Free scheduled Action (every 2–3 minutes) that runs the sender. |
 | `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.telegram.org/bot<token>/sendMessage`. |
 | `functions/changes.js` | Pure diff/format helpers, reused by the sender. |
 
@@ -135,7 +135,7 @@ Details:
   later run after a quiet cooldown instead of being retried immediately. Being
   rate-limited does not consume a retry attempt, so a long Telegram outage
   cannot drop a notification.
-- Delivery is not instant: expect a push within about 5 minutes of an edit.
+- Delivery is not instant: expect a push within about 3 minutes of an edit.
 
 ### Notification setup
 
@@ -293,7 +293,7 @@ match /notification-outbox/{job} {
 ## Scheduled push sender
 
 There is no Cloud Function to deploy. `.github/workflows/push-notifications.yml`
-runs every 5 minutes (and can be triggered manually), installs
+runs every 2–3 minutes (and can be triggered manually), installs
 `functions/package-lock.json`, and executes `functions/send-push.js` with the
 Telegram and Firebase secrets. It claims pending outbox jobs transactionally,
 sends one localized message per recipient, and marks each job `sent`, `pending`

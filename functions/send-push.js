@@ -3,7 +3,7 @@
  *
  * Run by the scheduled GitHub Actions workflow in `.github/workflows/`, where
  * the bot token, chat IDs and Firebase service account live as repo secrets.
- * No Cloud Functions / Blaze plan is involved.
+ * No Cloud Functions or paid Firebase plan is involved.
  */
 
 const { getApps, initializeApp } = require("firebase-admin/app");

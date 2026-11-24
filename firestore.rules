@@ -8,7 +8,7 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Pushover registration, one document per browser keyed by its anonymous
+    // Notification device registration, one document per browser keyed by its anonymous
     // uid. A device may only read and manage its own entry; the scheduled
     // sender reads these through the Admin SDK (which bypasses these rules).
     match /devices/{uid} {
