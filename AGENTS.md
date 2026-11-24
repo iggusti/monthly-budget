@@ -239,8 +239,9 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   `app.css` and the component.
 - Clearing browser storage creates a new anonymous uid; on app start
   `initNotifications()` re-reads `devices/{uid}` and clears the local "enabled"
-  flag if that record is gone. Old devices keyed by FCM token are simply ignored
-  (they never match the new uid) and can be deleted manually.
+  flag if that record is gone. Old devices keyed by FCM token have no
+  `recipient` and are ignored by both the app and the sender; they can be
+  deleted manually.
 - Native `<input type="date">`: Chrome/Firefox keep the calendar button flush to
   the right border. Do **not** add `padding-right` to "give it breathing room" —
   it drags the arrow away from the border and looks wrong on desktop, while

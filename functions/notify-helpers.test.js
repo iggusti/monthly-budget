@@ -59,6 +59,11 @@ describe("groupRecipients", () => {
       { recipient: "wife", lang: "id", uids: ["u2"] }
     ]);
   });
+
+  it("ignores legacy records without a recipient", () => {
+    const legacy = [{ uid: "old", lang: "en", enabled: true, platform: "web" }];
+    expect(groupRecipients(legacy, null)).toEqual([]);
+  });
 });
 
 describe("buildMessage", () => {

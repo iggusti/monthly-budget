@@ -39,8 +39,9 @@ function groupRecipients(devices, editorUid) {
   for (const device of Array.isArray(devices) ? devices : []) {
     if (!device || device.enabled === false || !device.uid) continue;
     if (editorUid && device.uid === editorUid) continue;
+    if (device.recipient !== "husband" && device.recipient !== "wife") continue;
 
-    const recipient = device.recipient === "wife" ? "wife" : "husband";
+    const recipient = device.recipient;
     const lang = device.lang === "en" ? "en" : "id";
     const key = `${recipient}|${lang}`;
 
