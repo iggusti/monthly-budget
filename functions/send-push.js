@@ -155,18 +155,29 @@ async function main() {
       if (sends.length) sent += 1;
       else skipped += 1;
     } catch (error) {
-      const attempts = Number(job.data.attempts || 0) + 1;
       const message = String(error?.message || error);
-      console.error(`Failed job ${job.ref.id}: ${message}`);
       const retryAfter = Number(error?.retryAfter || 0);
+      console.error(`Failed job ${job.ref.id}: ${message}`);
+
+      // A Telegram throttle is temporary: keep the job queued without burning
+      // an attempt, so a long API outage cannot silently drop notifications.
+      if (retryAfter) {
+        await job.ref.update({
+          status: "pending",
+          lastError: message,
+          processingAt: null,
+          retryAfterAt: new Date(Date.now() + (retryAfter + RETRY_COOLDOWN_SECONDS) * 1000).toISOString()
+        });
+        continue;
+      }
+
+      const attempts = Number(job.data.attempts || 0) + 1;
       await job.ref.update({
         status: attempts >= MAX_ATTEMPTS ? "error" : "pending",
         attempts,
         lastError: message,
         processingAt: null,
-        ...(retryAfter && attempts < MAX_ATTEMPTS
-          ? { retryAfterAt: new Date(Date.now() + (retryAfter + RETRY_COOLDOWN_SECONDS) * 1000).toISOString() }
-          : { retryAfterAt: null })
+        retryAfterAt: null
       });
       failed += 1;
     }

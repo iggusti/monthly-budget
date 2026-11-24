@@ -132,7 +132,9 @@ Details:
 - Failed sends are retried on the next run (up to 5 attempts); jobs are claimed
   transactionally so overlapping runs cannot double-send. Telegram flood limits
   are respected: messages are spaced out, and a flooded job is deferred to a
-  later run after a quiet cooldown instead of being retried immediately.
+  later run after a quiet cooldown instead of being retried immediately. Being
+  rate-limited does not consume a retry attempt, so a long Telegram outage
+  cannot drop a notification.
 - Delivery is not instant: expect a push within about 5 minutes of an edit.
 
 ### Notification setup

@@ -215,8 +215,10 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   **not** retry in the same run — that keeps re-triggering Telegram's flood
   wait, even for `getMe`. Instead it stores `retryAfterAt` using
   `retry_after + RETRY_COOLDOWN_SECONDS`, and `claimJobs()` skips deferred jobs
-  until that quiet window ends. `retryAfterSeconds()` and `isDeferred()` are
-  pure helpers in `notify-helpers.js`. Avoid manual runs while a bot is flooded.
+  until that quiet window ends. A 429 does **not** consume an attempt, so a long
+  Telegram-side outage cannot drop notifications. `retryAfterSeconds()` and
+  `isDeferred()` are pure helpers in `notify-helpers.js`. Avoid manual runs
+  while a bot is flooded.
 
 ## Gotchas
 
