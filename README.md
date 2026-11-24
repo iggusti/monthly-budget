@@ -125,8 +125,8 @@ Details:
 
 - The editor's devices are skipped, so you never get a push for your own edit.
 - Notifications arrive in the language selected on each phone (EN / ID).
-- Only name, amount and payment method changes matter. Ticking a fixed expense
-  (`checked`), editing a date or changing income sends no push.
+- Only name, amount, payment method and date changes matter. Ticking a fixed
+  expense (`checked`) or changing income sends no push.
 - Deleting a whole month sends a "Month deleted" notification to the other
   phones. Each push links straight to that month's page.
 - Failed sends are retried on the next run (up to 5 attempts); jobs are claimed

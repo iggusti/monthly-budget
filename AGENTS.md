@@ -204,9 +204,9 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 - Intended behaviour: notify on add/edit/delete of expense items (name, amount,
   payment method). **Do not** notify for `checked`-only toggles on fixed
   expenses or for income edits. Never notify the editor's own device.
-- `sameItem()` in `changes.js` compares only `name`, `amount` and `method`, so a
-  date-only edit sends no push today. Include `date` there (and its callers) if
-  that should change — keep the function pure and testable with plain `node`.
+- `sameItem()` in `changes.js` compares `name`, `amount`, `method`, and `date`.
+  Edits to any of these fields will trigger a notification. Keep the function
+  pure and testable with plain `node`.
 - Debounce/aggregate awareness: each budget write produces one outbox job and at
   most one Telegram message per recipient language; multiple events in one write
   are summarised. Delivery is delayed by up to ~5 minutes by design.
