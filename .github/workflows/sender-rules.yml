@@ -64,6 +64,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22 # firebase-tools@13 (superstatic) does not support Node 24.
+
       - name: Authenticate
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}

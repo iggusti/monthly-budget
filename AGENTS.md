@@ -55,7 +55,10 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 `preview.yml`. `release.yml` creates GitHub Releases from `v*` tags;
 `sender-rules.yml` tests the sender on every relevant push and deploys rules
 automatically when `firestore.rules`, `firestore.indexes.json`, `firebase.json`
-or `.firebaserc` change; manual dispatch still works.
+or `.firebaserc` change; manual dispatch still works. The `functions-production`
+environment has no required reviewers, so the deploy runs without approval; the
+deploy job pins Node 22 because `firebase-tools@13` (via `superstatic`) rejects
+the runner's default Node 24.
 
 ## Conventions
 
