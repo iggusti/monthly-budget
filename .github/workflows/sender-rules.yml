@@ -74,7 +74,13 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2 }}
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-sa.json"
+          # The rules test API needs a quota project; service account keys do
+          # not always include one. Patch it in without touching the secret.
+          jq '. + {quota_project_id: "monthly-budget-580b2"}' \
+            "$RUNNER_TEMP/firebase-sa.json" > "$RUNNER_TEMP/firebase-sa-quota.json"
+          mv "$RUNNER_TEMP/firebase-sa-quota.json" "$RUNNER_TEMP/firebase-sa.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-sa.json" >> "$GITHUB_ENV"
+          echo "GOOGLE_CLOUD_QUOTA_PROJECT=monthly-budget-580b2" >> "$GITHUB_ENV"
 
       - name: Select project
         run: npx --yes firebase-tools@13 use monthly-budget-580b2

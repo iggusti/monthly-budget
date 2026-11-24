@@ -58,7 +58,9 @@ automatically when `firestore.rules`, `firestore.indexes.json`, `firebase.json`
 or `.firebaserc` change; manual dispatch still works. The `functions-production`
 environment has no required reviewers, so the deploy runs without approval; the
 deploy job pins Node 22 because `firebase-tools@13` (via `superstatic`) rejects
-the runner's default Node 24.
+the runner's default Node 24, and it injects `quota_project_id` into the
+service account key because the Firestore rules test API rejects credentials
+without a quota project.
 
 ## Conventions
 
