@@ -52,10 +52,12 @@ describe("collectEvents", () => {
     expect(collectEvents(before, after)).toEqual([]);
   });
 
-  it("ignores a date-only edit", () => {
+  it("detects a date-only edit as an edit", () => {
     const before = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), date: "2026-11-01" }] });
     const after = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), date: "2026-11-02" }] });
-    expect(collectEvents(before, after)).toEqual([]);
+    const events = collectEvents(before, after);
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe("edit");
   });
 
   it("detects a removed item", () => {

@@ -52,7 +52,8 @@ function sameItem(a, b) {
   return (
     String(a.name ?? "") === String(b.name ?? "") &&
     Number(a.amount ?? 0) === Number(b.amount ?? 0) &&
-    String(a.method ?? "") === String(b.method ?? "")
+    String(a.method ?? "") === String(b.method ?? "") &&
+    String(a.date ?? "") === String(b.date ?? "")
   );
 }
 
