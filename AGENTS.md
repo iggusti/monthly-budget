@@ -211,12 +211,12 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   most one Telegram message per recipient language; multiple events in one write
   are summarised. Delivery is delayed by up to ~5 minutes by design.
 - Telegram flood control: `send-push.js` spaces every message in a run by
-  `SEND_SPACING_MS` (including messages from different jobs), waits once on a
-  429 using Telegram's `retry_after`, and defers still-limited jobs with
-  `retryAfterAt` so `claimJobs()` skips them. `retryAfterSeconds()` and
-  `isDeferred()` are pure helpers in `notify-helpers.js`. Do not send queued
-  jobs back-to-back — three rapid writes to one chat trigger "Too Many
-  Requests" and every job fails.
+  `SEND_SPACING_MS` (including messages from different jobs). On a 429 it does
+  **not** retry in the same run — that keeps re-triggering Telegram's flood
+  wait, even for `getMe`. Instead it stores `retryAfterAt` using
+  `retry_after + RETRY_COOLDOWN_SECONDS`, and `claimJobs()` skips deferred jobs
+  until that quiet window ends. `retryAfterSeconds()` and `isDeferred()` are
+  pure helpers in `notify-helpers.js`. Avoid manual runs while a bot is flooded.
 
 ## Gotchas
 

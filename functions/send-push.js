@@ -16,7 +16,7 @@ const MAX_JOBS = 25;
 const MAX_ATTEMPTS = 5;
 const STALE_AFTER_MS = 10 * 60 * 1000;
 const SEND_SPACING_MS = 1200; // Telegram allows roughly one message per second per chat.
-const MAX_RETRY_WAIT_SECONDS = 60;
+const RETRY_COOLDOWN_SECONDS = 120; // Give a flooded bot a long, completely quiet window.
 const TELEGRAM_API = "https://api.telegram.org/bot";
 
 function requireEnv(name) {
@@ -97,20 +97,6 @@ async function deliver(token, message) {
   }
 }
 
-/** Rate limits are usually short: wait once, then let the next run pick it up. */
-async function deliverWithRetry(token, message) {
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      return await deliver(token, message);
-    } catch (error) {
-      const retryAfter = Number(error?.retryAfter || 0);
-      if (attempt >= 1 || !retryAfter || retryAfter > MAX_RETRY_WAIT_SECONDS) throw error;
-      console.log(`Telegram rate limit: retrying in ${retryAfter + 1}s`);
-      await sleep((retryAfter + 1) * 1000);
-    }
-  }
-}
-
 async function main() {
   const token = requireEnv("TELEGRAM_BOT_TOKEN");
   if (!helpers.chatIdsConfigured(process.env)) {
@@ -155,7 +141,7 @@ async function main() {
 
       for (const send of sends) {
         await pace();
-        await deliverWithRetry(token, send.message);
+        await deliver(token, send.message);
         console.log(`Sent ${send.recipient}/${send.lang} Telegram message for ${monthId}`);
       }
 
@@ -179,7 +165,7 @@ async function main() {
         lastError: message,
         processingAt: null,
         ...(retryAfter && attempts < MAX_ATTEMPTS
-          ? { retryAfterAt: new Date(Date.now() + (retryAfter + 2) * 1000).toISOString() }
+          ? { retryAfterAt: new Date(Date.now() + (retryAfter + RETRY_COOLDOWN_SECONDS) * 1000).toISOString() }
           : { retryAfterAt: null })
       });
       failed += 1;
