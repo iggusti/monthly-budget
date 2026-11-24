@@ -1,15 +1,8 @@
 import {
-  db,
   auth,
   BUDGET_COLLECTION,
   NOTIFICATIONS_COLLECTION,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  deleteDoc,
-  onSnapshot
+  getFirestoreApi
 } from "./firebase";
 import { normalizeBudget, type MonthBudget } from "./types";
 
@@ -24,6 +17,7 @@ async function enqueueNotification(job: {
   editorUid: string | null;
 }): Promise<void> {
   try {
+    const { db, doc, setDoc } = await getFirestoreApi();
     const random =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
@@ -50,6 +44,7 @@ function toBudgetList(docs: { id: string; data: () => Partial<MonthBudget> }[]):
 /** Fetch a single month budget. Returns an empty (normalised) budget when missing. */
 export async function fetchBudget(id: string): Promise<MonthBudget> {
   try {
+    const { db, doc, getDoc } = await getFirestoreApi();
     const snapshot = await getDoc(doc(db, BUDGET_COLLECTION, id));
     if (snapshot.exists()) {
       return normalizeBudget(id, snapshot.data() as Partial<MonthBudget>);
@@ -71,6 +66,7 @@ export async function fetchBudget(id: string): Promise<MonthBudget> {
 export async function budgetExists(id: string): Promise<boolean> {
   try {
     await auth.authStateReady();
+    const { db, doc, getDoc } = await getFirestoreApi();
     const snapshot = await getDoc(doc(db, BUDGET_COLLECTION, id));
     return snapshot.exists();
   } catch (error) {
@@ -82,6 +78,7 @@ export async function budgetExists(id: string): Promise<boolean> {
 /** Fetch every stored budget, newest first. */
 export async function fetchAllBudgets(): Promise<MonthBudget[]> {
   try {
+    const { db, collection, getDocs } = await getFirestoreApi();
     const snapshot = await getDocs(collection(db, BUDGET_COLLECTION));
     return toBudgetList(snapshot.docs);
   } catch (error) {
@@ -95,10 +92,11 @@ export async function fetchAllBudgets(): Promise<MonthBudget[]> {
  * the callback receives the fresh, normalised budget. Returns an unsubscribe
  * function.
  */
-export function subscribeBudget(
+export async function subscribeBudget(
   id: string,
   onChange: (_budget: MonthBudget) => void
-): () => void {
+): Promise<() => void> {
+  const { db, doc, onSnapshot } = await getFirestoreApi();
   return onSnapshot(
     doc(db, BUDGET_COLLECTION, id),
     (snapshot) => {
@@ -115,9 +113,10 @@ export function subscribeBudget(
 }
 
 /** Live-subscribe to all budget documents, newest first. Returns an unsubscribe function. */
-export function subscribeAllBudgets(
+export async function subscribeAllBudgets(
   onChange: (_budgets: MonthBudget[]) => void
-): () => void {
+): Promise<() => void> {
+  const { db, collection, onSnapshot } = await getFirestoreApi();
   return onSnapshot(
     collection(db, BUDGET_COLLECTION),
     (snapshot) => {
@@ -136,6 +135,7 @@ export function subscribeAllBudgets(
  * device that made the change.
  */
 export async function saveBudget(budget: MonthBudget): Promise<void> {
+  const { db, doc, getDoc, setDoc } = await getFirestoreApi();
   const ref = doc(db, BUDGET_COLLECTION, budget.id);
 
   let before: Record<string, unknown> | null = null;
@@ -163,6 +163,7 @@ export async function saveBudget(budget: MonthBudget): Promise<void> {
 
 /** Permanently delete a budget. */
 export async function deleteBudget(id: string): Promise<void> {
+  const { db, doc, getDoc, setDoc, deleteDoc } = await getFirestoreApi();
   const ref = doc(db, BUDGET_COLLECTION, id);
   const uid = auth.currentUser?.uid ?? null;
 

@@ -102,13 +102,22 @@
 
     // Live-sync the dashboard: new/edited/deleted months appear immediately
     // without a reload.
-    const unsubscribe = subscribeAllBudgets((next) => {
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+    subscribeAllBudgets((next) => {
+      if (disposed) return;
       budgets = next;
       loading = false;
-    });
+    })
+      .then((stop) => {
+        if (disposed) stop();
+        else unsubscribe = stop;
+      })
+      .catch((error) => console.error("Failed to subscribe to budgets:", error));
 
     return () => {
-      unsubscribe();
+      disposed = true;
+      unsubscribe?.();
     };
   });
 

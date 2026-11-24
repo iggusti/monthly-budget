@@ -10,9 +10,8 @@
  * Import-safe during SSR: browser globals are only touched behind guards.
  */
 
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db, DEVICES_COLLECTION } from "./firebase";
+import { auth, DEVICES_COLLECTION, getFirestoreApi } from "./firebase";
 
 export const PUSH_NOTIFICATIONS_ENABLED = true;
 
@@ -78,6 +77,7 @@ export async function enableNotifications(recipient: Recipient, lang: string): P
     const uid = await waitForUid();
     if (!uid) throw new Error("not-signed-in");
 
+    const { db, doc, setDoc, serverTimestamp } = await getFirestoreApi();
     await setDoc(
       doc(db, DEVICES_COLLECTION, uid),
       {
@@ -114,6 +114,7 @@ export async function disableNotifications(): Promise<void> {
 
     const uid = await waitForUid();
     if (uid) {
+      const { db, doc, deleteDoc } = await getFirestoreApi();
       await deleteDoc(doc(db, DEVICES_COLLECTION, uid)).catch((error) => {
         console.warn("Failed to remove device record:", error);
       });
@@ -148,6 +149,7 @@ export async function initNotifications(lang: string): Promise<void> {
   }
 
   try {
+    const { db, doc, getDoc, setDoc, serverTimestamp } = await getFirestoreApi();
     const ref = doc(db, DEVICES_COLLECTION, uid);
     const snapshot = await getDoc(ref);
     const data = snapshot.exists() ? snapshot.data() : null;

@@ -329,13 +329,22 @@
     // Live-sync: when the other spouse (or this device) edits this budget in
     // Firestore, update locally immediately — no reload needed. Re-subscribes
     // whenever the opened month changes so navigation actually loads new data.
-    const unsubscribe = subscribeBudget(monthId, (next) => {
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+    subscribeBudget(monthId, (next) => {
+      if (disposed) return;
       budget = next;
       loading = false;
-    });
+    })
+      .then((stop) => {
+        if (disposed) stop();
+        else unsubscribe = stop;
+      })
+      .catch((error) => console.error(`Failed to subscribe to budget ${monthId}:`, error));
 
     return () => {
-      unsubscribe();
+      disposed = true;
+      unsubscribe?.();
     };
   });
 
