@@ -147,7 +147,8 @@ Details:
    if you want the "Husband"/"Wife" choice to skip the editor.
 3. Add repository secrets (Settings → Secrets and variables → Actions):
    `TELEGRAM_BOT_TOKEN`, and either `TELEGRAM_CHAT_ID` or both
-   `TELEGRAM_CHAT_ID_HUSBAND` and `TELEGRAM_CHAT_ID_WIFE`. The existing
+   `TELEGRAM_CHAT_ID_HUSBAND` and `TELEGRAM_CHAT_ID_WIFE` (comma-separate
+   multiple IDs for one person). The existing
    `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2` secret is reused to read the
    outbox.
 4. Deploy the updated Firestore rules so the app can create outbox jobs:

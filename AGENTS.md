@@ -197,7 +197,8 @@ without a quota project.
 - `.github/workflows/push-notifications.yml` — free scheduled Action (every 5
   minutes) with `concurrency` to avoid overlapping runs. Secrets:
   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (shared fallback) or
-  `TELEGRAM_CHAT_ID_HUSBAND` / `TELEGRAM_CHAT_ID_WIFE`, plus the existing
+  `TELEGRAM_CHAT_ID_HUSBAND` / `TELEGRAM_CHAT_ID_WIFE` (comma-separated for
+  multiple chats), plus the existing
   `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2`. No `VITE_` keys: credentials
   must never enter the bundle.
 - `functions/send-push.js` — claims pending jobs in a Firestore transaction,

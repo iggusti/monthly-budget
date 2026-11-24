@@ -86,12 +86,24 @@ describe("collectEvents", () => {
 });
 
 describe("buildContent", () => {
+  const meta = {
+    recipient: "wife",
+    editorUid: "u1",
+    devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }]
+  };
+
   it("describes a single addition with its section", () => {
     const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "Listrik", 150000)] }));
-    expect(buildContent("en", "November 2026", events)).toEqual({
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content).toMatchObject({
       title: "New expense",
       body: "Listrik · Rp 150.000\nHusband fixed expenses"
     });
+    expect(content.html).toContain("<b>🟢 New expense</b>");
+    expect(content.html).toContain("<b>Listrik</b>");
+    expect(content.html).toContain("Rp 150.000");
+    expect(content.html).toContain("<b>Category:</b> Husband fixed expenses");
+    expect(content.html).toContain("from husband");
   });
 
   it("shows the previous amount on an edit", () => {
@@ -99,27 +111,36 @@ describe("buildContent", () => {
       doc({ husbandFixed: [expense("a", "Listrik", 150000)] }),
       doc({ husbandFixed: [expense("a", "Listrik", 175000)] })
     );
-    expect(buildContent("id", "November 2026", events).body).toBe(
-      "Listrik · Rp 175.000\nsebelumnya Rp 150.000"
-    );
+    const content = buildContent("id", "November 2026", events, meta);
+    expect(content.body).toBe("Listrik · Rp 175.000\nsebelumnya Rp 150.000");
+    expect(content.html).toContain("Rp 150.000 → <b>Rp 175.000</b>");
   });
 
-  it("summarises multiple events and caps the list at four lines", () => {
-    const items = ["a", "b", "c", "d", "e"].map((id) =>
+  it("escapes user text before putting it into Telegram HTML", () => {
+    const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "<script>&", 1000)] }));
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("&lt;script&gt;&amp;");
+    expect(content.html).not.toContain("<script>");
+  });
+
+  it("summarises multiple events with totals and caps the list at six lines", () => {
+    const items = ["a", "b", "c", "d", "e", "f", "g"].map((id) =>
       expense(id, `Item ${id}`, 1000)
     );
     const events = collectEvents(doc(), doc({ husbandFixed: items }));
-    const content = buildContent("en", "November 2026", events);
+    const content = buildContent("en", "November 2026", events, meta);
 
-    expect(content.title).toBe("5 expense changes");
+    expect(content.title).toBe("7 expense changes");
     expect(content.body.split("\n")).toHaveLength(5);
-    expect(content.body).toContain("+1 …");
+    expect(content.body).toContain("+3 …");
+    expect(content.html).toContain("Change summary");
+    expect(content.html).toContain("Added: Rp 7.000");
+    expect(content.html).toContain("+1 more changes");
   });
 
   it("uses the month title for a deleted month", () => {
-    expect(buildContent("en", "November 2026", [{ type: "month-delete" }])).toEqual({
-      title: "Month deleted",
-      body: "November 2026"
-    });
+    const content = buildContent("en", "November 2026", [{ type: "month-delete" }], meta);
+    expect(content).toMatchObject({ title: "Month deleted", body: "November 2026" });
+    expect(content.html).toContain("All budget data for this month has been deleted.");
   });
 });

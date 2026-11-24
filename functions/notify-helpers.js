@@ -10,11 +10,26 @@ const { collectEvents, buildContent } = require("./changes");
 
 const DEFAULT_APP_URL = "https://monthly-budget-nia-ilham.web.app";
 
-/** Husband/wife chat IDs are optional; a single family chat works as fallback. */
-function resolveChatId(env, recipient) {
+/** Split a comma-separated secret into unique, non-empty chat IDs. */
+function parseChatIds(value) {
+  return [...new Set(
+    String(value || "")
+      .split(/[\s,]+/)
+      .map((id) => id.trim())
+      .filter(Boolean)
+  )];
+}
+
+/** Husband/wife chat IDs are optional; a shared family chat works as fallback. */
+function resolveChatIds(env, recipient) {
   const specific = env[`TELEGRAM_CHAT_ID_${String(recipient || "").toUpperCase()}`];
-  if (specific) return specific;
-  return env.TELEGRAM_CHAT_ID || null;
+  const ids = parseChatIds(specific);
+  return ids.length ? ids : parseChatIds(env.TELEGRAM_CHAT_ID);
+}
+
+/** First chat for a recipient, kept for callers that need a single ID. */
+function resolveChatId(env, recipient) {
+  return resolveChatIds(env, recipient)[0] || null;
 }
 
 /** Whether at least one chat can be resolved from the environment. */
@@ -72,15 +87,15 @@ function groupRecipients(devices, editorUid) {
 }
 
 /** Build the sendMessage payload for one Telegram chat. */
-function buildMessage(env, group, content, monthId) {
-  const chatId = resolveChatId(env, group.recipient);
+function buildMessage(env, group, content, monthId, chatId = resolveChatId(env, group.recipient)) {
   if (!chatId) return null;
 
   const appUrl = (env.APP_URL || DEFAULT_APP_URL).replace(/\/$/, "");
   const linkLabel = group.lang === "en" ? "Open budget" : "Buka anggaran";
   return {
     chat_id: chatId,
-    text: `${content.title}\n${content.body}`,
+    text: content.html || `${content.title}\n${content.body}`,
+    parse_mode: content.html ? "HTML" : undefined,
     disable_web_page_preview: true,
     reply_markup: {
       inline_keyboard: [[{ text: linkLabel, url: `${appUrl}/month/${monthId}` }]]
@@ -108,14 +123,23 @@ function plannedSends({ before, after, monthId, editorUid, devices, env }) {
   const sentChats = new Set();
 
   for (const group of groups) {
-    const chatId = resolveChatId(env, group.recipient);
-    if (!chatId || sentChats.has(chatId)) continue;
-    // A shared family chat must not receive one message per family member.
-    sentChats.add(chatId);
+    const chatIds = resolveChatIds(env, group.recipient);
+    if (!chatIds.length) continue;
+    const content = buildContent(group.lang, monthTitle, events, {
+      recipient: group.recipient,
+      editorUid,
+      devices
+    });
 
-    const content = buildContent(group.lang, monthTitle, events);
-    const message = buildMessage(env, group, content, monthId);
-    if (message) messages.push({ message, recipient: group.recipient, lang: group.lang });
+    for (const chatId of chatIds) {
+      // A shared family chat must not receive one message per family member.
+      if (sentChats.has(chatId)) continue;
+      sentChats.add(chatId);
+      const message = buildMessage(env, group, content, monthId, chatId);
+      if (message) {
+        messages.push({ message, recipient: group.recipient, lang: group.lang, chatId });
+      }
+    }
   }
 
   return messages;
@@ -123,6 +147,8 @@ function plannedSends({ before, after, monthId, editorUid, devices, env }) {
 
 module.exports = {
   DEFAULT_APP_URL,
+  parseChatIds,
+  resolveChatIds,
   resolveChatId,
   chatIdsConfigured,
   retryAfterSeconds,

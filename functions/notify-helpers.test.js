@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 import helpers from "./notify-helpers.js";
 
-const { buildMessage, chatIdsConfigured, groupRecipients, isDeferred, plannedSends, resolveChatId, retryAfterSeconds } = helpers;
+const {
+  buildMessage,
+  chatIdsConfigured,
+  groupRecipients,
+  isDeferred,
+  parseChatIds,
+  plannedSends,
+  resolveChatId,
+  resolveChatIds,
+  retryAfterSeconds
+} = helpers;
 
 const expense = (id, name, amount) => ({ id, name, amount, method: "QRIS" });
 
@@ -31,11 +41,23 @@ const devices = [
   { uid: "u3", recipient: "wife", lang: "id", enabled: false }
 ];
 
-describe("resolveChatId", () => {
-  it("prefers the recipient-specific chat, then the family fallback", () => {
-    expect(resolveChatId(env, "wife")).toBe("222");
-    expect(resolveChatId({ TELEGRAM_CHAT_ID: "shared" }, "husband")).toBe("shared");
-    expect(resolveChatId({}, "husband")).toBeNull();
+describe("chat ID parsing", () => {
+  it("splits, trims and deduplicates a comma-separated secret", () => {
+    expect(parseChatIds("5959164056, 949805387, 5959164056")).toEqual([
+      "5959164056",
+      "949805387"
+    ]);
+    expect(parseChatIds("")).toEqual([]);
+  });
+
+  it("resolves every chat for a recipient and falls back to the shared chat", () => {
+    expect(resolveChatIds({ TELEGRAM_CHAT_ID_WIFE: "5959164056,949805387" }, "wife")).toEqual([
+      "5959164056",
+      "949805387"
+    ]);
+    expect(resolveChatId({ TELEGRAM_CHAT_ID_WIFE: "5959164056,949805387" }, "wife")).toBe("5959164056");
+    expect(resolveChatIds({ TELEGRAM_CHAT_ID: "shared" }, "husband")).toEqual(["shared"]);
+    expect(resolveChatIds({}, "husband")).toEqual([]);
   });
 
   it("reports whether any chat is configured", () => {
@@ -85,16 +107,17 @@ describe("groupRecipients", () => {
 });
 
 describe("buildMessage", () => {
-  it("builds a Telegram payload with a deep link to the month", () => {
+  it("builds a rich Telegram payload with a deep link to the month", () => {
     const payload = buildMessage(
       { ...env, APP_URL: "https://example.test/" },
       { recipient: "wife", lang: "id" },
-      { title: "Pengeluaran baru", body: "Listrik" },
+      { title: "Pengeluaran baru", body: "Listrik", html: "<b>Listrik</b>" },
       "2026-11"
     );
     expect(payload).toEqual({
       chat_id: "222",
-      text: "Pengeluaran baru\nListrik",
+      text: "<b>Listrik</b>",
+      parse_mode: "HTML",
       disable_web_page_preview: true,
       reply_markup: {
         inline_keyboard: [
@@ -102,6 +125,18 @@ describe("buildMessage", () => {
         ]
       }
     });
+  });
+
+  it("uses an explicit chat ID when one is supplied", () => {
+    const payload = buildMessage(
+      env,
+      { recipient: "wife", lang: "en" },
+      { title: "t", body: "b" },
+      "x",
+      "949805387"
+    );
+    expect(payload.chat_id).toBe("949805387");
+    expect(payload.parse_mode).toBeUndefined();
   });
 
   it("returns null when no chat is configured for the recipient", () => {
@@ -129,9 +164,26 @@ describe("plannedSends", () => {
       env
     });
     expect(sends).toHaveLength(1);
-    expect(sends[0]).toMatchObject({ recipient: "wife", lang: "id" });
-    expect(sends[0].message.chat_id).toBe("222");
+    expect(sends[0]).toMatchObject({ recipient: "wife", lang: "id", chatId: "222" });
     expect(sends[0].message.text).toContain("Listrik");
+    expect(sends[0].message.parse_mode).toBe("HTML");
+  });
+
+  it("sends to every chat configured for one recipient", () => {
+    const sends = plannedSends({
+      before: budget(),
+      after,
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env: {
+        TELEGRAM_BOT_TOKEN: "bot-token",
+        TELEGRAM_CHAT_ID_HUSBAND: "111",
+        TELEGRAM_CHAT_ID_WIFE: "5959164056, 949805387"
+      }
+    });
+    expect(sends.map((send) => send.chatId)).toEqual(["5959164056", "949805387"]);
+    expect(sends.every((send) => send.message.text.includes("<b>🟢 Pengeluaran baru</b>"))).toBe(true);
   });
 
   it("sends only once when both family members share one chat", () => {
@@ -158,6 +210,6 @@ describe("plannedSends", () => {
     });
     expect(sends).toHaveLength(1);
     expect(sends[0]).toMatchObject({ recipient: "husband", lang: "en" });
-    expect(sends[0].message.text).toContain("Month deleted");
+    expect(sends[0].message.text).toContain("🗑️ Month deleted");
   });
 });

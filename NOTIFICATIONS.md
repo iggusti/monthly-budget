@@ -20,8 +20,11 @@ Function, no paid Firebase plan, and no browser notification permission prompt.
 | `functions/changes.js` and `functions/notify-helpers.js` | Pure diff, formatting and recipient grouping with Vitest tests. |
 
 Because the browser only writes a queue document, all Telegram credentials stay
-server-side in GitHub Secrets. The message has a button linking to the changed
-month and arrives in the language selected on that browser (EN / ID).
+server-side in GitHub Secrets. The message is a rich Telegram HTML card with the month, the changed item,
+its category, method, date, payment status and a per-field before/after for
+edits. Multi-change edits include added/removed/net totals. A button links to
+the changed month, and the copy arrives in the language selected on that
+browser (EN / ID).
 
 ## One-time setup
 
@@ -38,12 +41,14 @@ month and arrives in the language selected on that browser (EN / ID).
    | `TELEGRAM_BOT_TOKEN` | Bot token from BotFather. |
    | `TELEGRAM_CHAT_ID` | Shared family chat, *or* leave unset if using the two below. |
    | `TELEGRAM_CHAT_ID_HUSBAND` | Husband's chat ID. |
-   | `TELEGRAM_CHAT_ID_WIFE` | Wife's chat ID. |
+   | `TELEGRAM_CHAT_ID_WIFE` | Wife's chat ID; separate multiple IDs with a comma. |
    | `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2` | Existing service account JSON. |
 
    Recommended: one chat ID per person. Then the bell's Husband/Wife choice
    makes the sender skip the editor's own browser and target the other person.
    With only a shared `TELEGRAM_CHAT_ID`, everyone in that chat gets the message.
+   One recipient can also have several chats, e.g. `5959164056,949805387`; the
+   sender delivers one message per chat and never duplicates a shared chat.
 
 4. **Deploy Firestore rules** so the app can create outbox jobs:
 
