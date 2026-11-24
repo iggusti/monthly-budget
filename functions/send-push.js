@@ -118,6 +118,10 @@ async function main() {
         env
       });
 
+      if (!sends.length) {
+        console.log(`No recipients for ${monthId}: editor=${editorUid || "none"} devices=${devices.length}`);
+      }
+
       for (const send of sends) {
         await deliver(send.message);
         console.log(`Sent ${send.recipient}/${send.lang} push for ${monthId}`);

@@ -195,7 +195,9 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   must never enter the bundle.
 - `functions/send-push.js` — claims pending jobs in a Firestore transaction,
   POSTs to Pushover, then marks jobs `sent` / `pending` (retry, max 5) /
-  `error`. Jobs stuck in `processing` for over 10 minutes are reset.
+  `error`. Jobs stuck in `processing` for over 10 minutes are reset. It uses
+  the modular `firebase-admin/app` and `firebase-admin/firestore` APIs because
+  firebase-admin v14 no longer exposes `admin.apps`.
 - `functions/changes.js` and `functions/notify-helpers.js` — pure diff,
   formatting and recipient-grouping logic with Vitest tests. `send-push.js`
   must stay a thin adapter around them.
