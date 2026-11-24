@@ -1,9 +1,9 @@
 <script lang="ts">
   /**
    * Bell in the topbar. When off, it opens a small popover to pick this
-   * phone's owner and register for Pushover. When on, one click unregisters it
-   * immediately — no confirmation popup. Pushes arrive in the Pushover app, so
-   * there is no browser permission prompt.
+   * phone's owner and register for Telegram. When on, one click unregisters it
+   * immediately — no confirmation popup. Messages arrive in Telegram, so there
+   * is no browser permission prompt.
    */
   import { t, lang } from "#lib/i18n.svelte";
   import { toastError, toastSuccess } from "#lib/toast.svelte";

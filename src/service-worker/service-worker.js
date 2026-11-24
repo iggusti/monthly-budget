@@ -2,7 +2,7 @@
 /**
  * App-shell service worker template. `vite.config.ts` replaces
  * `__APP_VERSION__` with the build version when it emits `/service-worker.js`.
- * Pushes are handled by Pushover; this worker only keeps the app available
+ * Messages are handled by Telegram; this worker only keeps the app available
  * offline.
  */
 

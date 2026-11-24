@@ -1,6 +1,6 @@
 name: Send budget pushes
 
-# Pushover replaces Firebase Cloud Functions, so the sender runs as a free
+# Telegram replaces Firebase Cloud Functions, so the sender runs as a free
 # scheduled GitHub Action instead of needing the Firebase Blaze plan.
 on:
   schedule:
@@ -38,8 +38,8 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
           APP_URL: https://monthly-budget-nia-ilham.web.app
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_USER_KEY_HUSBAND: ${{ secrets.PUSHOVER_USER_KEY_HUSBAND }}
-          PUSHOVER_USER_KEY_WIFE: ${{ secrets.PUSHOVER_USER_KEY_WIFE }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID_HUSBAND: ${{ secrets.TELEGRAM_CHAT_ID_HUSBAND }}
+          TELEGRAM_CHAT_ID_WIFE: ${{ secrets.TELEGRAM_CHAT_ID_WIFE }}
         run: npm run send-push --prefix functions

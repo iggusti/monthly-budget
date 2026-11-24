@@ -1,8 +1,8 @@
 /**
  * App-shell service worker registration.
  *
- * The worker only handles offline caching now — pushes are delivered by the
- * Pushover app, not by the browser. Kept in its own module so components do not
+ * The worker only handles offline caching now — messages are delivered by
+ * Telegram, not by the browser. Kept in its own module so components do not
  * need to know where the worker lives.
  */
 

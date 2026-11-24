@@ -1,8 +1,8 @@
 /**
- * Pure helpers for the scheduled Pushover sender.
+ * Pure helpers for the scheduled Telegram sender.
  *
  * No Firebase or network calls here: given a queued job and the registered
- * devices, these functions decide exactly which Pushover messages to send.
+ * devices, these functions decide exactly which Telegram messages to send.
  * Kept CommonJS to match `changes.js` so the same code runs in Node and Vitest.
  */
 
@@ -10,19 +10,19 @@ const { collectEvents, buildContent } = require("./changes");
 
 const DEFAULT_APP_URL = "https://monthly-budget-nia-ilham.web.app";
 
-/** Husband/wife keys are optional; a single family key works as a fallback. */
-function resolveUserKey(env, recipient) {
-  const specific = env[`PUSHOVER_USER_KEY_${String(recipient || "").toUpperCase()}`];
+/** Husband/wife chat IDs are optional; a single family chat works as fallback. */
+function resolveChatId(env, recipient) {
+  const specific = env[`TELEGRAM_CHAT_ID_${String(recipient || "").toUpperCase()}`];
   if (specific) return specific;
-  return env.PUSHOVER_USER_KEY || null;
+  return env.TELEGRAM_CHAT_ID || null;
 }
 
-/** Whether at least one recipient can be resolved from the environment. */
-function userKeysConfigured(env) {
+/** Whether at least one chat can be resolved from the environment. */
+function chatIdsConfigured(env) {
   return Boolean(
-    env.PUSHOVER_USER_KEY ||
-      env.PUSHOVER_USER_KEY_HUSBAND ||
-      env.PUSHOVER_USER_KEY_WIFE
+    env.TELEGRAM_CHAT_ID ||
+      env.TELEGRAM_CHAT_ID_HUSBAND ||
+      env.TELEGRAM_CHAT_ID_WIFE
   );
 }
 
@@ -59,26 +59,25 @@ function groupRecipients(devices, editorUid) {
   return groups;
 }
 
-/** Build the form payload for one Pushover message. */
+/** Build the sendMessage payload for one Telegram chat. */
 function buildMessage(env, group, content, monthId) {
-  const user = resolveUserKey(env, group.recipient);
-  if (!user) return null;
+  const chatId = resolveChatId(env, group.recipient);
+  if (!chatId) return null;
 
   const appUrl = (env.APP_URL || DEFAULT_APP_URL).replace(/\/$/, "");
+  const linkLabel = group.lang === "en" ? "Open budget" : "Buka anggaran";
   return {
-    token: env.PUSHOVER_APP_TOKEN,
-    user,
-    title: content.title,
-    message: content.body,
-    url: `${appUrl}/month/${monthId}`,
-    url_title: group.lang === "en" ? "Open budget" : "Buka anggaran",
-    timestamp: Math.floor(Date.now() / 1000),
-    priority: "0"
+    chat_id: chatId,
+    text: `${content.title}\n${content.body}`,
+    disable_web_page_preview: true,
+    reply_markup: {
+      inline_keyboard: [[{ text: linkLabel, url: `${appUrl}/month/${monthId}` }]]
+    }
   };
 }
 
 /**
- * Turn one queued job into the list of Pushover payloads it should produce.
+ * Turn one queued job into the list of Telegram payloads it should produce.
  * Returns an empty list when nothing changed or nobody else is registered.
  */
 function plannedSends({ before, after, monthId, editorUid, devices, env }) {
@@ -94,13 +93,13 @@ function plannedSends({ before, after, monthId, editorUid, devices, env }) {
 
   const monthTitle = after?.title || before?.title || monthId;
   const messages = [];
-  const sentKeys = new Set();
+  const sentChats = new Set();
 
   for (const group of groups) {
-    const user = resolveUserKey(env, group.recipient);
-    if (!user || sentKeys.has(user)) continue;
-    // A single shared key must not receive one push per family member.
-    sentKeys.add(user);
+    const chatId = resolveChatId(env, group.recipient);
+    if (!chatId || sentChats.has(chatId)) continue;
+    // A shared family chat must not receive one message per family member.
+    sentChats.add(chatId);
 
     const content = buildContent(group.lang, monthTitle, events);
     const message = buildMessage(env, group, content, monthId);
@@ -112,8 +111,8 @@ function plannedSends({ before, after, monthId, editorUid, devices, env }) {
 
 module.exports = {
   DEFAULT_APP_URL,
-  resolveUserKey,
-  userKeysConfigured,
+  resolveChatId,
+  chatIdsConfigured,
   groupRecipients,
   buildMessage,
   plannedSends

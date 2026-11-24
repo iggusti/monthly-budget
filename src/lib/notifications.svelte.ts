@@ -1,11 +1,11 @@
 /**
- * Push notification registration for Pushover.
+ * Message registration for Telegram.
  *
  * The browser does not ask for the Notification permission or talk to a push
  * service anymore. It only records which family member owns this device in
  * `devices/{uid}`. Every budget write also drops a job into
  * `notification-outbox`; a scheduled GitHub Action diffs that job and sends it
- * through Pushover, skipping the uid that made the change.
+ * through Telegram, skipping the uid that made the change.
  *
  * Import-safe during SSR: browser globals are only touched behind guards.
  */
@@ -18,7 +18,7 @@ export const PUSH_NOTIFICATIONS_ENABLED = true;
 const ENABLED_KEY = "fhb-notify-enabled";
 const RECIPIENT_KEY = "fhb-notify-recipient";
 
-/** Which family member's Pushover user key should receive this phone's pushes. */
+/** Which family member's Telegram chat should receive this phone's messages. */
 export type Recipient = "husband" | "wife";
 export type NotificationStatus = "default" | "enabled";
 export type NotificationMessage = "disabled" | "error" | null;

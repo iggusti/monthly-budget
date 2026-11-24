@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Scheduled Pushover sender for the monthly budget app",
+  "description": "Scheduled Telegram sender for the monthly budget app",
   "private": true,
   "main": "send-push.js",
   "license": "MIT",

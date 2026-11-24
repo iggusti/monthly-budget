@@ -4,8 +4,8 @@ A monthly family budget app that keeps husband and wife spending in balance,
 tracks daily expenses, and shows how money is funded from salary or savings.
 
 Built with SvelteKit, TypeScript, Firebase Firestore and Firebase Anonymous
-Authentication. Push notifications go through Pushover, sent by a free
-scheduled GitHub Action — no Firebase Blaze plan or credit card needed. The data
+Authentication. Notifications go through Telegram, sent by a free scheduled
+GitHub Action — no Firebase Blaze plan or credit card needed. The data
 model mirrors the `Budgeting Bulanan.xlsx` spreadsheet.
 
 ## Login
@@ -101,16 +101,15 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   browser allows it.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
-- **Push notifications** — an expense edit notifies the other phone through
-  Pushover, a few minutes later. No Blaze plan needed. See
-  [Push notifications](#push-notifications).
+- **Notifications** — an expense edit messages the other person on Telegram a
+  few minutes later. No Blaze plan needed. See [Notifications](#notifications).
 - **Offline & updates** — Firestore keeps a persistent IndexedDB cache and the
   service worker serves cached pages/assets offline. After a new deploy a
   "Versi baru tersedia" toast offers a reload.
 
-## Push notifications
+## Notifications
 
-Pushover replaces Firebase Cloud Messaging entirely, so the project stays on
+Telegram replaces Firebase Cloud Messaging entirely, so the project stays on
 the free Spark plan: no Cloud Functions, no Blaze upgrade, no credit card.
 
 | Piece | Role |
@@ -119,7 +118,7 @@ the free Spark plan: no Cloud Functions, no Blaze upgrade, no credit card.
 | `src/lib/notifications.svelte.ts` | Registers `devices/{uid}` with the recipient, language and anonymous uid. |
 | `src/lib/budget-store.ts` | Writes a job to `notification-outbox` on every save/delete, with the before/after snapshots and `lastEditBy`. |
 | `.github/workflows/push-notifications.yml` | Free scheduled Action (every 5 minutes) that runs the sender. |
-| `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.pushover.net/1/messages.json`. |
+| `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.telegram.org/bot<token>/sendMessage`. |
 | `functions/changes.js` | Pure diff/format helpers, reused by the sender. |
 
 Details:
@@ -136,14 +135,15 @@ Details:
 
 ### Notification setup
 
-1. Create a Pushover application at <https://pushover.net/apps/build> and copy
-   its **API token/Application token**.
-2. Install the Pushover app on each phone and copy each **User key** from
-   <https://pushover.net/>. A shared key is enough for a simple setup; use one
-   key per person if you want the "Husband"/"Wife" choice to skip the editor.
+1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`) and copy
+   its **bot token**.
+2. Send a message to the bot from each person's Telegram account. Open
+   `https://api.telegram.org/bot<token>/getUpdates` and copy each `message.chat.id`.
+   One shared group chat also works for a simple setup; use one chat per person
+   if you want the "Husband"/"Wife" choice to skip the editor.
 3. Add repository secrets (Settings → Secrets and variables → Actions):
-   `PUSHOVER_APP_TOKEN`, and either `PUSHOVER_USER_KEY` or both
-   `PUSHOVER_USER_KEY_HUSBAND` and `PUSHOVER_USER_KEY_WIFE`. The existing
+   `TELEGRAM_BOT_TOKEN`, and either `TELEGRAM_CHAT_ID` or both
+   `TELEGRAM_CHAT_ID_HUSBAND` and `TELEGRAM_CHAT_ID_WIFE`. The existing
    `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2` secret is reused to read the
    outbox.
 4. Deploy the updated Firestore rules so the app can create outbox jobs:
@@ -177,7 +177,7 @@ src/
     auth.ts                  keyword gate + anonymous sign-in
     budget-store.ts          Firestore read/write + push job queue
     i18n.svelte.ts           EN/ID dictionary and the reactive t() helper
-    notifications.svelte.ts  Pushover device registration per browser
+    notifications.svelte.ts  Telegram recipient registration per browser
     service-worker.ts        app-shell service worker registration
     components/
       ExpenseSection.svelte  reusable editable expense list (drag & drop)
@@ -193,7 +193,7 @@ src/
 src/service-worker/
   service-worker.js          template for the generated offline app-shell worker
 functions/
-  send-push.js               scheduled sender: drains the outbox via Pushover
+  send-push.js               scheduled sender: drains the outbox via Telegram
   changes.js                 pure diff/format helpers (unit-testable)
   notify-helpers.js          pure recipient grouping / payload helpers
 scripts/                     data seeding / migration / repair helpers
@@ -255,7 +255,7 @@ npx firebase-tools deploy --only firestore:rules
 ```
 
 The rules allow read/write only for authenticated users, let each device manage
-only its own Pushover registration, and let clients append push jobs while only
+only its own notification registration, and let clients append push jobs while only
 the sender (Admin SDK) updates their status:
 
 ```
@@ -286,7 +286,7 @@ match /notification-outbox/{job} {
 There is no Cloud Function to deploy. `.github/workflows/push-notifications.yml`
 runs every 5 minutes (and can be triggered manually), installs
 `functions/package-lock.json`, and executes `functions/send-push.js` with the
-Pushover and Firebase secrets. It claims pending outbox jobs transactionally,
+Telegram and Firebase secrets. It claims pending outbox jobs transactionally,
 sends one localized message per recipient, and marks each job `sent`, `pending`
 (retry) or `error`. Old `processing` jobs from a crashed run are reset on the
 next run.
@@ -296,8 +296,8 @@ pure helpers are covered by Vitest. No Firebase CLI deploy step is needed.
 
 ## Support & donations
 
-The whole app, **including push notifications**, now runs on free plans:
-Firebase Spark, GitHub Actions and Pushover's 7,500 free messages per month.
+The whole app, **including notifications**, now runs on free plans:
+Firebase Spark, GitHub Actions and the Telegram Bot API.
 No credit card is required. If the app is useful to you, donations are still
 appreciated and help cover future hosting experiments:
 

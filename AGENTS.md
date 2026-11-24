@@ -25,9 +25,9 @@ changing code; the rules below are easy to break accidentally.
   a reload after a new deploy.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
-- **Pushover** for notifications: the browser writes a job to
+- **Telegram Bot API** for notifications: the browser writes a job to
   `notification-outbox` and a free scheduled GitHub Action (`functions/`,
-  Node 22) sends it via the Pushover API. No Cloud Functions and no Blaze plan.
+  Node 22) sends it via Telegram. No Cloud Functions and no Blaze plan.
 
 ## Commands
 
@@ -49,7 +49,7 @@ npx firebase-tools deploy --only firestore:rules  # needed after rules changes
 ```
 
 Hosting is deployed automatically by `.github/workflows/deploy.yml` on every
-push to `main`; that workflow does **not** touch rules. The Pushover sender runs
+push to `main`; that workflow does **not** touch rules. The Telegram sender runs
 separately in `.github/workflows/push-notifications.yml` every 5 minutes.
 Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 `preview.yml`. `release.yml` creates GitHub Releases from `v*` tags;
@@ -175,10 +175,10 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
 - `src/lib/notifications.svelte.ts` — registers `devices/{uid}` with
   `{ uid, recipient, lang, enabled, platform, updatedAt }` and exposes the
   reactive `notify` state. There is **no browser permission prompt** and no FCM:
-  pushes are delivered by the Pushover app on the phone.
+  messages are delivered by Telegram.
 - `src/lib/components/NotificationToggle.svelte` — topbar bell. Enabling asks
-  the user to pick "Husband" or "Wife" so the sender knows which Pushover user
-  key to use and which devices to skip.
+  the user to pick "Husband" or "Wife" so the sender knows which Telegram chat
+  to use and which devices to skip.
 - `src/lib/service-worker.ts` + `src/service-worker/service-worker.js` — the
   worker only caches the app shell now. `vite.config.ts` emits
   `/service-worker.js` (injecting `__APP_VERSION__`) and serves it in dev.
@@ -189,13 +189,13 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   `after: null`. Never remove or bypass these stamps.
 - `.github/workflows/push-notifications.yml` — free scheduled Action (every 5
   minutes) with `concurrency` to avoid overlapping runs. Secrets:
-  `PUSHOVER_APP_TOKEN`, `PUSHOVER_USER_KEY` (shared fallback) or
-  `PUSHOVER_USER_KEY_HUSBAND` / `PUSHOVER_USER_KEY_WIFE`, plus the existing
+  `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (shared fallback) or
+  `TELEGRAM_CHAT_ID_HUSBAND` / `TELEGRAM_CHAT_ID_WIFE`, plus the existing
   `FIREBASE_SERVICE_ACCOUNT_MONTHLY_BUDGET_580B2`. No `VITE_` keys: credentials
   must never enter the bundle.
 - `functions/send-push.js` — claims pending jobs in a Firestore transaction,
-  POSTs to Pushover, then marks jobs `sent` / `pending` (retry, max 5) /
-  `error`. Jobs stuck in `processing` for over 10 minutes are reset. It uses
+  POSTs to the Telegram Bot API, then marks jobs `sent` / `pending` (retry,
+  max 5) / `error`. Jobs stuck in `processing` for over 10 minutes are reset. It uses
   the modular `firebase-admin/app` and `firebase-admin/firestore` APIs because
   firebase-admin v14 no longer exposes `admin.apps`.
 - `functions/changes.js` and `functions/notify-helpers.js` — pure diff,
@@ -208,16 +208,16 @@ Pull requests get `ci.yml` checks and a 7-day Hosting preview channel from
   date-only edit sends no push today. Include `date` there (and its callers) if
   that should change — keep the function pure and testable with plain `node`.
 - Debounce/aggregate awareness: each budget write produces one outbox job and at
-  most one Pushover message per recipient language; multiple events in one write
+  most one Telegram message per recipient language; multiple events in one write
   are summarised. Delivery is delayed by up to ~5 minutes by design.
 
 ## Gotchas
 
-- Pushover pushes need GitHub Secrets configured before the scheduled sender can
-  do anything; with only a shared `PUSHOVER_USER_KEY` the editor's own phone also
-  receives pushes, because Pushover cannot target one device of a shared key.
-  Per-person keys avoid that. Pushes are delayed by up to ~5 minutes — do not
-  describe them as instant.
+- Telegram delivery needs GitHub Secrets configured before the scheduled sender
+  can do anything; with only a shared `TELEGRAM_CHAT_ID` the editor also receives
+  the message, because one chat cannot be split per browser. Per-person chat IDs
+  avoid that. Messages are delayed by up to ~5 minutes — do not describe them as
+  instant.
 - `adapter-static` + `fallback: index.html`: dynamic routes like `/month/[id]`
   only work client-side; direct visits are rewritten to the SPA.
 - `.topbar` uses `backdrop-filter`, which makes it the containing block for

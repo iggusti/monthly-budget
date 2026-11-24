@@ -1,8 +1,8 @@
 /**
- * Drain `notification-outbox` and deliver queued budget changes via Pushover.
+ * Drain `notification-outbox` and deliver queued budget changes via Telegram.
  *
  * Run by the scheduled GitHub Actions workflow in `.github/workflows/`, where
- * the Pushover keys and the Firebase service account live as repo secrets.
+ * the bot token, chat IDs and Firebase service account live as repo secrets.
  * No Cloud Functions / Blaze plan is involved.
  */
 
@@ -15,7 +15,7 @@ const DEVICES = "devices";
 const MAX_JOBS = 25;
 const MAX_ATTEMPTS = 5;
 const STALE_AFTER_MS = 10 * 60 * 1000;
-const PUSHOVER_URL = "https://api.pushover.net/1/messages.json";
+const TELEGRAM_API = "https://api.telegram.org/bot";
 
 function requireEnv(name) {
   const value = process.env[name];
@@ -76,24 +76,24 @@ async function loadDevices(db) {
   return snapshot.docs.map((entry) => entry.data());
 }
 
-async function deliver(message) {
-  const response = await fetch(PUSHOVER_URL, {
+async function deliver(token, message) {
+  const response = await fetch(`${TELEGRAM_API}${token}/sendMessage`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams(message).toString()
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(message)
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok || result.status !== 1) {
-    throw new Error((result.errors || []).join("; ") || `Pushover HTTP ${response.status}`);
+  if (!response.ok || result.ok !== true) {
+    throw new Error(result.description || `Telegram HTTP ${response.status}`);
   }
 }
 
 async function main() {
-  const token = requireEnv("PUSHOVER_APP_TOKEN");
-  if (!helpers.userKeysConfigured(process.env)) {
-    throw new Error("Set PUSHOVER_USER_KEY or PUSHOVER_USER_KEY_HUSBAND / PUSHOVER_USER_KEY_WIFE");
+  const token = requireEnv("TELEGRAM_BOT_TOKEN");
+  if (!helpers.chatIdsConfigured(process.env)) {
+    throw new Error("Set TELEGRAM_CHAT_ID or TELEGRAM_CHAT_ID_HUSBAND / TELEGRAM_CHAT_ID_WIFE");
   }
-  const env = { ...process.env, PUSHOVER_APP_TOKEN: token };
+  const env = { ...process.env, TELEGRAM_BOT_TOKEN: token };
 
   if (!getApps().length) initializeApp();
   const db = getFirestore();
@@ -123,8 +123,8 @@ async function main() {
       }
 
       for (const send of sends) {
-        await deliver(send.message);
-        console.log(`Sent ${send.recipient}/${send.lang} push for ${monthId}`);
+        await deliver(token, send.message);
+        console.log(`Sent ${send.recipient}/${send.lang} Telegram message for ${monthId}`);
       }
 
       await job.ref.update({
@@ -150,11 +150,11 @@ async function main() {
   }
 
   console.log(
-    `Pushover sender: ${jobs.length} claimed, ${reset} reset, ${sent} sent, ${skipped} skipped, ${failed} failed`
+    `Telegram sender: ${jobs.length} claimed, ${reset} reset, ${sent} sent, ${skipped} skipped, ${failed} failed`
   );
 }
 
 main().catch((error) => {
-  console.error("Pushover sender stopped:", error);
+  console.error("Telegram sender stopped:", error);
   process.exitCode = 1;
 });
