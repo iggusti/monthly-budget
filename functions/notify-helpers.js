@@ -26,6 +26,18 @@ function chatIdsConfigured(env) {
   );
 }
 
+/** Telegram's `retry_after` hint (seconds) on a 429, or 0 when absent. */
+function retryAfterSeconds(result) {
+  const seconds = Number(result?.parameters?.retry_after ?? 0);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 0;
+}
+
+/** Whether a job is still waiting out a Telegram rate limit. */
+function isDeferred(job, nowMs = Date.now()) {
+  const until = Date.parse(job?.retryAfterAt || "");
+  return Number.isFinite(until) && until > nowMs;
+}
+
 /**
  * Group the other people's devices by recipient + language.
  *
@@ -113,6 +125,8 @@ module.exports = {
   DEFAULT_APP_URL,
   resolveChatId,
   chatIdsConfigured,
+  retryAfterSeconds,
+  isDeferred,
   groupRecipients,
   buildMessage,
   plannedSends

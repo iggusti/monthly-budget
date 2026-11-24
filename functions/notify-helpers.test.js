@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import helpers from "./notify-helpers.js";
 
-const { buildMessage, chatIdsConfigured, groupRecipients, plannedSends, resolveChatId } = helpers;
+const { buildMessage, chatIdsConfigured, groupRecipients, isDeferred, plannedSends, resolveChatId, retryAfterSeconds } = helpers;
 
 const expense = (id, name, amount) => ({ id, name, amount, method: "QRIS" });
 
@@ -42,6 +42,24 @@ describe("resolveChatId", () => {
     expect(chatIdsConfigured(env)).toBe(true);
     expect(chatIdsConfigured({ TELEGRAM_CHAT_ID: "shared" })).toBe(true);
     expect(chatIdsConfigured({})).toBe(false);
+  });
+});
+
+describe("retryAfterSeconds", () => {
+  it("reads Telegram's retry hint and ignores missing or invalid values", () => {
+    expect(retryAfterSeconds({ parameters: { retry_after: 32 } })).toBe(32);
+    expect(retryAfterSeconds({ parameters: { retry_after: 1.4 } })).toBe(2);
+    expect(retryAfterSeconds({ ok: false })).toBe(0);
+    expect(retryAfterSeconds(undefined)).toBe(0);
+  });
+});
+
+describe("isDeferred", () => {
+  it("defers a job only while its retry window is open", () => {
+    const now = Date.parse("2026-11-24T05:00:00.000Z");
+    expect(isDeferred({ retryAfterAt: "2026-11-24T05:00:35.000Z" }, now)).toBe(true);
+    expect(isDeferred({ retryAfterAt: "2026-11-24T04:59:00.000Z" }, now)).toBe(false);
+    expect(isDeferred({}, now)).toBe(false);
   });
 });
 

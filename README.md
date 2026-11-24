@@ -130,7 +130,9 @@ Details:
 - Deleting a whole month sends a "Month deleted" notification to the other
   phones. Each push links straight to that month's page.
 - Failed sends are retried on the next run (up to 5 attempts); jobs are claimed
-  transactionally so overlapping runs cannot double-send.
+  transactionally so overlapping runs cannot double-send. Telegram flood limits
+  are respected: messages are spaced out, a short `retry_after` is waited out,
+  and a still-limited job is deferred to a later run.
 - Delivery is not instant: expect a push within about 5 minutes of an edit.
 
 ### Notification setup

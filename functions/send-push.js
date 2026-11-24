@@ -15,6 +15,8 @@ const DEVICES = "devices";
 const MAX_JOBS = 25;
 const MAX_ATTEMPTS = 5;
 const STALE_AFTER_MS = 10 * 60 * 1000;
+const SEND_SPACING_MS = 1200; // Telegram allows roughly one message per second per chat.
+const MAX_RETRY_WAIT_SECONDS = 60;
 const TELEGRAM_API = "https://api.telegram.org/bot";
 
 function requireEnv(name) {
@@ -50,7 +52,7 @@ async function resetStaleJobs(db) {
 async function claimJobs(db) {
   const snapshot = await db.collection(OUTBOX).where("status", "==", "pending").limit(200).get();
   const pending = snapshot.docs
-    .filter((entry) => entry.data().createdAt)
+    .filter((entry) => entry.data().createdAt && !helpers.isDeferred(entry.data()))
     .sort((a, b) => String(a.data().createdAt).localeCompare(String(b.data().createdAt)))
     .slice(0, MAX_JOBS);
 
@@ -76,6 +78,10 @@ async function loadDevices(db) {
   return snapshot.docs.map((entry) => entry.data());
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function deliver(token, message) {
   const response = await fetch(`${TELEGRAM_API}${token}/sendMessage`, {
     method: "POST",
@@ -84,7 +90,24 @@ async function deliver(token, message) {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result.ok !== true) {
-    throw new Error(result.description || `Telegram HTTP ${response.status}`);
+    const error = new Error(result.description || `Telegram HTTP ${response.status}`);
+    const retryAfter = helpers.retryAfterSeconds(result);
+    if (retryAfter) error.retryAfter = retryAfter;
+    throw error;
+  }
+}
+
+/** Rate limits are usually short: wait once, then let the next run pick it up. */
+async function deliverWithRetry(token, message) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await deliver(token, message);
+    } catch (error) {
+      const retryAfter = Number(error?.retryAfter || 0);
+      if (attempt >= 1 || !retryAfter || retryAfter > MAX_RETRY_WAIT_SECONDS) throw error;
+      console.log(`Telegram rate limit: retrying in ${retryAfter + 1}s`);
+      await sleep((retryAfter + 1) * 1000);
+    }
   }
 }
 
@@ -105,6 +128,14 @@ async function main() {
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  let lastSentAt = 0;
+
+  // Pace every message in the run, including ones from different jobs.
+  async function pace() {
+    const wait = SEND_SPACING_MS - (Date.now() - lastSentAt);
+    if (wait > 0) await sleep(wait);
+    lastSentAt = Date.now();
+  }
 
   for (const job of jobs) {
     const { before, after, monthId, editorUid } = job.data;
@@ -123,7 +154,8 @@ async function main() {
       }
 
       for (const send of sends) {
-        await deliver(token, send.message);
+        await pace();
+        await deliverWithRetry(token, send.message);
         console.log(`Sent ${send.recipient}/${send.lang} Telegram message for ${monthId}`);
       }
 
@@ -131,6 +163,7 @@ async function main() {
         status: "sent",
         processedAt: new Date().toISOString(),
         processingAt: null,
+        retryAfterAt: null,
         recipients: sends.length
       });
       if (sends.length) sent += 1;
@@ -139,11 +172,15 @@ async function main() {
       const attempts = Number(job.data.attempts || 0) + 1;
       const message = String(error?.message || error);
       console.error(`Failed job ${job.ref.id}: ${message}`);
+      const retryAfter = Number(error?.retryAfter || 0);
       await job.ref.update({
         status: attempts >= MAX_ATTEMPTS ? "error" : "pending",
         attempts,
         lastError: message,
-        processingAt: null
+        processingAt: null,
+        ...(retryAfter && attempts < MAX_ATTEMPTS
+          ? { retryAfterAt: new Date(Date.now() + (retryAfter + 2) * 1000).toISOString() }
+          : { retryAfterAt: null })
       });
       failed += 1;
     }
