@@ -1,4 +1,4 @@
-// Changes to this file are deployed automatically by sender-rules.yml.
+// Changes to this file are deployed automatically by sender-rules.yml on push.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
