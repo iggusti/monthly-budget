@@ -6,7 +6,8 @@
  * No Cloud Functions / Blaze plan is involved.
  */
 
-const admin = require("firebase-admin");
+const { getApps, initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 const helpers = require("./notify-helpers");
 
 const OUTBOX = "notification-outbox";
@@ -94,8 +95,8 @@ async function main() {
   }
   const env = { ...process.env, PUSHOVER_APP_TOKEN: token };
 
-  if (!admin.apps.length) admin.initializeApp();
-  const db = admin.firestore();
+  if (!getApps().length) initializeApp();
+  const db = getFirestore();
 
   const reset = await resetStaleJobs(db);
   const jobs = await claimJobs(db);
