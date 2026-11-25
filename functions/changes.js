@@ -23,6 +23,10 @@ const TEXT = {
     monthDelete: "Data bulan dihapus",
     changes: "perubahan pengeluaran",
     was: "sebelumnya",
+    success: "Berhasil",
+    failed: "Gagal",
+    detail: "Detail",
+    errorLabel: "Kesalahan",
     name: "Nama",
     amount: "Jumlah",
     category: "Kategori",
@@ -49,6 +53,10 @@ const TEXT = {
     monthDelete: "Month deleted",
     changes: "expense changes",
     was: "was",
+    success: "Success",
+    failed: "Failed",
+    detail: "Detail",
+    errorLabel: "Error",
     name: "Name",
     amount: "Amount",
     category: "Category",
@@ -71,6 +79,26 @@ const TEXT = {
 };
 
 const ICONS = { add: "🟢", edit: "✏️", delete: "🔴", "month-delete": "🗑️", many: "📊" };
+
+const ACTIVITY_LABEL = {
+  id: {
+    "budget.save": "Anggaran disimpan",
+    "budget.delete": "Anggaran dihapus",
+    "auth.login": "Masuk ke aplikasi",
+    "auth.logout": "Keluar dari aplikasi",
+    "notify.enable": "Notifikasi diaktifkan",
+    "notify.disable": "Notifikasi dimatikan"
+  },
+  en: {
+    "budget.save": "Budget saved",
+    "budget.delete": "Budget deleted",
+    "auth.login": "Signed in",
+    "auth.logout": "Signed out",
+    "notify.enable": "Notifications enabled",
+    "notify.disable": "Notifications disabled"
+  }
+};
+
 
 function formatRupiah(amount) {
   return "Rp " + new Intl.NumberFormat("id-ID").format(Math.round(Number(amount) || 0));
@@ -180,7 +208,8 @@ function editorLabel(lang, meta) {
 }
 
 function footer(lang, meta) {
-  return `───────────\n<i>${escapeHtml(TEXT[lang].footer)} · ${escapeHtml(editorLabel(lang, meta))}</i>`;
+  const outcome = meta.outcome === "error" ? `⚠️ ${TEXT[lang].failed}` : `✅ ${TEXT[lang].success}`;
+  return `───────────\n<i>${escapeHtml(outcome)} · ${escapeHtml(TEXT[lang].footer)} · ${escapeHtml(editorLabel(lang, meta))}</i>`;
 }
 
 function htmlForSingle(lang, monthTitle, event, meta) {
@@ -267,6 +296,30 @@ function htmlForMany(lang, monthTitle, events, meta) {
   return `${head}\n${lines.join("\n\n")}${more}\n\n${summary}\n\n${footer(lang, meta)}`;
 }
 
+/** Compose a card for an audit action (auth, device toggle, or no-diff save). */
+function buildActivityContent(lang, activity, meta = {}) {
+  const text = TEXT[lang];
+  const label = ACTIVITY_LABEL[lang][activity.action] || activity.action;
+  const failed = activity.outcome === "error";
+  const outcome = failed ? text.failed : text.success;
+  const icon = failed ? "⚠️" : "✅";
+  const detail = activity.detail || "";
+
+  const lines = [
+    `<b>${icon} ${escapeHtml(label)}</b>`,
+    `<i>${icon} ${escapeHtml(outcome)}${activity.monthId ? ` · ${escapeHtml(activity.monthId)}` : ""}</i>`
+  ];
+  if (detail) lines.push(`<b>${escapeHtml(text.detail)}:</b> ${escapeHtml(detail)}`);
+  if (activity.error) lines.push(`<b>${escapeHtml(text.errorLabel)}:</b> ${escapeHtml(activity.error)}`);
+  lines.push("", footer(lang, { ...meta, outcome: activity.outcome }));
+
+  return {
+    title: `${icon} ${label}`,
+    body: `${outcome} · ${label}${detail ? `\n${detail}` : ""}${activity.error ? `\n${text.errorLabel}: ${activity.error}` : ""}`,
+    html: lines.join("\n")
+  };
+}
+
 /** Compose the title/body/html for one recipient language. */
 function buildContent(lang, monthTitle, events, meta = {}) {
   const text = TEXT[lang];
@@ -323,5 +376,6 @@ module.exports = {
   TEXT,
   formatRupiah,
   collectEvents,
-  buildContent
+  buildContent,
+  buildActivityContent
 };

@@ -213,3 +213,46 @@ describe("plannedSends", () => {
     expect(sends[0].message.text).toContain("🗑️ Month deleted");
   });
 });
+
+
+describe("activity jobs", () => {
+  it("sends one activity card per chat for a failed Firebase action", () => {
+    const sends = helpers.plannedSends({
+      before: null,
+      after: null,
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env: { ...env, TELEGRAM_CHAT_ID_WIFE: "5959164056,949805387" },
+      job: {
+        kind: "activity",
+        action: "notify.enable",
+        outcome: "error",
+        detail: "wife",
+        error: "permission-denied",
+        editorUid: "u1"
+      }
+    });
+    expect(sends.map((send) => send.chatId)).toEqual(["5959164056", "949805387"]);
+    expect(sends[0].message.parse_mode).toBe("HTML");
+    expect(sends[0].message.text).toContain("⚠️ Gagal");
+    expect(sends[0].message.text).toContain("permission-denied");
+  });
+
+  it("falls back to a success card when a budget save changed no expense", () => {
+    const before = budget({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: false }] });
+    const after = budget({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: true }] });
+    const sends = helpers.plannedSends({
+      before,
+      after,
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env,
+      job: { kind: "budget", outcome: "success", action: "budget.save", detail: "November 2026", editorUid: "u1" }
+    });
+    expect(sends).toHaveLength(1);
+    expect(sends[0].message.text).toContain("✅ Berhasil");
+    expect(sends[0].message.text).toContain("Anggaran disimpan");
+  });
+});

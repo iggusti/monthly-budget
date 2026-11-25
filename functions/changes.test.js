@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import changes from "./changes.js";
 
-const { buildContent, collectEvents, formatRupiah } = changes;
+const { buildActivityContent, buildContent, collectEvents, formatRupiah } = changes;
 
 const expense = (id, name, amount, method = "QRIS") => ({ id, name, amount, method });
 
@@ -142,5 +142,40 @@ describe("buildContent", () => {
     const content = buildContent("en", "November 2026", [{ type: "month-delete" }], meta);
     expect(content).toMatchObject({ title: "Month deleted", body: "November 2026" });
     expect(content.html).toContain("All budget data for this month has been deleted.");
+  });
+});
+
+
+describe("buildActivityContent", () => {
+  const meta = {
+    recipient: "wife",
+    editorUid: "u1",
+    devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }]
+  };
+
+  it("marks successful actions as success", () => {
+    const content = buildActivityContent("en", {
+      action: "auth.login",
+      outcome: "success",
+      detail: "Anonymous sign-in",
+      monthId: "2026-11"
+    }, meta);
+    expect(content.title).toBe("✅ Signed in");
+    expect(content.html).toContain("✅ Success · 2026-11");
+    expect(content.html).toContain("<b>Detail:</b> Anonymous sign-in");
+    expect(content.html).toContain("from husband");
+  });
+
+  it("shows the error on a failed Firebase action", () => {
+    const content = buildActivityContent("id", {
+      action: "notify.enable",
+      outcome: "error",
+      detail: "wife",
+      error: "permission-denied"
+    }, meta);
+    expect(content.title).toBe("⚠️ Notifikasi diaktifkan");
+    expect(content.body).toContain("Gagal · Notifikasi diaktifkan");
+    expect(content.html).toContain("<b>Kesalahan:</b> permission-denied");
+    expect(content.html).toContain("⚠️ Gagal");
   });
 });

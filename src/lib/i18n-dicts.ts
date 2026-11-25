@@ -49,6 +49,13 @@ export const en: Dict = {
   "toast.movedTo": "Moved to {person} · {kind}",
   "toast.saveFailed": "Couldn't save. Please try again.",
   "toast.dismiss": "Dismiss",
+  "toast.created": "Period created",
+  "toast.createFailed": "Couldn't create period. Please try again.",
+  "toast.loginSuccess": "Signed in",
+  "toast.loginFailed": "Couldn't sign in. Please try again.",
+  "toast.logoutSuccess": "Signed out",
+  "toast.logoutFailed": "Couldn't sign out. Please try again.",
+  "toast.languageSaved": "Language preference saved",
 
   // ── Login ─────────────────────────────────────────────────────────────────
   "login.title": "Monthly Budget Nia Ilham",
@@ -330,6 +337,13 @@ export const id: Dict = {
   "toast.movedTo": "Dipindahkan ke {person} · {kind}",
   "toast.saveFailed": "Gagal menyimpan. Coba lagi.",
   "toast.dismiss": "Tutup",
+  "toast.created": "Periode dibuat",
+  "toast.createFailed": "Gagal membuat periode. Coba lagi.",
+  "toast.loginSuccess": "Berhasil masuk",
+  "toast.loginFailed": "Gagal masuk. Coba lagi.",
+  "toast.logoutSuccess": "Berhasil keluar",
+  "toast.logoutFailed": "Gagal keluar. Coba lagi.",
+  "toast.languageSaved": "Bahasa berhasil disimpan",
 
   // ── Login ─────────────────────────────────────────────────────────────────
   "login.title": "Anggaran Bulanan Nia Ilham",

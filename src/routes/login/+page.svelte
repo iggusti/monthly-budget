@@ -3,6 +3,7 @@
   import { MOTION, motionFade } from "#lib/motion";
   import { login, isAuthenticated } from "#lib/auth";
   import { t } from "#lib/i18n.svelte";
+  import { toastError, toastSuccess } from "#lib/toast.svelte";
   import { syncTheme } from "#lib/theme.svelte";
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";
   import ThemeToggle from "#lib/components/ThemeToggle.svelte";
@@ -33,9 +34,11 @@
     const ok = await login(keyword);
     loading = false;
     if (ok) {
+      toastSuccess(t("toast.loginSuccess"));
       location.href = "/";
     } else {
       hasError = true;
+      toastError(t("toast.loginFailed"));
       shake = true;
       setTimeout(() => (shake = false), 500);
     }

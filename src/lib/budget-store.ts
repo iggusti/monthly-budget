@@ -5,6 +5,7 @@ import {
   getFirestoreApi
 } from "./firebase";
 import { normalizeBudget, type MonthBudget } from "./types";
+import { logActivity } from "./activity";
 
 /**
  * Queue one push job for the scheduled sender. This is best-effort: a failed
@@ -15,6 +16,8 @@ async function enqueueNotification(job: {
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   editorUid: string | null;
+  action?: "budget.save" | "budget.delete";
+  detail?: string;
 }): Promise<void> {
   try {
     const { db, doc, setDoc } = await getFirestoreApi();
@@ -25,12 +28,24 @@ async function enqueueNotification(job: {
     const id = `${job.monthId}-${Date.now()}-${random}`;
     await setDoc(doc(db, NOTIFICATIONS_COLLECTION, id), {
       ...job,
+      kind: "budget",
+      outcome: "success",
+      action: job.action || "budget.save",
+      detail: job.detail || "",
       createdAt: new Date().toISOString(),
       status: "pending",
       attempts: 0
     });
   } catch (error) {
     console.error("Failed to queue push notification:", error);
+    await logActivity({
+      action: job.action || "budget.save",
+      outcome: "error",
+      monthId: job.monthId,
+      detail: job.detail || "Gagal mengantre notifikasi",
+      editorUid: job.editorUid,
+      error
+    });
   }
 }
 
@@ -132,64 +147,99 @@ export async function subscribeAllBudgets(
  * Persist a budget, stamping the update time and the editor's uid.
  *
  * `lastEditBy` travels with the queued push job so the sender can skip the
- * device that made the change.
+ * device that made the change. A failed write is reported to Telegram as an
+ * activity card, while the caller shows the matching toast.
  */
 export async function saveBudget(budget: MonthBudget): Promise<void> {
-  const { db, doc, getDoc, setDoc } = await getFirestoreApi();
-  const ref = doc(db, BUDGET_COLLECTION, budget.id);
-
-  let before: Record<string, unknown> | null = null;
+  const uid = auth.currentUser?.uid ?? null;
   try {
-    const snapshot = await getDoc(ref);
-    if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
+    const { db, doc, getDoc, setDoc } = await getFirestoreApi();
+    const ref = doc(db, BUDGET_COLLECTION, budget.id);
+
+    let before: Record<string, unknown> | null = null;
+    try {
+      const snapshot = await getDoc(ref);
+      if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
+    } catch (error) {
+      console.error(`Failed to read previous state of budget ${budget.id}:`, error);
+    }
+
+    const payload: MonthBudget = {
+      ...budget,
+      updatedAt: new Date().toISOString(),
+      lastEditBy: uid
+    };
+    await setDoc(ref, payload, { merge: true });
+
+    await enqueueNotification({
+      monthId: budget.id,
+      before,
+      after: payload as unknown as Record<string, unknown>,
+      editorUid: uid,
+      action: "budget.save",
+      detail: budget.title || budget.id
+    });
   } catch (error) {
-    console.error(`Failed to read previous state of budget ${budget.id}:`, error);
+    await logActivity({
+      action: "budget.save",
+      outcome: "error",
+      monthId: budget.id,
+      detail: budget.title || budget.id,
+      editorUid: uid,
+      error
+    });
+    throw error;
   }
-
-  const payload: MonthBudget = {
-    ...budget,
-    updatedAt: new Date().toISOString(),
-    lastEditBy: auth.currentUser?.uid ?? null
-  };
-  await setDoc(ref, payload, { merge: true });
-
-  await enqueueNotification({
-    monthId: budget.id,
-    before,
-    after: payload as unknown as Record<string, unknown>,
-    editorUid: payload.lastEditBy ?? null
-  });
 }
 
-/** Permanently delete a budget. */
+/** Permanently delete a budget, reporting the outcome to the family. */
 export async function deleteBudget(id: string): Promise<void> {
-  const { db, doc, getDoc, setDoc, deleteDoc } = await getFirestoreApi();
-  const ref = doc(db, BUDGET_COLLECTION, id);
   const uid = auth.currentUser?.uid ?? null;
-
-  let before: Record<string, unknown> | null = null;
   try {
-    const snapshot = await getDoc(ref);
-    if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
-  } catch (error) {
-    console.error(`Failed to read budget ${id} before deletion:`, error);
-  }
+    const { db, doc, getDoc, setDoc, deleteDoc } = await getFirestoreApi();
+    const ref = doc(db, BUDGET_COLLECTION, id);
 
-  // Stamp the deleter first: the sender only sees the queued snapshot, so it
-  // needs this to know whose phone to skip.
-  if (uid) {
+    let before: Record<string, unknown> | null = null;
     try {
-      await setDoc(
-        ref,
-        { lastEditBy: uid, updatedAt: new Date().toISOString() },
-        { merge: true }
-      );
+      const snapshot = await getDoc(ref);
+      if (snapshot.exists()) before = snapshot.data() as Record<string, unknown>;
     } catch (error) {
-      console.error("Failed to stamp budget deletion:", error);
+      console.error(`Failed to read budget ${id} before deletion:`, error);
     }
+
+    // Stamp the deleter first: the sender only sees the queued snapshot, so it
+    // needs this to know whose phone to skip.
+    if (uid) {
+      try {
+        await setDoc(
+          ref,
+          { lastEditBy: uid, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch (error) {
+        console.error("Failed to stamp budget deletion:", error);
+      }
+    }
+
+    await deleteDoc(ref);
+
+    await enqueueNotification({
+      monthId: id,
+      before,
+      after: null,
+      editorUid: uid,
+      action: "budget.delete",
+      detail: before?.title ? String(before.title) : id
+    });
+  } catch (error) {
+    await logActivity({
+      action: "budget.delete",
+      outcome: "error",
+      monthId: id,
+      detail: id,
+      editorUid: uid,
+      error
+    });
+    throw error;
   }
-
-  await deleteDoc(ref);
-
-  await enqueueNotification({ monthId: id, before, after: null, editorUid: uid });
 }

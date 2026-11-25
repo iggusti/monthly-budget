@@ -20,7 +20,9 @@ Function, no paid Firebase plan, and no browser notification permission prompt.
 | `functions/changes.js` and `functions/notify-helpers.js` | Pure diff, formatting and recipient grouping with Vitest tests. |
 
 Because the browser only writes a queue document, all Telegram credentials stay
-server-side in GitHub Secrets. The message is a rich Telegram HTML card with the month, the changed item,
+server-side in GitHub Secrets. Budget edits and activity jobs (sign-in, sign-out,
+notification/language changes, and failures) notify the other registered family
+member; when nobody else is registered, the actor receives the card. The message is a rich Telegram HTML card with the month, the changed item,
 its category, method, date, payment status and a per-field before/after for
 edits. Multi-change edits include added/removed/net totals. A button links to
 the changed month, and the copy arrives in the language selected on that

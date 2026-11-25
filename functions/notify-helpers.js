@@ -6,7 +6,7 @@
  * Kept CommonJS to match `changes.js` so the same code runs in Node and Vitest.
  */
 
-const { collectEvents, buildContent } = require("./changes");
+const { collectEvents, buildContent, buildActivityContent } = require("./changes");
 
 const DEFAULT_APP_URL = "https://monthly-budget-nia-ilham.web.app";
 
@@ -92,30 +92,83 @@ function buildMessage(env, group, content, monthId, chatId = resolveChatId(env, 
 
   const appUrl = (env.APP_URL || DEFAULT_APP_URL).replace(/\/$/, "");
   const linkLabel = group.lang === "en" ? "Open budget" : "Buka anggaran";
-  return {
+  const payload = {
     chat_id: chatId,
     text: content.html || `${content.title}\n${content.body}`,
     parse_mode: content.html ? "HTML" : undefined,
-    disable_web_page_preview: true,
-    reply_markup: {
-      inline_keyboard: [[{ text: linkLabel, url: `${appUrl}/month/${monthId}` }]]
-    }
+    disable_web_page_preview: true
   };
+  if (monthId && monthId !== "activity") {
+    payload.reply_markup = {
+      inline_keyboard: [[{ text: linkLabel, url: `${appUrl}/month/${monthId}` }]]
+    };
+  }
+  return payload;
+}
+
+/** Activity jobs notify the other device; if none exists, tell the actor. */
+function activitySends({ activity, monthId, editorUid, devices, env }) {
+  const payload = { ...activity, monthId: activity?.monthId || monthId || null };
+  const allGroups = groupRecipients(devices, null);
+  const otherGroups = groupRecipients(devices, editorUid);
+  const groups = otherGroups.length ? otherGroups : allGroups;
+  const messages = [];
+  const sentChats = new Set();
+
+  for (const group of groups) {
+    const chatIds = resolveChatIds(env, group.recipient);
+    const content = buildActivityContent(group.lang, payload, {
+      recipient: group.recipient,
+      editorUid: editorUid || payload.editorUid || null,
+      devices
+    });
+    for (const chatId of chatIds) {
+      if (sentChats.has(chatId)) continue;
+      sentChats.add(chatId);
+      const message = buildMessage(env, group, content, payload.monthId || "activity", chatId);
+      if (message) {
+        messages.push({ message, recipient: group.recipient, lang: group.lang, chatId });
+      }
+    }
+  }
+
+  return messages;
 }
 
 /**
  * Turn one queued job into the list of Telegram payloads it should produce.
  * Returns an empty list when nothing changed or nobody else is registered.
  */
-function plannedSends({ before, after, monthId, editorUid, devices, env }) {
+function plannedSends({ before, after, monthId, editorUid, devices, env, job }) {
+  const editor = editorUid || job?.editorUid || null;
   const events = after
     ? collectEvents(before || undefined, after)
     : before
       ? [{ type: "month-delete" }]
       : [];
+
+  // Auth/device actions are pure activity jobs. A budget save that changed no
+  // expense (e.g. a lock toggle) falls back to a success activity card too.
+  if (job?.kind === "activity") {
+    return activitySends({ activity: job, monthId, editorUid: editor, devices, env });
+  }
+  if (events.length === 0 && job?.outcome) {
+    return activitySends({
+      activity: {
+        ...job,
+        kind: "activity",
+        action: job.action || "budget.save",
+        detail: job.detail || monthId
+      },
+      monthId,
+      editorUid: editor,
+      devices,
+      env
+    });
+  }
   if (events.length === 0) return [];
 
-  const groups = groupRecipients(devices, editorUid);
+  const groups = groupRecipients(devices, editor);
   if (groups.length === 0) return [];
 
   const monthTitle = after?.title || before?.title || monthId;
@@ -127,8 +180,9 @@ function plannedSends({ before, after, monthId, editorUid, devices, env }) {
     if (!chatIds.length) continue;
     const content = buildContent(group.lang, monthTitle, events, {
       recipient: group.recipient,
-      editorUid,
-      devices
+      editorUid: editor,
+      devices,
+      outcome: job?.outcome || "success"
     });
 
     for (const chatId of chatIds) {
@@ -155,5 +209,6 @@ module.exports = {
   isDeferred,
   groupRecipients,
   buildMessage,
+  activitySends,
   plannedSends
 };

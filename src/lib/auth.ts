@@ -8,11 +8,12 @@
  *     rules can require an authenticated user (no public read/write).
  *
  * The anonymous session is persisted by the Firebase SDK, so the app stays
- * signed in across visits.
+ * signed in across visits. Both Firebase steps are reported to Telegram.
  */
 
 import { signInAnonymously } from "firebase/auth";
 import { auth } from "./firebase";
+import { logActivity } from "./activity";
 
 const KEYWORD = "enza";
 
@@ -35,21 +36,39 @@ export async function login(keyword: string): Promise<boolean> {
   if (keyword.trim().toLowerCase() !== KEYWORD) return false;
   try {
     await signInAnonymously(auth);
+    await logActivity({
+      action: "auth.login",
+      outcome: "success",
+      editorUid: auth.currentUser?.uid ?? null,
+      detail: "Anonymous sign-in"
+    });
     grantKeyword();
     return true;
   } catch (error) {
     console.error("Anonymous sign-in failed:", error);
+    await logActivity({
+      action: "auth.login",
+      outcome: "error",
+      editorUid: auth.currentUser?.uid ?? null,
+      detail: "Anonymous sign-in",
+      error
+    });
     return false;
   }
 }
 
 /** Sign out of Firebase and clear the keyword gate. */
 export async function logout(): Promise<void> {
+  const uid = auth.currentUser?.uid ?? null;
   revokeKeyword();
   try {
+    // Log while the session is still alive: Firestore writes need auth.
+    await logActivity({ action: "auth.logout", outcome: "success", editorUid: uid, detail: "Signed out" });
     await auth.signOut();
   } catch (error) {
     console.error("Sign-out failed:", error);
+    await logActivity({ action: "auth.logout", outcome: "error", editorUid: uid, detail: "Signed out", error });
+    throw error;
   }
 }
 

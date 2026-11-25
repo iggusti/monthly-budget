@@ -291,15 +291,21 @@
       return;
     }
     busy = true;
-    // Carry over fixed expenses (unchecked) and income from the previous
-    // period; the shared helper also seeds the routine sadaqah.
-    const prev = await fetchBudget(previousMonthId(id));
-    const budget = createBudgetFromPrevious(id, prev);
-
-    await saveBudget(budget);
-    budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
-    busy = false;
-    location.href = `/month/${budget.id}`;
+    try {
+      // Carry over fixed expenses (unchecked) and income from the previous
+      // period; the shared helper also seeds the routine sadaqah.
+      const prev = await fetchBudget(previousMonthId(id));
+      const budget = createBudgetFromPrevious(id, prev);
+      await saveBudget(budget);
+      budgets = [...budgets, budget].sort((a, b) => b.id.localeCompare(a.id));
+      toastSuccess(t("toast.created"));
+      location.href = `/month/${budget.id}`;
+    } catch (error) {
+      console.error("Failed to create month:", error);
+      toastError(t("toast.createFailed"));
+    } finally {
+      busy = false;
+    }
   }
 
   /**

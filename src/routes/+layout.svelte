@@ -8,6 +8,7 @@
   import { MOTION, motionFly, takeNavOffset } from "#lib/motion";
   import { logout, isAuthenticated } from "#lib/auth";
   import { t, lang } from "#lib/i18n.svelte";
+  import { toastError, toastSuccess } from "#lib/toast.svelte";
   import { syncTheme } from "#lib/theme.svelte";
   import { initNotifications, PUSH_NOTIFICATIONS_ENABLED } from "#lib/notifications.svelte";
   import { registerServiceWorker } from "#lib/service-worker";
@@ -50,15 +51,29 @@
   const isLogin = $derived(page.url.pathname === "/login");
 
   // Refresh the push registration (and its stored language) once signed in.
+  // A change caused by a language click also gets success/failure feedback.
+  let lastNotifLang = lang.value;
   $effect(() => {
     const currentLang = lang.value;
+    const changedByClick = currentLang !== lastNotifLang;
+    lastNotifLang = currentLang;
     if (!PUSH_NOTIFICATIONS_ENABLED) return;
     if (isLogin || !isAuthenticated()) return;
-    void initNotifications(currentLang);
+    void initNotifications(currentLang).then((ok) => {
+      if (!changedByClick) return;
+      if (ok) toastSuccess(t("toast.languageSaved"));
+      else toastError(t("toast.saveFailed"));
+    });
   });
 
   async function handleLogout() {
-    await logout();
+    try {
+      await logout();
+      toastSuccess(t("toast.logoutSuccess"));
+    } catch (error) {
+      console.error("Sign-out failed:", error);
+      toastError(t("toast.logoutFailed"));
+    }
     location.href = "/login";
   }
 </script>

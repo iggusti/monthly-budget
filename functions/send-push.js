@@ -132,7 +132,8 @@ async function main() {
         monthId,
         editorUid: editorUid || null,
         devices,
-        env
+        env,
+        job: job.data
       });
 
       if (!sends.length) {

@@ -707,8 +707,8 @@
    *
    * The editor closes straight away; the parent's `onChange` may return the
    * write's promise, and a `false` result (or a rejection) reports a failure
-   * instead. Checkbox toggles call `onChange` directly — they are not changes
-   * worth announcing.
+   * instead. Checkbox toggles use this path too, so every Firebase write has
+   * visible success/failure feedback.
    */
   function applyChange(
     nextItems: ExpenseItem[],
@@ -830,8 +830,9 @@
 
   function toggleCheck(id: string) {
     if (readOnly) return;
-    onChange(
-      items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item))
+    applyChange(
+      items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)),
+      "edit"
     );
   }
 </script>

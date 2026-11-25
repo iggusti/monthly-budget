@@ -12,6 +12,7 @@
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, DEVICES_COLLECTION, getFirestoreApi } from "./firebase";
+import { logActivity } from "./activity";
 
 export const PUSH_NOTIFICATIONS_ENABLED = true;
 
@@ -73,8 +74,9 @@ function waitForUid(timeoutMs = 8000): Promise<string | null> {
 export async function enableNotifications(recipient: Recipient, lang: string): Promise<void> {
   notify.busy = true;
   notify.message = null;
+  let uid: string | null = null;
   try {
-    const uid = await waitForUid();
+    uid = await waitForUid();
     if (!uid) throw new Error("not-signed-in");
 
     const { db, doc, setDoc, serverTimestamp } = await getFirestoreApi();
@@ -95,8 +97,10 @@ export async function enableNotifications(recipient: Recipient, lang: string): P
     localStorage.setItem(RECIPIENT_KEY, recipient);
     notify.recipient = recipient;
     notify.status = "enabled";
+    await logActivity({ action: "notify.enable", outcome: "success", editorUid: uid, detail: recipient });
   } catch (error) {
     console.error("Failed to enable notifications:", error);
+    await logActivity({ action: "notify.enable", outcome: "error", editorUid: uid, detail: recipient, error });
     refreshStatus();
     notify.message = "error";
   } finally {
@@ -108,22 +112,22 @@ export async function enableNotifications(recipient: Recipient, lang: string): P
 export async function disableNotifications(): Promise<void> {
   notify.busy = true;
   notify.message = null;
+  let uid: string | null = null;
   try {
     localStorage.removeItem(ENABLED_KEY);
     localStorage.removeItem(RECIPIENT_KEY);
 
-    const uid = await waitForUid();
-    if (uid) {
-      const { db, doc, deleteDoc } = await getFirestoreApi();
-      await deleteDoc(doc(db, DEVICES_COLLECTION, uid)).catch((error) => {
-        console.warn("Failed to remove device record:", error);
-      });
-    }
+    uid = await waitForUid();
+    if (!uid) throw new Error("not-signed-in");
+    const { db, doc, deleteDoc } = await getFirestoreApi();
+    await deleteDoc(doc(db, DEVICES_COLLECTION, uid));
 
+    await logActivity({ action: "notify.disable", outcome: "success", editorUid: uid, detail: "device" });
     notify.status = "default";
     notify.message = "disabled";
   } catch (error) {
     console.error("Failed to disable notifications:", error);
+    await logActivity({ action: "notify.disable", outcome: "error", editorUid: uid, detail: "device", error });
     refreshStatus();
     notify.message = "error";
   } finally {
@@ -135,17 +139,17 @@ export async function disableNotifications(): Promise<void> {
  * Call once when the app starts. Re-reads the device record so a reinstall or
  * a partially written flag cannot leave the bell claiming to be enabled.
  */
-export async function initNotifications(lang: string): Promise<void> {
-  if (typeof window === "undefined") return;
+export async function initNotifications(lang: string): Promise<boolean> {
+  if (typeof window === "undefined") return true;
   refreshStatus();
   // No local flag means there is nothing to verify; skip the Firestore read
   // for users who never enabled notifications.
-  if (localStorage.getItem(ENABLED_KEY) !== "true") return;
+  if (localStorage.getItem(ENABLED_KEY) !== "true") return true;
 
   const uid = await waitForUid();
   if (!uid) {
     refreshStatus();
-    return;
+    return true;
   }
 
   try {
@@ -161,14 +165,30 @@ export async function initNotifications(lang: string): Promise<void> {
 
       if (data.lang !== normalizeLang(lang)) {
         await setDoc(ref, { lang: normalizeLang(lang), updatedAt: serverTimestamp() }, { merge: true });
+        await logActivity({
+          action: "notify.language",
+          outcome: "success",
+          detail: normalizeLang(lang),
+          editorUid: uid
+        });
       }
-    } else {
-      localStorage.removeItem(ENABLED_KEY);
-      localStorage.removeItem(RECIPIENT_KEY);
-      notify.status = "default";
+      return true;
     }
+
+    localStorage.removeItem(ENABLED_KEY);
+    localStorage.removeItem(RECIPIENT_KEY);
+    notify.status = "default";
+    return true;
   } catch (error) {
     console.error("Failed to refresh notification registration:", error);
+    await logActivity({
+      action: "notify.language",
+      outcome: "error",
+      detail: normalizeLang(lang),
+      editorUid: auth.currentUser?.uid || null,
+      error
+    });
     refreshStatus();
+    return false;
   }
 }
