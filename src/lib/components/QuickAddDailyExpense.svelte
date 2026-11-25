@@ -9,7 +9,7 @@
    */
   import { untrack } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import { MOTION, motionFade, motionFly } from "#lib/motion";
+  import { MOTION, motionFade, motionSheet } from "#lib/motion";
   import {
     daysBetween,
     makeId,
@@ -228,14 +228,14 @@
 
 <svelte:window onkeydown={onKeydown} onfocusin={keepFieldVisible} />
 
-<div class="sheet-overlay" role="presentation" transition:fade={motionFade(MOTION.fast)}>
+<div class="sheet-overlay" role="presentation" transition:fade={motionFade(MOTION.base)}>
   <div
     class="sheet"
     role="dialog"
     aria-modal="true"
     aria-label={t("dashboard.quickAdd")}
     bind:this={dialogEl}
-    transition:fly={motionFly(20, MOTION.fast)}
+    transition:motionSheet={MOTION.base}
   >
     <div class="sheet-head">
       <div class="head-text">
@@ -391,9 +391,11 @@
     padding: 1.25rem;
     background: var(--scrim);
     backdrop-filter: blur(3px);
+    will-change: opacity;
   }
   .sheet {
     display: flex; flex-direction: column;
+    will-change: transform;
     width: 100%; max-width: 29rem;
     max-height: min(88dvh, 44rem);
     background: var(--surface); border: 1px solid var(--surface-border);

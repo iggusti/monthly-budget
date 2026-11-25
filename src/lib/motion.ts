@@ -1,3 +1,6 @@
+import { cubicOut } from "svelte/easing";
+import type { TransitionConfig } from "svelte/transition";
+
 /** Motion durations in milliseconds, matching the tokens in `app.css`. */
 export const MOTION = { fast: 180, base: 280, slow: 450 } as const;
 
@@ -21,6 +24,21 @@ export function motionFly(y: number, ms: number, delay = 0) {
     y: prefersReducedMotion() ? 0 : y,
     duration: motionDuration(ms),
     delay: motionDuration(delay)
+  };
+}
+
+/**
+ * Modal sheet slide: rises from below by part of its own height and eases out.
+ * Measuring the node keeps the motion proportional on both the centred panel
+ * and the phone bottom sheet. Collapses to an instant change for reduced motion.
+ */
+export function motionSheet(node: HTMLElement, ms: number = MOTION.base): TransitionConfig {
+  const viewport = typeof window === "undefined" ? 0 : window.innerHeight;
+  const distance = prefersReducedMotion() ? 0 : Math.min(node.offsetHeight || 0, viewport * 0.45);
+  return {
+    duration: motionDuration(ms),
+    easing: cubicOut,
+    css: (t) => `transform: translateY(${(1 - t) * distance}px)`
   };
 }
 
