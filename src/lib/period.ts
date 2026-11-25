@@ -61,6 +61,11 @@ export function periodQuickDates(id: string, now: Date = new Date(), limit = 4):
   return dates;
 }
 
+/** True when an ISO date sits inside the inclusive bounds. */
+export function isDateWithin(value: string, min: string, max: string): boolean {
+  return value >= min && value <= max;
+}
+
 /** Day a period starts — the 25th → 24th cycle. */
 export const PERIOD_START_DAY = 25;
 

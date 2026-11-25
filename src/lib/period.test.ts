@@ -5,6 +5,7 @@ import {
   currentPeriodId,
   isFuturePeriodId,
   isPastPeriodId,
+  isDateWithin,
   isPeriodLocked,
   isUpcomingPeriod,
   latestPeriodId,
@@ -237,5 +238,17 @@ describe("periodQuickDates", () => {
       "2026-11-28",
       "2026-11-27"
     ]);
+  });
+});
+
+
+describe("isDateWithin", () => {
+  it("accepts both bounds", () => {
+    expect(isDateWithin("2026-11-25", "2026-11-25", "2026-11-25")).toBe(true);
+  });
+
+  it("rejects dates outside the bounds", () => {
+    expect(isDateWithin("2026-11-24", "2026-11-25", "2026-11-30")).toBe(false);
+    expect(isDateWithin("2026-12-01", "2026-11-25", "2026-11-30")).toBe(false);
   });
 });

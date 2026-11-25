@@ -191,7 +191,12 @@
     daysBetween,
     type ExpenseItem
   } from "#lib/types";
-  import { periodDateCeiling, periodDateRange, periodQuickDates } from "#lib/period";
+  import {
+    isDateWithin,
+    periodDateCeiling,
+    periodDateRange,
+    periodQuickDates
+  } from "#lib/period";
   import { t, lang } from "#lib/i18n.svelte";
   import {
     allExpensesChecked,
@@ -794,7 +799,14 @@
       checked: existingItem?.checked ?? draft.checked ?? false
     };
     if (withMethod) clean.method = composeMethod();
-    if (withDate) clean.date = draft.date ?? "";
+    if (withDate) {
+      const date = draft.date ?? "";
+      if (date && !isDateWithin(date, dateFloor, dateCeiling)) {
+        toastError(t("expense.dateOutOfRange", { min: dateFloor, max: dateCeiling }));
+        return;
+      }
+      clean.date = date;
+    }
 
     const exists = items.some((item) => item.id === clean.id);
     const nextItems = exists

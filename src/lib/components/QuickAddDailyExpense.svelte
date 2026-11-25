@@ -20,9 +20,15 @@
     type DailySectionKey
   } from "#lib/types";
   import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
-  import { periodDateCeiling, periodDateRange, periodQuickDates } from "#lib/period";
+  import {
+    isDateWithin,
+    periodDateCeiling,
+    periodDateRange,
+    periodQuickDates
+  } from "#lib/period";
   import BadgeIcon from "#lib/components/BadgeIcon.svelte";
   import { lang, t } from "#lib/i18n.svelte";
+  import { toastError } from "#lib/toast.svelte";
 
   interface Props {
     /** Human label of the period receiving the entry, e.g. "November 2026". */
@@ -154,6 +160,11 @@
     event.preventDefault();
     if (!canCommit || saving) return;
     const trimmed = name.trim();
+
+    if (date && !isDateWithin(date, dateFloor, dateCeiling)) {
+      toastError(t("expense.dateOutOfRange", { min: dateFloor, max: dateCeiling }));
+      return;
+    }
 
     const base = methodBases.find((option) => option.value === methodBase)?.label ?? "";
     const channel = channelOptions.includes(methodChannel) ? methodChannel : "";
