@@ -239,8 +239,10 @@
     withDate?: boolean;
     /** Period id (`YYYY-MM`) used to keep custom dates inside this cycle. */
     periodId?: string;
-    /** Compact header chip; does not change the header height when toggled. */
-    headerHint?: { label: string; title?: string };
+    /** Overrides the checkbox footer's sub-line (e.g. while checks are locked). */
+    footerSub?: string;
+    /** Full explanation for `footerSub`, shown as a tooltip. */
+    footerSubTitle?: string;
     /** When true each row shows a checkbox and the footer shows remaining total. */
     checkboxable?: boolean;
     /** Keeps checkboxes visible but disabled (e.g. until a period's 1st day). */
@@ -301,7 +303,8 @@
     methodDefault,
     withDate = false,
     periodId,
-    headerHint,
+    footerSub,
+    footerSubTitle,
     checkboxable = false,
     checkboxesDisabled = false,
     collapsible = false,
@@ -889,9 +892,6 @@
       {/if}
     </span>
     <span class="section-title">{title}</span>
-    {#if headerHint}
-      <span class="section-hint" title={headerHint.title ?? headerHint.label}>{headerHint.label}</span>
-    {/if}
     <span class="section-total">{formatCurrency(total)}</span>
     {#if !readOnly}
       <button
@@ -1211,7 +1211,9 @@
       {#if checkboxable}
         <span class="footer-check-stats">
           <span class="footer-remaining" class:negative={remaining < 0}>{formatCurrency(remaining)}</span>
-          <span class="footer-sub">{t("expense.remaining")} · {formatCurrency(checkedTotal)} {t("expense.paid")}</span>
+          <span class="footer-sub" title={footerSubTitle}>
+            {footerSub ?? `${t("expense.remaining")} · ${formatCurrency(checkedTotal)} ${t("expense.paid")}`}
+          </span>
         </span>
       {:else}
         <span class:negative={(footerValue ?? total) < 0}>{formatCurrency(footerValue ?? total)}</span>
@@ -1294,8 +1296,7 @@
   .section:hover { box-shadow: var(--shadow-md); }
 
   .section-head { display: flex; align-items: center; gap: 0.65rem; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--surface-border); }
-  .section-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 700; }
-  .section-hint { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--accent-rose) 30%, transparent); background: color-mix(in srgb, var(--accent-rose) 12%, transparent); color: var(--accent-rose-ink); }
+  .section-title { flex: 1; min-width: 0; font-size: 0.88rem; font-weight: 700; line-height: 1.25; }
   .section-total { flex-shrink: 0; font-size: 0.9rem; font-weight: 700; }
   .badge { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: transform var(--dur-base) var(--ease-spring); }
   .section:hover .badge { transform: scale(1.08) rotate(-4deg); }

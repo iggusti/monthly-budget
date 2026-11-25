@@ -1019,9 +1019,8 @@
       badge="♀"
       icon="fixed"
       tone="rose"
-      headerHint={wifeFixedChecksLocked
-        ? { label: t("month.wifeFixedCheckHint"), title: t("month.wifeFixedCheckLocked") }
-        : undefined}
+      footerSub={wifeFixedChecksLocked ? t("month.wifeFixedCheckHint") : undefined}
+      footerSubTitle={wifeFixedChecksLocked ? t("month.wifeFixedCheckLocked") : undefined}
       checkboxable
       checkboxesDisabled={wifeFixedChecksLocked}
       collapsible
