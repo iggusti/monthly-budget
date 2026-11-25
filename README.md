@@ -142,22 +142,29 @@ click gets a toast, but only meaningful family-visible events reach Telegram.
 
 Details:
 
-- The editor's devices are skipped, so you never get a push for your own edit.
+- For budget changes, the editor's devices are skipped, so you never get a push
+  for your own edit. Activity cards (login/logout, bell toggles, failures) go to
+  the other registered device; when none exists, the configured family chats
+  are the fallback, so the actor can receive those cards.
 - Notifications arrive in the language selected on each phone (EN / ID).
 - Tracked expense fields are name, amount, method and date for all expenses,
   plus `checked` for fixed expenses only. Daily spending is already paid, so
   its Status row and `checked` changes are ignored. Income edits send no push.
 - A successful save that changes no tracked expense sends no Telegram card;
   the old generic `Budget saved` card was intentionally removed.
-- Deleting a whole month always sends a `Month deleted` card to the other
-  phones. Each push links straight to that month's page.
+- Deleting a whole month sends a `Month deleted` card to the other phones.
+  Expense and month-delete cards link straight to that month's page; activity
+  cards have no month to link to.
 - Failed sends are retried on the next run (up to 5 attempts); jobs are claimed
   transactionally so overlapping runs cannot double-send. Telegram flood limits
   are respected: messages are spaced out, and a flooded job is deferred to a
   later run after a quiet cooldown instead of being retried immediately. Being
   rate-limited does not consume a retry attempt, so a long Telegram outage
   cannot drop a notification.
-- Delivery is not instant: expect a push within about 3 minutes of an edit.
+- Delivery is not instant. The two offset crons target a 2–3 minute gap, but
+  GitHub sometimes delays or drops scheduled runs (gaps of hours are possible).
+  Dispatch `push-notifications.yml` manually from the Actions tab when a card
+  is needed immediately.
 
 ### Notification setup
 

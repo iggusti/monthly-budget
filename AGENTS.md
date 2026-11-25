@@ -243,15 +243,18 @@ Two channels, deliberately separate:
 - Intended behaviour: notify on add/edit/delete of expense items when `name`,
   `amount`, `method` or `date` changes, plus `checked` changes for fixed
   expenses only. Date-only edits now do notify. Income edits, daily `checked`
-  changes and successful saves with no tracked change do not. Never notify the
-  editor's own device. Failures and auth/device actions still produce activity
-  cards.
+  changes and successful saves with no tracked change do not. Budget writes
+  skip the editor's own devices. Failures and auth/device actions still produce
+  activity cards; those fall back to configured chats when no other device is
+  registered, so the actor can receive them.
 - `sameItem()` in `changes.js` compares `name`, `amount`, `method`, `date` and
   `checked` only for fixed sections (`isDailySection()` skips status for daily
   sections). Keep the function pure and testable with plain `node`.
 - Debounce/aggregate awareness: each budget write produces one outbox job and at
   most one Telegram message per recipient language; multiple events in one write
-  are summarised. Delivery is delayed by up to ~3 minutes by design.
+  are summarised. Delivery is intentionally delayed, not instant: the crons
+  target 2–3 minutes, but GitHub can delay or skip scheduled runs for hours, so
+  never promise a hard 3-minute SLA. Manual `workflow_dispatch` is immediate.
 - Telegram flood control: `send-push.js` spaces every message in a run by
   `SEND_SPACING_MS` (including messages from different jobs). On a 429 it does
   **not** retry in the same run — that keeps re-triggering Telegram's flood
@@ -267,8 +270,8 @@ Two channels, deliberately separate:
 - Telegram delivery needs GitHub Secrets configured before the scheduled sender
   can do anything; with only a shared `TELEGRAM_CHAT_ID` the editor also receives
   the message, because one chat cannot be split per browser. Per-person chat IDs
-  avoid that. Messages are delayed by up to ~3 minutes — do not describe them as
-  instant.
+  avoid that. Messages are delayed by design and GitHub may hold scheduled runs
+  for hours — do not describe them as instant or guarantee 3 minutes.
 - `adapter-static` + `fallback: index.html`: dynamic routes like `/month/[id]`
   only work client-side; direct visits are rewritten to the SPA.
 - `.topbar` uses `backdrop-filter`, which makes it the containing block for

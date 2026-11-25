@@ -88,7 +88,10 @@ failed immediately.
 
 ## Notes
 
-- Delivery is delayed by design; do not describe it as instant.
+- Delivery is delayed by design; do not describe it as instant. The two cron
+  schedules target a 2–3 minute gap, but GitHub frequently delays or drops
+  scheduled runs (observed gaps of several hours). Use `gh workflow run
+  push-notifications.yml` when a card is needed right away.
 - The browser never stores the bot token or chat IDs. No `VITE_` keys.
 - Old FCM-era `devices` records have no `recipient` and are ignored by both the
   app and the sender.
