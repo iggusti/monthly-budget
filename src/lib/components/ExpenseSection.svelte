@@ -241,6 +241,8 @@
     periodId?: string;
     /** When true each row shows a checkbox and the footer shows remaining total. */
     checkboxable?: boolean;
+    /** Keeps checkboxes visible but disabled (e.g. until a period's 1st day). */
+    checkboxesDisabled?: boolean;
     /** When true, only the most recent items are shown with a view more/less toggle. */
     collapsible?: boolean;
     /** Number of items shown when collapsed (default 8). */
@@ -298,6 +300,7 @@
     withDate = false,
     periodId,
     checkboxable = false,
+    checkboxesDisabled = false,
     collapsible = false,
     collapseLimit = 8,
     items,
@@ -865,7 +868,7 @@
   }
 
   function toggleCheck(id: string) {
-    if (readOnly) return;
+    if (readOnly || checkboxesDisabled) return;
     applyChange(
       items.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item)),
       "edit"
@@ -1027,11 +1030,18 @@
               <span class="drag-handle" aria-hidden="true" title={t("expense.dragToMove")}>⠿</span>
             {/if}
             {#if checkboxable}
-              <label class="check" title={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}>
+              <label
+                class="check"
+                title={checkboxesDisabled
+                  ? t("expense.checkLocked")
+                  : item.checked
+                    ? t("expense.markUnpaid")
+                    : t("expense.markPaid")}
+              >
                 <input
                   type="checkbox"
                   checked={item.checked}
-                  disabled={readOnly}
+                  disabled={readOnly || checkboxesDisabled}
                   aria-label={item.checked ? t("expense.markUnpaid") : t("expense.markPaid")}
                   onchange={() => toggleCheck(item.id)}
                 />

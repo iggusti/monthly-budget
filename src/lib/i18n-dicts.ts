@@ -237,6 +237,7 @@ export const en: Dict = {
   "expense.delete": "Delete",
   "expense.markPaid": "Mark paid",
   "expense.markUnpaid": "Mark unpaid",
+  "expense.checkLocked": "Available from the 1st",
   "expense.dragToMove": "Drag to move",
   "expense.empty": "No entries yet — tap “+” to add one.",
   "expense.viewLess": "View less",
@@ -288,6 +289,7 @@ export const en: Dict = {
   "month.lockedToast": "Period locked",
   "month.unlockedToast": "Period unlocked",
   "month.upcomingDailyNotice": "Daily expenses open when the period starts on the 25th.",
+  "month.wifeFixedCheckLocked": "Wife's fixed expenses can be marked paid from the 1st of this period.",
 };
 
 export const id: Dict = {
@@ -526,6 +528,7 @@ export const id: Dict = {
   "expense.delete": "Hapus",
   "expense.markPaid": "Tandai lunas",
   "expense.markUnpaid": "Tandai belum lunas",
+  "expense.checkLocked": "Aktif mulai tanggal 1",
   "expense.dragToMove": "Geser untuk memindah",
   "expense.empty": "Belum ada entri — ketuk “+” untuk menambah.",
   "expense.viewLess": "Lihat lebih sedikit",
@@ -577,6 +580,7 @@ export const id: Dict = {
   "month.lockedToast": "Periode dikunci",
   "month.unlockedToast": "Periode dibuka",
   "month.upcomingDailyNotice": "Pengeluaran harian dibuka saat periode mulai tanggal 25.",
+  "month.wifeFixedCheckLocked": "Pengeluaran tetap istri bisa ditandai lunas mulai tanggal 1 periode ini.",
 };
 
 export const dictionaries: Record<"en" | "id", Dict> = { en, id };

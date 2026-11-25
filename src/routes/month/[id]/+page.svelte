@@ -19,6 +19,7 @@
   import { isAuthenticated } from "#lib/auth";
   import {
     canEditDailyExpenses,
+    canMarkWifeFixedPaid,
     currentPeriodId,
     isPastPeriodId,
     isPeriodLocked,
@@ -49,6 +50,8 @@
   const isUpcomingMonth = $derived(isUpcomingPeriod(monthId));
   /** Fixed sections skip the confirmation for the upcoming period only. */
   const confirmFixedChanges = $derived(!isActiveMonth && !isUpcomingMonth);
+  /** Wife's fixed checkboxes unlock on the 1st of the active period's end month. */
+  const wifeFixedChecksLocked = $derived(isActiveMonth && !canMarkWifeFixedPaid(monthId));
 
   /** All stored month ids, sorted chronologically (oldest first). */
   let allMonthIds = $state<string[]>([]);
@@ -998,6 +1001,9 @@
     />
     {/if}
     {#if !searchActive || matchedSections[3]}
+    {#if wifeFixedChecksLocked}
+      <p class="upcoming-daily-notice">{t("month.wifeFixedCheckLocked")}</p>
+    {/if}
     <ExpenseSection
       sectionId="section-4"
       confirmChanges={confirmFixedChanges}
@@ -1009,6 +1015,7 @@
       icon="fixed"
       tone="rose"
       checkboxable
+      checkboxesDisabled={wifeFixedChecksLocked}
       collapsible
       items={visibleItemsPerSection[3]?.items ?? budget.wifeFixed}
       onChange={(items: ExpenseItem[]) => update("wifeFixed", items)}

@@ -135,6 +135,10 @@ without a quota project.
 - Daily items also carry an optional `date` (`YYYY-MM-DD`, local calendar day;
   use the `todayISO()` / `parseISODate()` / `daysBetween()` helpers, not raw
   `Date` math). Documents created before the field existed have none.
+- Wife's fixed-expense checkboxes stay visible but disabled from the 25th
+  through the end of the start month of the active period; they unlock on the
+  1st of the period's ending month (`canMarkWifeFixedPaid()` in `period.ts`).
+  Other sections and periods keep their normal checkbox behaviour.
 - Payment method is one string in `item.method`, composed from a preset pair:
   base (`qris` / `transfer` / `cash`) plus a channel (bank or e-wallet). The
   shared presets and defaults live in `src/lib/expense-methods.ts` (used by both

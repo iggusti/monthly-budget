@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   allMonthsTo,
   canEditDailyExpenses,
+  canMarkWifeFixedPaid,
   currentPeriodId,
   isFuturePeriodId,
   isPastPeriodId,
@@ -140,6 +141,18 @@ describe("canEditDailyExpenses", () => {
 
   it("becomes true once the period starts on the 25th", () => {
     expect(canEditDailyExpenses("2026-10", new Date(2026, 9, 25))).toBe(true);
+  });
+});
+
+describe("canMarkWifeFixedPaid", () => {
+  it("stays locked from the 25th through the end of the start month", () => {
+    expect(canMarkWifeFixedPaid("2026-10", new Date(2026, 9, 25))).toBe(false);
+    expect(canMarkWifeFixedPaid("2026-10", new Date(2026, 9, 31))).toBe(false);
+  });
+
+  it("unlocks on the 1st of the period's ending month", () => {
+    expect(canMarkWifeFixedPaid("2026-10", new Date(2026, 10, 1))).toBe(true);
+    expect(canMarkWifeFixedPaid("2026-10", new Date(2026, 10, 24))).toBe(true);
   });
 });
 

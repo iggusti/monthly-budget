@@ -62,6 +62,10 @@ header. The stored `periodStart` / `periodEnd` (`YYYY-MM-DD`) feed the readable
 titled "February 2026"). Each period is stored as one Firestore document (id
 `YYYY-MM`) in the `budget` collection.
 
+During the active period, the wife's fixed-expense checkboxes stay disabled
+until the **1st** of the period's ending month; the money is considered paid
+only from that day. The husband's fixed checkboxes are unaffected.
+
 The dashboard lists a period from the **21st** — four days before it starts on
 the 25th — so the upcoming card can be prepared early. Its **fixed expenses**
 (sections 3–4) are editable, movable between the spouses and deletable without

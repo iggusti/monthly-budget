@@ -151,6 +151,14 @@ export function canEditDailyExpenses(id: string, now: Date = new Date()): boolea
   return !isUpcomingPeriod(id, now);
 }
 
+/**
+ * Wife's fixed expenses can only be marked paid from the 1st of the period's
+ * ending month. `2026-10` (25 Oct – 24 Nov) unlocks on 1 Nov 2026.
+ */
+export function canMarkWifeFixedPaid(id: string, now: Date = new Date()): boolean {
+  return toISODate(now) >= `${nextMonthId(id)}-01`;
+}
+
 /** ID of the calendar month before `id` (`YYYY-MM`). */
 export function previousMonthId(id: string): string {
   const [year, month] = id.split("-").map(Number);
