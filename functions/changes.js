@@ -43,6 +43,8 @@ const TEXT = {
     net: "Selisih bersih",
     summary: "Ringkasan perubahan",
     more: "perubahan lainnya",
+    changed: "Diubah",
+    period: "Periode",
     monthDeletedBody: "Seluruh data anggaran untuk bulan ini telah dihapus.",
     footer: "Dikirim otomatis oleh Monthly Budget"
   },
@@ -73,6 +75,8 @@ const TEXT = {
     net: "Net change",
     summary: "Change summary",
     more: "more changes",
+    changed: "Changed",
+    period: "Period",
     monthDeletedBody: "All budget data for this month has been deleted.",
     footer: "Sent automatically by Monthly Budget"
   }
@@ -87,7 +91,8 @@ const ACTIVITY_LABEL = {
     "auth.login": "Masuk ke aplikasi",
     "auth.logout": "Keluar dari aplikasi",
     "notify.enable": "Notifikasi diaktifkan",
-    "notify.disable": "Notifikasi dimatikan"
+    "notify.disable": "Notifikasi dimatikan",
+    "notify.language": "Bahasa notifikasi diperbarui"
   },
   en: {
     "budget.save": "Budget saved",
@@ -95,7 +100,29 @@ const ACTIVITY_LABEL = {
     "auth.login": "Signed in",
     "auth.logout": "Signed out",
     "notify.enable": "Notifications enabled",
-    "notify.disable": "Notifications disabled"
+    "notify.disable": "Notifications disabled",
+    "notify.language": "Notification language updated"
+  }
+};
+
+const ACTIVITY_DETAILS = {
+  id: {
+    "Anonymous sign-in": "Masuk anonim",
+    "Signed out": "Keluar dari aplikasi",
+    husband: "untuk suami",
+    wife: "untuk istri",
+    device: "pada perangkat ini",
+    id: "Bahasa Indonesia",
+    en: "English"
+  },
+  en: {
+    "Anonymous sign-in": "Anonymous sign-in",
+    "Signed out": "Signed out",
+    husband: "for husband",
+    wife: "for wife",
+    device: "on this device",
+    id: "Indonesian",
+    en: "English"
   }
 };
 
@@ -118,6 +145,19 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(date);
 }
 
+function formatTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 function sectionLabel(lang, section) {
   return section ? section.label[lang] : "";
 }
@@ -127,13 +167,14 @@ function itemKey(item, index) {
   return `#${index}`;
 }
 
-/** Compare only the fields the family actually edits (`checked` is ignored for diffing). */
+/** Compare every field the family edits, including the payment checkbox. */
 function sameItem(a, b) {
   return (
     String(a.name ?? "") === String(b.name ?? "") &&
     Number(a.amount ?? 0) === Number(b.amount ?? 0) &&
     String(a.method ?? "") === String(b.method ?? "") &&
-    String(a.date ?? "") === String(b.date ?? "")
+    String(a.date ?? "") === String(b.date ?? "") &&
+    Boolean(a.checked) === Boolean(b.checked)
   );
 }
 
@@ -208,13 +249,18 @@ function editorLabel(lang, meta) {
 }
 
 function footer(lang, meta) {
-  const outcome = meta.outcome === "error" ? `⚠️ ${TEXT[lang].failed}` : `✅ ${TEXT[lang].success}`;
-  return `───────────\n<i>${escapeHtml(outcome)} · ${escapeHtml(TEXT[lang].footer)} · ${escapeHtml(editorLabel(lang, meta))}</i>`;
+  const outcome = meta.outcome === "error" ? `⚠️ ${TEXT[lang].failed}` : "";
+  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const parts = [outcome, editorLabel(lang, meta), when].filter(Boolean);
+  const suffix = parts.length ? ` · ${escapeHtml(parts.join(" · "))}` : "";
+  return `───────────\n<i>${escapeHtml(TEXT[lang].footer)}${suffix}</i>`;
 }
 
 function htmlForSingle(lang, monthTitle, event, meta) {
   const text = TEXT[lang];
-  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type))}</b>\n<i>${escapeHtml(monthTitle || "")}</i>\n`;
+  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
+  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type))}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
   if (event.type === "month-delete") {
     return `${head}\n${escapeHtml(text.monthDeletedBody)}\n\n${footer(lang, meta)}`;
@@ -257,7 +303,9 @@ function htmlForSingle(lang, monthTitle, event, meta) {
 
 function htmlForMany(lang, monthTitle, events, meta) {
   const text = TEXT[lang];
-  const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(monthTitle || "")}</i>\n`;
+  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
+  const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
   const lines = events.slice(0, 6).map((event, index) => {
     const label = event.type === "month-delete" ? text.monthDelete : eventTitle(lang, event.type);
@@ -269,6 +317,7 @@ function htmlForMany(lang, monthTitle, events, meta) {
 
   let added = 0;
   let removed = 0;
+  let changed = 0;
   let delta = 0;
   for (const event of events) {
     const amount = Number(event.item?.amount || 0);
@@ -279,6 +328,7 @@ function htmlForMany(lang, monthTitle, events, meta) {
       removed += amount;
       delta -= amount;
     } else if (event.type === "edit") {
+      changed += 1;
       const change = amount - Number(event.previous?.amount || 0);
       delta += change;
       if (change >= 0) added += change;
@@ -290,6 +340,7 @@ function htmlForMany(lang, monthTitle, events, meta) {
     `<b>${escapeHtml(text.summary)}</b>`,
     `${escapeHtml(text.added)}: ${formatRupiah(added)}`,
     `${escapeHtml(text.removed)}: ${formatRupiah(removed)}`,
+    `${escapeHtml(text.changed)}: ${changed}`,
     `${escapeHtml(text.net)}: ${delta >= 0 ? "+" : "−"}${formatRupiah(Math.abs(delta))}`
   ].join("\n");
 
@@ -303,15 +354,19 @@ function buildActivityContent(lang, activity, meta = {}) {
   const failed = activity.outcome === "error";
   const outcome = failed ? text.failed : text.success;
   const icon = failed ? "⚠️" : "✅";
-  const detail = activity.detail || "";
+  const rawDetail = activity.detail || "";
+  const detail = ACTIVITY_DETAILS[lang][rawDetail] || rawDetail;
+  const detailLabel = activity.action?.startsWith("budget.") ? text.period : text.detail;
+  const when = activity.createdAt ? formatTime(activity.createdAt) : "";
+  const stamp = [`${icon} ${outcome}`, when, activity.monthId].filter(Boolean).join(" · ");
 
   const lines = [
     `<b>${icon} ${escapeHtml(label)}</b>`,
-    `<i>${icon} ${escapeHtml(outcome)}${activity.monthId ? ` · ${escapeHtml(activity.monthId)}` : ""}</i>`
+    `<i>${escapeHtml(stamp)}</i>`
   ];
-  if (detail) lines.push(`<b>${escapeHtml(text.detail)}:</b> ${escapeHtml(detail)}`);
+  if (detail) lines.push(`<b>${escapeHtml(detailLabel)}:</b> ${escapeHtml(detail)}`);
   if (activity.error) lines.push(`<b>${escapeHtml(text.errorLabel)}:</b> ${escapeHtml(activity.error)}`);
-  lines.push("", footer(lang, { ...meta, outcome: activity.outcome }));
+  lines.push("", footer(lang, { ...meta, outcome: activity.outcome, createdAt: activity.createdAt }));
 
   return {
     title: `${icon} ${label}`,

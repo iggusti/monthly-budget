@@ -46,10 +46,14 @@ describe("collectEvents", () => {
     }
   });
 
-  it("ignores checked-only toggles on fixed expenses", () => {
+  it("reports a checked-only toggle as a status edit", () => {
     const before = doc({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: false }] });
     const after = doc({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: true }] });
-    expect(collectEvents(before, after)).toEqual([]);
+    const events = collectEvents(before, after);
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe("edit");
+    expect(events[0].previous.checked).toBe(false);
+    expect(events[0].item.checked).toBe(true);
   });
 
   it("detects a date-only edit as an edit", () => {
@@ -177,5 +181,62 @@ describe("buildActivityContent", () => {
     expect(content.body).toContain("Gagal · Notifikasi diaktifkan");
     expect(content.html).toContain("<b>Kesalahan:</b> permission-denied");
     expect(content.html).toContain("⚠️ Gagal");
+  });
+});
+
+
+describe("clearer notification copy", () => {
+  const meta = {
+    recipient: "wife",
+    editorUid: "u1",
+    devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }]
+  };
+
+  it("adds the queue time to a budget card", () => {
+    const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "Listrik", 150000)] }));
+    const content = buildContent("en", "November 2026", events, {
+      ...meta,
+      createdAt: "2026-11-25T08:15:00"
+    });
+    expect(content.html).toContain("November 2026 · 25 Nov 2026, 08.15");
+    expect(content.html).toContain("from husband · 25 Nov 2026, 08.15");
+    expect(content.html).not.toContain("✅ Success");
+  });
+
+  it("shows a payment-status change with before and after", () => {
+    const before = doc({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: false }] });
+    const after = doc({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: true }] });
+    const content = buildContent("id", "November 2026", collectEvents(before, after), meta);
+    expect(content.html).toContain("<b>Status:</b> Belum lunas → <b>Lunas</b>");
+  });
+
+  it("counts non-amount edits in the change summary", () => {
+    const before = doc({ husbandFixed: [expense("a", "Listrik", 100000)] });
+    const after = doc({
+      husbandFixed: [expense("a", "Listrik PLN", 100000), expense("b", "Air", 50000)]
+    });
+    const content = buildContent("en", "November 2026", collectEvents(before, after), meta);
+    expect(content.html).toContain("Changed: 1");
+  });
+
+  it("names the language action and translates its detail", () => {
+    const content = buildActivityContent("id", {
+      action: "notify.language",
+      outcome: "success",
+      detail: "id",
+      createdAt: "2026-11-25T08:15:00"
+    }, meta);
+    expect(content.title).toContain("Bahasa notifikasi diperbarui");
+    expect(content.html).toContain("Bahasa Indonesia");
+    expect(content.html).toContain("25 Nov 2026, 08.15");
+  });
+
+  it("translates recipient details for notification toggles", () => {
+    const content = buildActivityContent("id", {
+      action: "notify.enable",
+      outcome: "success",
+      detail: "wife"
+    }, meta);
+    expect(content.html).toContain("<b>Detail:</b> untuk istri");
   });
 });

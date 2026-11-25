@@ -149,9 +149,17 @@ describe("buildMessage", () => {
 describe("plannedSends", () => {
   const after = budget({ husbandFixed: [expense("a", "Listrik", 150000)] });
 
-  it("sends nothing when an edit does not change expenses", () => {
-    const before = budget({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: true }] });
-    expect(plannedSends({ before, after, monthId: "2026-11", editorUid: "u1", devices, env })).toEqual([]);
+  it("sends nothing when a save changes no tracked expense field", () => {
+    const before = budget({ title: "Lama" });
+    const differentTitle = budget({ title: "Baru" });
+    expect(plannedSends({
+      before,
+      after: differentTitle,
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env
+    })).toEqual([]);
   });
 
   it("sends one localized message per remaining recipient", () => {
@@ -239,7 +247,55 @@ describe("activity jobs", () => {
     expect(sends[0].message.text).toContain("permission-denied");
   });
 
-  it("falls back to a success card when a budget save changed no expense", () => {
+  it("falls back to a success card when a save changed no tracked expense", () => {
+    const sends = helpers.plannedSends({
+      before: budget({ title: "Lama" }),
+      after: budget({ title: "Baru" }),
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env,
+      job: {
+        kind: "budget",
+        outcome: "success",
+        action: "budget.save",
+        detail: "November 2026",
+        editorUid: "u1",
+        createdAt: "2026-11-25T08:15:00"
+      }
+    });
+    expect(sends).toHaveLength(1);
+    expect(sends[0].message.text).toContain("Anggaran disimpan");
+    expect(sends[0].message.text).toContain("<b>Periode:</b> November 2026");
+    expect(sends[0].message.text).toContain("dari suami · 25 Nov 2026, 08.15");
+  });
+
+  it("uses configured chats when no device is registered yet", () => {
+    const sends = helpers.plannedSends({
+      before: null,
+      after: null,
+      monthId: "activity",
+      editorUid: "u1",
+      devices: [],
+      env: {
+        TELEGRAM_BOT_TOKEN: "bot-token",
+        TELEGRAM_CHAT_ID_HUSBAND: "111",
+        TELEGRAM_CHAT_ID_WIFE: "5959164056,949805387"
+      },
+      job: {
+        kind: "activity",
+        action: "auth.login",
+        outcome: "success",
+        detail: "Anonymous sign-in",
+        editorUid: "u1",
+        createdAt: "2026-11-25T08:15:00"
+      }
+    });
+    expect(sends.map((send) => send.chatId)).toEqual(["111", "5959164056", "949805387"]);
+    expect(sends.every((send) => send.message.text.includes("Masuk anonim"))).toBe(true);
+  });
+
+  it("reports a checked item as a detailed status change", () => {
     const before = budget({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: false }] });
     const after = budget({ husbandFixed: [{ ...expense("a", "Listrik", 150000), checked: true }] });
     const sends = helpers.plannedSends({
@@ -249,10 +305,17 @@ describe("activity jobs", () => {
       editorUid: "u1",
       devices,
       env,
-      job: { kind: "budget", outcome: "success", action: "budget.save", detail: "November 2026", editorUid: "u1" }
+      job: {
+        kind: "budget",
+        outcome: "success",
+        action: "budget.save",
+        detail: "November 2026",
+        editorUid: "u1",
+        createdAt: "2026-11-25T08:15:00"
+      }
     });
     expect(sends).toHaveLength(1);
-    expect(sends[0].message.text).toContain("✅ Berhasil");
-    expect(sends[0].message.text).toContain("Anggaran disimpan");
+    expect(sends[0].message.text).toContain("✏️ Pengeluaran diubah");
+    expect(sends[0].message.text).toContain("<b>Status:</b> Belum lunas → <b>Lunas</b>");
   });
 });

@@ -111,7 +111,14 @@ function activitySends({ activity, monthId, editorUid, devices, env }) {
   const payload = { ...activity, monthId: activity?.monthId || monthId || null };
   const allGroups = groupRecipients(devices, null);
   const otherGroups = groupRecipients(devices, editorUid);
-  const groups = otherGroups.length ? otherGroups : allGroups;
+  let groups = otherGroups.length ? otherGroups : allGroups;
+  if (groups.length === 0) {
+    // Login and "disable notifications" can happen before any device record
+    // exists. Still deliver the card to whichever chats are configured.
+    groups = ["husband", "wife"]
+      .filter((recipient) => resolveChatIds(env, recipient).length > 0)
+      .map((recipient) => ({ recipient, lang: "id", uids: [] }));
+  }
   const messages = [];
   const sentChats = new Set();
 
@@ -182,7 +189,8 @@ function plannedSends({ before, after, monthId, editorUid, devices, env, job }) 
       recipient: group.recipient,
       editorUid: editor,
       devices,
-      outcome: job?.outcome || "success"
+      outcome: job?.outcome || "success",
+      createdAt: job?.createdAt || null
     });
 
     for (const chatId of chatIds) {
