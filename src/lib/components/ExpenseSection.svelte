@@ -359,6 +359,26 @@
   /** Only a closed period uses absolute labels; the active one stays relative. */
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
+  /** Relative quick-pick chips exist only while the period is still active. */
+  const dateOptions = $derived.by(() => {
+    if (isPastPeriod) return [] as { value: string; label: string }[];
+    const options: { value: string; label: string }[] = [];
+    const ceiling = parseISODate(dateCeiling);
+    if (!ceiling) return options;
+    for (let offset = 0; offset < 4; offset += 1) {
+      const value = toISODate(
+        new Date(ceiling.getFullYear(), ceiling.getMonth(), ceiling.getDate() - offset)
+      );
+      if (value < dateFloor) break;
+      options.push({ value, label: relativeLabel(value) });
+    }
+    return options;
+  });
+
+  function pickDate(value: string) {
+    draft.date = value;
+  }
+
   /** Absolute labels for past-period dates instead of "37 days ago". */
   function dateBadgeLabel(value: string | undefined): string {
     if (!value) return t("expense.noDate");
@@ -911,6 +931,21 @@
         {#if withDate}
           <label class="field date-field">
             <span>{t("expense.date")}</span>
+            {#if dateOptions.length}
+              <div class="date-quick" role="group" aria-label={t("expense.date")}>
+                {#each dateOptions as option (option.value)}
+                  <button
+                    type="button"
+                    class="date-chip"
+                    class:active={draft.date === option.value}
+                    onclick={() => pickDate(option.value)}
+                    title={formatFullDate(option.value)}
+                  >
+                    <span class="date-chip-relative">{option.label}</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
             <input
               type="date"
               bind:value={draft.date}
@@ -1039,6 +1074,21 @@
                 {#if withDate}
                   <label class="field date-field">
                     <span>{t("expense.date")}</span>
+                    {#if dateOptions.length}
+                      <div class="date-quick" role="group" aria-label={t("expense.date")}>
+                        {#each dateOptions as option (option.value)}
+                          <button
+                            type="button"
+                            class="date-chip"
+                            class:active={draft.date === option.value}
+                            onclick={() => pickDate(option.value)}
+                            title={formatFullDate(option.value)}
+                          >
+                            <span class="date-chip-relative">{option.label}</span>
+                          </button>
+                        {/each}
+                      </div>
+                    {/if}
                     <input
                       type="date"
                       bind:value={draft.date}
@@ -1221,8 +1271,24 @@
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
-  /* Date capture: one labelled native picker, bounded to the open period. */
+  /* Active period: relative chips. Past period: just the bounded native picker. */
   .date-field { grid-column: 1 / -1; }
+  .date-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+  .date-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; padding: 0.4rem 0.15rem;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius-pill);
+    background: var(--bg-muted);
+    color: var(--text-secondary);
+    font-size: 0.7rem; font-weight: 700; line-height: 1.2;
+  }
+  .date-chip:hover { border-color: var(--accent-gold); }
+  .date-chip.active {
+    border-color: var(--accent-gold);
+    background: var(--accent-gold-light);
+    color: var(--text-primary);
+  }
   .date-field input[type="date"] { width: 100%; min-height: 44px; }
   /* The hint look comes from the shared `.field-hint` (app.css); this only
      holds the layout. "No date" and a picked date share it, so only the text

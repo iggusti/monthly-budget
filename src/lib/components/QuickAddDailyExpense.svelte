@@ -65,6 +65,22 @@
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
+  /** Relative chips in the active period; none in a closed period. */
+  const dateOptions = $derived.by(() => {
+    if (isPastPeriod) return [] as { value: string; label: string }[];
+    const options: { value: string; label: string }[] = [];
+    const ceiling = parseISODate(dateCeiling);
+    if (!ceiling) return options;
+    for (let offset = 0; offset < 4; offset += 1) {
+      const value = toISODate(
+        new Date(ceiling.getFullYear(), ceiling.getMonth(), ceiling.getDate() - offset)
+      );
+      if (value < dateFloor) break;
+      options.push({ value, label: relativeLabel(value) });
+    }
+    return options;
+  });
+
   /** Date descriptions, worded and formatted like the month page's editor. */
   function formatFullDate(value: string | undefined): string {
     const date = parseISODate(value);
@@ -299,6 +315,22 @@
 
       <label class="field">
         <span class="field-label">{t("expense.date")}</span>
+        {#if dateOptions.length}
+          <div class="date-chips" role="group" aria-label={t("expense.date")}>
+            {#each dateOptions as option (option.value)}
+              <button
+                class="date-chip"
+                class:active={date === option.value}
+                type="button"
+                aria-pressed={date === option.value}
+                title={formatFullDate(option.value)}
+                onclick={() => (date = option.value)}
+              >
+                {option.label}
+              </button>
+            {/each}
+          </div>
+        {/if}
         <input
           class="date-input"
           type="date"
@@ -402,6 +434,17 @@
     box-shadow: var(--focus-ring-gold);
   }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+  .date-chip {
+    min-height: 44px; padding: 0.4rem 0.15rem; border-radius: var(--radius-pill);
+    border: 1px solid var(--surface-border); background: var(--bg-muted);
+    color: var(--text-secondary); font-size: 0.7rem; font-weight: 700;
+  }
+  .date-chip:hover { border-color: var(--accent-gold); }
+  .date-chip.active {
+    border-color: var(--accent-gold); background: var(--accent-gold-light);
+    color: var(--text-primary);
+  }
   .date-input { min-height: 44px; }
   .date-preview { margin-top: 0.45rem; }
 
@@ -422,7 +465,7 @@
   .btn-save:hover { opacity: 0.88; }
   .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  .close-btn:focus-visible, .destination:focus-visible,
+  .close-btn:focus-visible, .date-chip:focus-visible, .destination:focus-visible,
   .btn-cancel:focus-visible, .btn-save:focus-visible {
     outline: var(--focus-outline); outline-offset: 2px;
   }
