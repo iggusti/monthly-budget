@@ -12,6 +12,7 @@ import {
   monthLabel,
   periodDateCeiling,
   periodDateRange,
+  periodQuickDates,
   previousMonthId
 } from "./period";
 
@@ -213,5 +214,28 @@ describe("periodDateCeiling", () => {
 
   it("never goes before the period start", () => {
     expect(periodDateCeiling("2026-11", new Date(2026, 10, 10))).toBe("2026-11-25");
+  });
+});
+
+
+describe("periodQuickDates", () => {
+  it("offers only the 25th when the cycle starts", () => {
+    expect(periodQuickDates("2026-11", new Date(2026, 10, 25))).toEqual(["2026-11-25"]);
+  });
+
+  it("adds one day on the 26th", () => {
+    expect(periodQuickDates("2026-11", new Date(2026, 10, 26))).toEqual([
+      "2026-11-26",
+      "2026-11-25"
+    ]);
+  });
+
+  it("caps at four dates later in the cycle", () => {
+    expect(periodQuickDates("2026-11", new Date(2026, 10, 30))).toEqual([
+      "2026-11-30",
+      "2026-11-29",
+      "2026-11-28",
+      "2026-11-27"
+    ]);
   });
 });

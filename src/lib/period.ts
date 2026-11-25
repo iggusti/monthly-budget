@@ -43,6 +43,24 @@ export function periodDateCeiling(id: string, now: Date = new Date()): string {
   return today;
 }
 
+/**
+ * Quick-pick dates for an active period, newest first. Never reaches before
+ * the period's 25th start: on the 25th only that day, on the 26th two, etc.,
+ * capped at four.
+ */
+export function periodQuickDates(id: string, now: Date = new Date(), limit = 4): string[] {
+  const { start } = periodDateRange(id);
+  const ceiling = periodDateCeiling(id, now);
+  const [year, month, day] = ceiling.split("-").map(Number);
+  const dates: string[] = [];
+  for (let offset = 0; offset < limit; offset += 1) {
+    const value = toISODate(new Date(year, month - 1, day - offset));
+    if (value < start) break;
+    dates.push(value);
+  }
+  return dates;
+}
+
 /** Day a period starts — the 25th → 24th cycle. */
 export const PERIOD_START_DAY = 25;
 

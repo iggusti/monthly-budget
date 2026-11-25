@@ -20,7 +20,7 @@
     type DailySectionKey
   } from "#lib/types";
   import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
-  import { periodDateCeiling, periodDateRange } from "#lib/period";
+  import { periodDateCeiling, periodDateRange, periodQuickDates } from "#lib/period";
   import BadgeIcon from "#lib/components/BadgeIcon.svelte";
   import { lang, t } from "#lib/i18n.svelte";
 
@@ -65,20 +65,16 @@
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
-  /** Original four chips: today and the previous three calendar days. */
+  /** Original chip labels, but the list stops at the period's 25th start. */
   const dateOptions = $derived(
-    [0, 1, 2, 3].map((offset) => {
-      const now = new Date();
-      const value = toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
-      return {
-        value,
-        relative: offset === 0
-          ? t("expense.dateToday")
-          : offset === 1
-            ? t("expense.dateYesterday")
-            : t("expense.daysAgo", { n: offset })
-      };
-    })
+    (periodId ? periodQuickDates(periodId) : [todayISO()]).map((value, offset) => ({
+      value,
+      relative: offset === 0
+        ? t("expense.dateToday")
+        : offset === 1
+          ? t("expense.dateYesterday")
+          : t("expense.daysAgo", { n: offset })
+    }))
   );
 
   /** Date descriptions, worded and formatted like the month page's editor. */
@@ -354,7 +350,7 @@
               class="date-input"
               type="date"
               bind:value={date}
-              min={dateOptions[dateOptions.length - 1].value}
+              min={dateFloor}
               max={dateOptions[0].value}
             />
           </label>

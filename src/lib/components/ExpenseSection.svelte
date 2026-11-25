@@ -191,7 +191,7 @@
     daysBetween,
     type ExpenseItem
   } from "#lib/types";
-  import { periodDateCeiling, periodDateRange } from "#lib/period";
+  import { periodDateCeiling, periodDateRange, periodQuickDates } from "#lib/period";
   import { t, lang } from "#lib/i18n.svelte";
   import {
     allExpensesChecked,
@@ -359,9 +359,6 @@
   /** Only a closed period uses absolute labels; the active one stays relative. */
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
-  /** Same window as the original quick-add: today through three days ago. */
-  const DATE_QUICK_DAYS = [0, 1, 2, 3] as const;
-
   interface DateOption {
     /** `YYYY-MM-DD` value stored on the item. */
     value: string;
@@ -371,21 +368,18 @@
     detail: string;
   }
 
-  /** Original four chips: today and the previous three calendar days. */
+  /** Quick chips never reach before the active period's 25th start. */
+  const quickDates = $derived(periodId ? periodQuickDates(periodId) : []);
   const dateOptions = $derived.by<DateOption[]>(() =>
-    DATE_QUICK_DAYS.map((offset) => {
-      const now = new Date();
-      const value = toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
-      return {
-        value,
-        relative: offset === 0
-          ? t("expense.dateToday")
-          : offset === 1
-            ? t("expense.dateYesterday")
-            : t("expense.daysAgo", { n: offset }),
-        detail: formatFullDate(value)
-      };
-    })
+    quickDates.map((value, offset) => ({
+      value,
+      relative: offset === 0
+        ? t("expense.dateToday")
+        : offset === 1
+          ? t("expense.dateYesterday")
+          : t("expense.daysAgo", { n: offset }),
+      detail: formatFullDate(value)
+    }))
   );
 
   /** Today's date, offered as the default when adding a new entry. */
@@ -983,7 +977,7 @@
                 <input
                   type="date"
                   bind:value={draft.date}
-                  min={dateOptions[dateOptions.length - 1].value}
+                  min={dateFloor}
                   max={todayValue}
                 />
               </label>
@@ -1146,7 +1140,7 @@
                         <input
                           type="date"
                           bind:value={draft.date}
-                          min={dateOptions[dateOptions.length - 1].value}
+                          min={dateFloor}
                           max={todayValue}
                         />
                       </label>
