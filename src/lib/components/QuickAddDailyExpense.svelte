@@ -64,21 +64,6 @@
   const dateFloor = $derived(periodRange?.start ?? toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 3)));
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
 
-  function shiftISODate(value: string, days: number): string {
-    const date = parseISODate(value);
-    if (!date) return value;
-    return toISODate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
-  }
-
-  function formatShortDate(value: string): string {
-    const date = parseISODate(value);
-    if (!date) return value;
-    return date.toLocaleDateString(lang.value === "id" ? "id-ID" : "en-US", {
-      day: "numeric",
-      month: "short"
-    });
-  }
-
   /** Date descriptions, worded and formatted like the month page's editor. */
   function formatFullDate(value: string | undefined): string {
     const date = parseISODate(value);
@@ -100,26 +85,6 @@
     if (diff > 1) return t("expense.daysAgo", { n: diff });
     return formatFullDate(value);
   }
-
-  /** Quick-pick dates anchored to the period, up to four days back. */
-  const dateOptions = $derived.by(() => {
-    const options: { value: string; relative: string }[] = [];
-    for (let offset = 0; offset < 4; offset += 1) {
-      const value = shiftISODate(dateCeiling, -offset);
-      if (value < dateFloor) break;
-      options.push({
-        value,
-        relative: periodRange && value !== today
-          ? formatShortDate(value)
-          : offset === 0
-            ? t("expense.dateToday")
-            : offset === 1
-              ? t("expense.dateYesterday")
-              : t("expense.daysAgo", { n: offset })
-      });
-    }
-    return options;
-  });
 
   /** The section preselected when the sheet opens (section 5 on the month page). */
   const DEFAULT_SECTION: DailySectionKey = "husbandDailyFromSalary";
@@ -331,32 +296,15 @@
         </label>
       </div>
 
-      <div>
+      <label class="field">
         <span class="field-label">{t("expense.date")}</span>
-        <div class="date-chips" role="group" aria-label={t("expense.date")}>
-          {#each dateOptions as option (option.value)}
-            <button
-              class="date-chip"
-              class:active={date === option.value}
-              type="button"
-              aria-pressed={date === option.value}
-              title={formatFullDate(option.value)}
-              onclick={() => (date = option.value)}
-            >
-              {option.relative}
-            </button>
-          {/each}
-        </div>
-        <label class="date-custom">
-          <span class="date-custom-label">{t("expense.dateOther")}</span>
-          <input
-            class="date-input"
-            type="date"
-            bind:value={date}
-            min={dateFloor}
-            max={dateCeiling}
-          />
-        </label>
+        <input
+          class="date-input"
+          type="date"
+          bind:value={date}
+          min={dateFloor}
+          max={dateCeiling}
+        />
         <span class="date-preview field-hint">
           {#if date}
             🗓 {periodRange && date < today ? formatFullDate(date) : `${relativeLabel(date)} · ${formatFullDate(date)}`}
@@ -364,7 +312,7 @@
             {t("expense.noDate")}
           {/if}
         </span>
-      </div>
+      </label>
 
       <div class="sheet-actions">
         <button class="btn-cancel" type="button" onclick={onClose}>{t("expense.cancel")}</button>
@@ -453,24 +401,7 @@
     box-shadow: var(--focus-ring-gold);
   }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-  .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
-  .date-chip {
-    padding: 0.4rem 0.15rem; border-radius: var(--radius-pill);
-    border: 1px solid var(--surface-border); background: var(--bg-muted);
-    color: var(--text-secondary); font-size: 0.7rem; font-weight: 700;
-  }
-  .date-chip:hover { border-color: var(--accent-gold); }
-  .date-chip.active {
-    border-color: var(--accent-gold); background: var(--accent-gold-light);
-    color: var(--text-primary);
-  }
-  /* Same date field as the month page: a labelled native picker and a live
-     description of the chosen day. */
-  .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
-  .date-custom-label {
-    font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
-  }
-  .date-custom input { flex: 1; min-width: 0; }
+  .date-input { min-height: 44px; }
   .date-preview { margin-top: 0.45rem; }
 
   /* Mounted only while the field is empty, so filled fields keep normal
@@ -490,7 +421,7 @@
   .btn-save:hover { opacity: 0.88; }
   .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  .close-btn:focus-visible, .destination:focus-visible, .date-chip:focus-visible,
+  .close-btn:focus-visible, .destination:focus-visible,
   .btn-cancel:focus-visible, .btn-save:focus-visible {
     outline: var(--focus-outline); outline-offset: 2px;
   }
