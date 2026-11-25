@@ -15,7 +15,22 @@ runs:
       shell: bash
 
     - name: Resolve app version
-      run: echo "APP_VERSION=$(git describe --tags --always --dirty)" >> "$GITHUB_ENV"
+      # Hash only files that can change the deployed app, so workflow/docs-only
+      # pushes no longer flash a "new version" toast. Tree hashes work on a
+      # shallow checkout, unlike `git log` over app paths.
+      run: |
+        APP_VERSION=$(git rev-parse \
+          HEAD:src \
+          HEAD:static \
+          HEAD:vite.config.ts \
+          HEAD:package.json \
+          HEAD:package-lock.json \
+          HEAD:tsconfig.json \
+          HEAD:.github/actions/setup-build/action.yml 2>/dev/null | sha256sum | cut -c1-12)
+        if [ -z "$APP_VERSION" ]; then
+          APP_VERSION=$(git describe --tags --always --dirty)
+        fi
+        echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
       shell: bash
 
     - name: Build

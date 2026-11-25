@@ -12,7 +12,7 @@
   import { syncTheme } from "#lib/theme.svelte";
   import { initNotifications, PUSH_NOTIFICATIONS_ENABLED } from "#lib/notifications.svelte";
   import { registerServiceWorker } from "#lib/service-worker";
-  import { checkAppUpdate } from "#lib/app-update.svelte";
+  import { checkAppUpdate, watchServiceWorkerUpdates } from "#lib/app-update.svelte";
   import { installPrompt } from "#lib/install-prompt.svelte";
   import LanguageToggle from "#lib/components/LanguageToggle.svelte";
   import NotificationToggle from "#lib/components/NotificationToggle.svelte";
@@ -23,9 +23,9 @@
 
   onMount(() => {
     installPrompt.init();
-    void registerServiceWorker().catch((error) =>
-      console.error("Service worker registration failed:", error)
-    );
+    void registerServiceWorker()
+      .then(watchServiceWorkerUpdates)
+      .catch((error) => console.error("Service worker registration failed:", error));
     checkAppUpdate();
   });
 
