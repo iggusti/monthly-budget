@@ -2,7 +2,7 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { fade, fly } from "svelte/transition";
-  import { untrack } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { MOTION, motionFade, motionFly, prefersReducedMotion, setMonthNavDirection } from "#lib/motion";
   import ExpenseSection from "#lib/components/ExpenseSection.svelte";
   import { subscribeBudget, saveBudget, fetchAllBudgets } from "#lib/budget-store";
@@ -50,8 +50,16 @@
   const isUpcomingMonth = $derived(isUpcomingPeriod(monthId));
   /** Fixed sections skip the confirmation for the upcoming period only. */
   const confirmFixedChanges = $derived(!isActiveMonth && !isUpcomingMonth);
+  /** Ticks so a page left open overnight unlocks the wife's checks at midnight. */
+  let now = $state(new Date());
+
+  onMount(() => {
+    const timer = setInterval(() => (now = new Date()), 60_000);
+    return () => clearInterval(timer);
+  });
+
   /** Wife's fixed checkboxes unlock on the 1st of the active period's end month. */
-  const wifeFixedChecksLocked = $derived(isActiveMonth && !canMarkWifeFixedPaid(monthId));
+  const wifeFixedChecksLocked = $derived(isActiveMonth && !canMarkWifeFixedPaid(monthId, now));
 
   /** All stored month ids, sorted chronologically (oldest first). */
   let allMonthIds = $state<string[]>([]);
