@@ -359,21 +359,37 @@
   /** Only a closed period uses absolute labels; the active one stays relative. */
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
-  /** Relative quick-pick chips exist only while the period is still active. */
-  const dateOptions = $derived.by(() => {
-    if (isPastPeriod) return [] as { value: string; label: string }[];
-    const options: { value: string; label: string }[] = [];
-    const ceiling = parseISODate(dateCeiling);
-    if (!ceiling) return options;
-    for (let offset = 0; offset < 4; offset += 1) {
-      const value = toISODate(
-        new Date(ceiling.getFullYear(), ceiling.getMonth(), ceiling.getDate() - offset)
-      );
-      if (value < dateFloor) break;
-      options.push({ value, label: relativeLabel(value) });
-    }
-    return options;
-  });
+  /** Same window as the original quick-add: today through three days ago. */
+  const DATE_QUICK_DAYS = [0, 1, 2, 3] as const;
+
+  interface DateOption {
+    /** `YYYY-MM-DD` value stored on the item. */
+    value: string;
+    /** Relative label, e.g. "Today" / "2 days ago". */
+    relative: string;
+    /** Human day + date, e.g. "Fri, 13 Nov 2026". */
+    detail: string;
+  }
+
+  /** Original four chips: today and the previous three calendar days. */
+  const dateOptions = $derived.by<DateOption[]>(() =>
+    DATE_QUICK_DAYS.map((offset) => {
+      const now = new Date();
+      const value = toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
+      return {
+        value,
+        relative: offset === 0
+          ? t("expense.dateToday")
+          : offset === 1
+            ? t("expense.dateYesterday")
+            : t("expense.daysAgo", { n: offset }),
+        detail: formatFullDate(value)
+      };
+    })
+  );
+
+  /** Today's date, offered as the default when adding a new entry. */
+  const todayValue = $derived(dateOptions[0]?.value ?? todayISO());
 
   function pickDate(value: string) {
     draft.date = value;
@@ -929,9 +945,26 @@
           {/if}
         {/if}
         {#if withDate}
-          <label class="field date-field">
-            <span>{t("expense.date")}</span>
-            {#if dateOptions.length}
+          {#if isPastPeriod}
+            <label class="field date-field">
+              <span>{t("expense.date")}</span>
+              <input
+                type="date"
+                bind:value={draft.date}
+                min={dateFloor}
+                max={dateCeiling}
+              />
+              <span class="date-preview field-hint">
+                {#if draft.date}
+                  🗓 {dateSummary(draft.date)}
+                {:else}
+                  {t("expense.noDate")}
+                {/if}
+              </span>
+            </label>
+          {:else}
+            <div class="field date-field">
+              <span>{t("expense.date")}</span>
               <div class="date-quick" role="group" aria-label={t("expense.date")}>
                 {#each dateOptions as option (option.value)}
                   <button
@@ -939,27 +972,30 @@
                     class="date-chip"
                     class:active={draft.date === option.value}
                     onclick={() => pickDate(option.value)}
-                    title={formatFullDate(option.value)}
+                    title={option.detail}
                   >
-                    <span class="date-chip-relative">{option.label}</span>
+                    <span class="date-chip-relative">{option.relative}</span>
                   </button>
                 {/each}
               </div>
-            {/if}
-            <input
-              type="date"
-              bind:value={draft.date}
-              min={dateFloor}
-              max={dateCeiling}
-            />
-            <span class="date-preview field-hint">
-              {#if draft.date}
-                🗓 {dateSummary(draft.date)}
-              {:else}
-                {t("expense.noDate")}
-              {/if}
-            </span>
-          </label>
+              <label class="date-custom">
+                <span class="date-custom-label">{t("expense.dateOther")}</span>
+                <input
+                  type="date"
+                  bind:value={draft.date}
+                  min={dateOptions[dateOptions.length - 1].value}
+                  max={todayValue}
+                />
+              </label>
+              <span class="date-preview field-hint">
+                {#if draft.date}
+                  🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+                {:else}
+                  {t("expense.noDate")}
+                {/if}
+              </span>
+            </div>
+          {/if}
         {/if}
       </div>
       <div class="editor-actions">
@@ -1072,9 +1108,26 @@
                   {/if}
                 {/if}
                 {#if withDate}
-                  <label class="field date-field">
-                    <span>{t("expense.date")}</span>
-                    {#if dateOptions.length}
+                  {#if isPastPeriod}
+                    <label class="field date-field">
+                      <span>{t("expense.date")}</span>
+                      <input
+                        type="date"
+                        bind:value={draft.date}
+                        min={dateFloor}
+                        max={dateCeiling}
+                      />
+                      <span class="date-preview field-hint">
+                        {#if draft.date}
+                          🗓 {dateSummary(draft.date)}
+                        {:else}
+                          {t("expense.noDate")}
+                        {/if}
+                      </span>
+                    </label>
+                  {:else}
+                    <div class="field date-field">
+                      <span>{t("expense.date")}</span>
                       <div class="date-quick" role="group" aria-label={t("expense.date")}>
                         {#each dateOptions as option (option.value)}
                           <button
@@ -1082,27 +1135,30 @@
                             class="date-chip"
                             class:active={draft.date === option.value}
                             onclick={() => pickDate(option.value)}
-                            title={formatFullDate(option.value)}
+                            title={option.detail}
                           >
-                            <span class="date-chip-relative">{option.label}</span>
+                            <span class="date-chip-relative">{option.relative}</span>
                           </button>
                         {/each}
                       </div>
-                    {/if}
-                    <input
-                      type="date"
-                      bind:value={draft.date}
-                      min={dateFloor}
-                      max={dateCeiling}
-                    />
-                    <span class="date-preview field-hint">
-                      {#if draft.date}
-                        🗓 {dateSummary(draft.date)}
-                      {:else}
-                        {t("expense.noDate")}
-                      {/if}
-                    </span>
-                  </label>
+                      <label class="date-custom">
+                        <span class="date-custom-label">{t("expense.dateOther")}</span>
+                        <input
+                          type="date"
+                          bind:value={draft.date}
+                          min={dateOptions[dateOptions.length - 1].value}
+                          max={todayValue}
+                        />
+                      </label>
+                      <span class="date-preview field-hint">
+                        {#if draft.date}
+                          🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+                        {:else}
+                          {t("expense.noDate")}
+                        {/if}
+                      </span>
+                    </div>
+                  {/if}
                 {/if}
               </div>
               <div class="editor-actions">
@@ -1271,7 +1327,7 @@
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
-  /* Active period: relative chips. Past period: just the bounded native picker. */
+  /* Active period: original chips + "other date" row. Past periods: plain field. */
   .date-field { grid-column: 1 / -1; }
   .date-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
@@ -1289,7 +1345,11 @@
     background: var(--accent-gold-light);
     color: var(--text-primary);
   }
-  .date-field input[type="date"] { width: 100%; min-height: 44px; }
+  .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
+  .date-custom-label { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
+  .date-custom input { flex: 1; min-width: 0; min-height: 44px; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
+  .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
+  .date-field > input[type="date"] { width: 100%; min-height: 44px; }
   /* The hint look comes from the shared `.field-hint` (app.css); this only
      holds the layout. "No date" and a picked date share it, so only the text
      and the icon tell them apart. */

@@ -65,21 +65,21 @@
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
   const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
-  /** Relative chips in the active period; none in a closed period. */
-  const dateOptions = $derived.by(() => {
-    if (isPastPeriod) return [] as { value: string; label: string }[];
-    const options: { value: string; label: string }[] = [];
-    const ceiling = parseISODate(dateCeiling);
-    if (!ceiling) return options;
-    for (let offset = 0; offset < 4; offset += 1) {
-      const value = toISODate(
-        new Date(ceiling.getFullYear(), ceiling.getMonth(), ceiling.getDate() - offset)
-      );
-      if (value < dateFloor) break;
-      options.push({ value, label: relativeLabel(value) });
-    }
-    return options;
-  });
+  /** Original four chips: today and the previous three calendar days. */
+  const dateOptions = $derived(
+    [0, 1, 2, 3].map((offset) => {
+      const now = new Date();
+      const value = toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
+      return {
+        value,
+        relative: offset === 0
+          ? t("expense.dateToday")
+          : offset === 1
+            ? t("expense.dateYesterday")
+            : t("expense.daysAgo", { n: offset })
+      };
+    })
+  );
 
   /** Date descriptions, worded and formatted like the month page's editor. */
   function formatFullDate(value: string | undefined): string {
@@ -313,9 +313,27 @@
         </label>
       </div>
 
-      <label class="field">
-        <span class="field-label">{t("expense.date")}</span>
-        {#if dateOptions.length}
+      {#if isPastPeriod}
+        <label class="field">
+          <span class="field-label">{t("expense.date")}</span>
+          <input
+            class="date-input"
+            type="date"
+            bind:value={date}
+            min={dateFloor}
+            max={dateCeiling}
+          />
+          <span class="date-preview field-hint">
+            {#if date}
+              🗓 {formatFullDate(date)}
+            {:else}
+              {t("expense.noDate")}
+            {/if}
+          </span>
+        </label>
+      {:else}
+        <div>
+          <span class="field-label">{t("expense.date")}</span>
           <div class="date-chips" role="group" aria-label={t("expense.date")}>
             {#each dateOptions as option (option.value)}
               <button
@@ -326,26 +344,29 @@
                 title={formatFullDate(option.value)}
                 onclick={() => (date = option.value)}
               >
-                {option.label}
+                {option.relative}
               </button>
             {/each}
           </div>
-        {/if}
-        <input
-          class="date-input"
-          type="date"
-          bind:value={date}
-          min={dateFloor}
-          max={dateCeiling}
-        />
-        <span class="date-preview field-hint">
-          {#if date}
-            🗓 {isPastPeriod ? formatFullDate(date) : `${relativeLabel(date)} · ${formatFullDate(date)}`}
-          {:else}
-            {t("expense.noDate")}
-          {/if}
-        </span>
-      </label>
+          <label class="date-custom">
+            <span class="date-custom-label">{t("expense.dateOther")}</span>
+            <input
+              class="date-input"
+              type="date"
+              bind:value={date}
+              min={dateOptions[dateOptions.length - 1].value}
+              max={dateOptions[0].value}
+            />
+          </label>
+          <span class="date-preview field-hint">
+            {#if date}
+              🗓 {relativeLabel(date)} · {formatFullDate(date)}
+            {:else}
+              {t("expense.noDate")}
+            {/if}
+          </span>
+        </div>
+      {/if}
 
       <div class="sheet-actions">
         <button class="btn-cancel" type="button" onclick={onClose}>{t("expense.cancel")}</button>
@@ -445,6 +466,11 @@
     border-color: var(--accent-gold); background: var(--accent-gold-light);
     color: var(--text-primary);
   }
+  .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
+  .date-custom-label {
+    font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
+  }
+  .date-custom input { flex: 1; min-width: 0; }
   .date-input { min-height: 44px; }
   .date-preview { margin-top: 0.45rem; }
 
