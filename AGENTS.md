@@ -21,8 +21,8 @@ changing code; the rules below are easy to break accidentally.
   darker `theme-color` meta on theme changes. Installed PWA icons and the OG
   image stay static because the platform chooses them outside the theme. The
   service worker also caches the app shell and immutable assets for offline
-  reads; Firestore uses persistent IndexedDB and a build-version toast offers
-  a reload after a new deploy.
+  reads; Firestore uses persistent IndexedDB and a version/service-worker
+  toast offers a reload after a new deploy.
 - **Firebase**: Firestore + anonymous Auth (project `monthly-budget-580b2`,
   hosting site `monthly-budget-nia-ilham`).
 - **Telegram Bot API** for notifications: the browser writes a job to
@@ -179,6 +179,33 @@ without a quota project.
 
 ## Notifications (do not break)
 
+### Current inventory
+
+Two channels, deliberately separate:
+
+- **In-app toasts** (`Toasts.svelte`, `toast.svelte.ts`) are instant and local.
+  Every user-click Firebase write gets success/failure feedback: expense add,
+  edit, delete (with Undo), drag-move, period create/lock/unlock/delete (with
+  Undo), transfer-received toggle, backup export/restore, login/logout,
+  language change, notification enable/disable, date validation failures and
+  save failures. The app-update toast shows `Versi baru tersedia` with a
+  `Reload` action when the bundle version changes or a new service worker
+  installs.
+- **Telegram cards** are delayed and go to the other family member:
+  - Expense `New expense` / `Expense updated` / `Expense deleted`, including
+    per-field before/after and a deep link.
+  - `N expense changes` summary when one save changes several items (first six
+    listed, plus added/removed/net totals).
+  - `Month deleted` for a whole period.
+  - Activity cards: `Signed in`, `Signed out`, notifications
+    enabled/disabled/language updated, and failed budget/queue writes with the
+    error text.
+  - No Telegram card for income edits, daily `checked` changes, or a successful
+    save with no tracked expense change. Do not reintroduce the generic
+    `Budget saved` success card.
+  - Fixed expenses include a Status row; daily cards omit it because the money
+    is already spent.
+
 - `src/lib/notifications.svelte.ts` — registers `devices/{uid}` with
   `{ uid, recipient, lang, enabled, platform, updatedAt }` and exposes the
   reactive `notify` state. There is **no browser permission prompt** and no FCM:
@@ -189,13 +216,17 @@ without a quota project.
 - `src/lib/service-worker.ts` + `src/service-worker/service-worker.js` — the
   worker only caches the app shell now. `vite.config.ts` emits
   `/service-worker.js` (injecting `__APP_VERSION__`) and serves it in dev.
+  `src/lib/app-update.svelte.ts` compares `__APP_VERSION__` with
+  `localStorage.fhb-app-version`, and `watchServiceWorkerUpdates()` prompts once
+  per session when a new worker installs.
 - `src/lib/budget-store.ts` — `saveBudget()` stamps
   `lastEditBy = auth.currentUser.uid` and appends one job to
   `notification-outbox` containing the before/after snapshots. `deleteBudget()`
   stamps the deleter *before* deleting and queues a `month-delete` job with
   `after: null`. Never remove or bypass these stamps.
-- `.github/workflows/push-notifications.yml` — free scheduled Action (every 5
-  minutes) with `concurrency` to avoid overlapping runs. Secrets:
+- `.github/workflows/push-notifications.yml` — free scheduled Action with two
+  offset crons (`*/5` and `2-59/5`, effective gap 2–3 minutes) and `concurrency`
+  to avoid overlapping runs. Secrets:
   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (shared fallback) or
   `TELEGRAM_CHAT_ID_HUSBAND` / `TELEGRAM_CHAT_ID_WIFE` (comma-separated for
   multiple chats), plus the existing
@@ -209,12 +240,15 @@ without a quota project.
 - `functions/changes.js` and `functions/notify-helpers.js` — pure diff,
   formatting and recipient-grouping logic with Vitest tests. `send-push.js`
   must stay a thin adapter around them.
-- Intended behaviour: notify on add/edit/delete of expense items (name, amount,
-  payment method). **Do not** notify for `checked`-only toggles on fixed
-  expenses or for income edits. Never notify the editor's own device.
-- `sameItem()` in `changes.js` compares `name`, `amount`, `method`, and `date`.
-  Edits to any of these fields will trigger a notification. Keep the function
-  pure and testable with plain `node`.
+- Intended behaviour: notify on add/edit/delete of expense items when `name`,
+  `amount`, `method` or `date` changes, plus `checked` changes for fixed
+  expenses only. Date-only edits now do notify. Income edits, daily `checked`
+  changes and successful saves with no tracked change do not. Never notify the
+  editor's own device. Failures and auth/device actions still produce activity
+  cards.
+- `sameItem()` in `changes.js` compares `name`, `amount`, `method`, `date` and
+  `checked` only for fixed sections (`isDailySection()` skips status for daily
+  sections). Keep the function pure and testable with plain `node`.
 - Debounce/aggregate awareness: each budget write produces one outbox job and at
   most one Telegram message per recipient language; multiple events in one write
   are summarised. Delivery is delayed by up to ~3 minutes by design.

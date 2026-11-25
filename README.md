@@ -101,8 +101,9 @@ becomes the *active* one (badge, overview, month page) on the 25th.
   browser allows it.
 - **Light & dark theme** — the topbar switch recolours the inline logo, favicon
   and browser theme colour together (installed PWA icons stay fixed).
-- **Notifications** — an expense edit messages the other person on Telegram a
-  few minutes later. No paid Firebase plan needed. See [Notifications](#notifications).
+- **Notifications** — instant in-app toasts plus delayed Telegram cards for
+  expense changes and account/device activity. No paid Firebase plan needed.
+  See [Notifications](#notifications).
 - **Offline & updates** — Firestore keeps a persistent IndexedDB cache and the
   service worker serves cached pages/assets offline. After a new deploy a
   "Versi baru tersedia" toast offers a reload.
@@ -121,13 +122,34 @@ the free Spark plan: no Cloud Functions and no credit card.
 | `functions/send-push.js` | Claims pending jobs and POSTs them to `https://api.telegram.org/bot<token>/sendMessage`. |
 | `functions/changes.js` | Pure diff/format helpers, reused by the sender. |
 
+#### What notifies
+
+| Channel | Trigger | Messages |
+| --- | --- | --- |
+| Toast (this device, instant) | Expense add / edit / delete / drag-move | `Entry added`, `Entry updated`, `Entry deleted` (with Undo), `Restored` |
+| Toast | Period created, locked, unlocked, deleted, transfer toggle | `Period created`, `Period locked`, `Period unlocked`, `{month} deleted` (with Undo), `Transfer marked as received/pending` |
+| Toast | Backup export/restore, login/logout, language, notification toggle | `Backup downloaded`, `Backup restored`, `Restore undone`, `Signed in`, `Signed out`, `Notifications enabled for this phone`, `Language preference saved` |
+| Toast | Invalid date, failed write, new app version | `Choose a date from 25 to 24`, `Couldn't save. Please try again.`, `Versi baru tersedia` + `Reload` |
+| Telegram (other person, delayed) | Expense add / edit / delete | `New expense`, `Expense updated` (per-field before/after), `Expense deleted` |
+| Telegram | More than one change in one save | `N expense changes` + added/removed/net summary (first 6 listed) |
+| Telegram | Whole period deleted | `Month deleted` |
+| Telegram | Auth / device activity | `Signed in`, `Signed out`, `Notifications enabled/disabled`, `Notification language updated` |
+| Telegram | Failed Firebase write or failed notification queue | Same activity card with `Failed` and the error text |
+
+Toasts are transient and local; Telegram is delivered by the free scheduled
+Action described below. The two channels are deliberately separate: every
+click gets a toast, but only meaningful family-visible events reach Telegram.
+
 Details:
 
 - The editor's devices are skipped, so you never get a push for your own edit.
 - Notifications arrive in the language selected on each phone (EN / ID).
-- Only name, amount, payment method and date changes matter. Ticking a fixed
-  expense (`checked`) or changing income sends no push.
-- Deleting a whole month sends a "Month deleted" notification to the other
+- Tracked expense fields are name, amount, method and date for all expenses,
+  plus `checked` for fixed expenses only. Daily spending is already paid, so
+  its Status row and `checked` changes are ignored. Income edits send no push.
+- A successful save that changes no tracked expense sends no Telegram card;
+  the old generic `Budget saved` card was intentionally removed.
+- Deleting a whole month always sends a `Month deleted` card to the other
   phones. Each push links straight to that month's page.
 - Failed sends are retried on the next run (up to 5 attempts); jobs are claimed
   transactionally so overlapping runs cannot double-send. Telegram flood limits

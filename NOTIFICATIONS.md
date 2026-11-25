@@ -1,9 +1,12 @@
 # Notifications setup (Telegram)
 
-The app sends a Telegram message whenever an expense (fixed or daily) is
-added, edited with a changed name/amount/method, or deleted. Deleting a whole
-month also notifies the other person. Nothing is sent for `checked`-only
-toggles, date-only edits, income edits, or the editor's own browser.
+The app sends a Telegram card when a fixed or daily expense is added, edited
+with a changed name/amount/method/date (plus `checked` for fixed expenses
+only), or deleted. Deleting a whole month also notifies the other person.
+Auth/device actions and Firebase failures produce activity cards. Nothing is
+sent for income edits, daily `checked` changes, successful saves with no
+tracked expense change, or the editor's own browser. In-app toasts are a
+separate, immediate channel for every local action.
 
 Telegram replaces Firebase Cloud Messaging completely. There is no Cloud
 Function, no paid Firebase plan, and no browser notification permission prompt.
