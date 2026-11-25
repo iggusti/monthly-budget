@@ -971,6 +971,7 @@
 {#if quickAddOpen}
   <QuickAddDailyExpense
     month={monthLabel(currentMonthId, locale)}
+    periodId={currentMonthId}
     onClose={() => (quickAddOpen = false)}
     onSave={quickAddExpense}
   />

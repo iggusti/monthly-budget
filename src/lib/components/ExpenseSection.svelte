@@ -191,6 +191,7 @@
     daysBetween,
     type ExpenseItem
   } from "#lib/types";
+  import { periodDateCeiling, periodDateRange } from "#lib/period";
   import { t, lang } from "#lib/i18n.svelte";
   import {
     allExpensesChecked,
@@ -231,6 +232,8 @@
     methodDefault?: { base: string; channel: string };
     /** When true each row also captures the date the expense happened. */
     withDate?: boolean;
+    /** Period id (`YYYY-MM`) used to keep custom dates inside this cycle. */
+    periodId?: string;
     /** When true each row shows a checkbox and the footer shows remaining total. */
     checkboxable?: boolean;
     /** When true, only the most recent items are shown with a view more/less toggle. */
@@ -288,6 +291,7 @@
     withMethod = false,
     methodDefault,
     withDate = false,
+    periodId,
     checkboxable = false,
     collapsible = false,
     collapseLimit = 8,
@@ -312,13 +316,13 @@
 
   // ── Date helpers ──────────────────────────────────────────────────────────
 
-  /** Same window as the dashboard quick-add: today through three days ago. */
+  /** Quick-pick up to four dates, anchored to the open period. */
   const DATE_QUICK_DAYS = [0, 1, 2, 3] as const;
 
   interface DateOption {
     /** `YYYY-MM-DD` value stored on the item. */
     value: string;
-    /** Relative label, e.g. "Today" / "2 days ago". */
+    /** Relative label today, or a short date in a past period. */
     relative: string;
     /** Human day + date, e.g. "Fri, 13 Nov 2026". */
     detail: string;
@@ -341,6 +345,13 @@
     });
   }
 
+  /** Compact chip label, e.g. "24 Nov", for dates outside the recent window. */
+  function shortDate(value: string): string {
+    const date = parseISODate(value);
+    if (!date) return value;
+    return date.toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
+  }
+
   /** Relative label for a `YYYY-MM-DD` value ("Today", "1 day ago", a date). */
   function relativeLabel(value: string | undefined): string {
     const date = parseISODate(value);
@@ -349,30 +360,48 @@
     if (diff === 0) return t("expense.dateToday");
     if (diff === 1) return t("expense.dateYesterday");
     if (diff > 1) return t("expense.daysAgo", { n: diff });
-    // Future date: fall back to the absolute day.
     return formatFullDate(value);
   }
 
-  /** Build the quick-pick list, each with its relative label and full date. */
+  function shiftISODate(value: string, days: number): string {
+    const date = parseISODate(value);
+    if (!date) return value;
+    return toISODate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+  }
+
+  const periodRange = $derived(periodId ? periodDateRange(periodId) : null);
+  const today = $derived(todayISO());
+  /** Inclusive bounds for the "other date" picker. */
+  const dateFloor = $derived(periodRange?.start ?? shiftISODate(today, -3));
+  const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
+
+  /** Quick chips start at the period's last usable day, not always today. */
   const dateOptions = $derived.by<DateOption[]>(() => {
-    const now = new Date();
-    return DATE_QUICK_DAYS.map((offset) => {
-      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
-      const value = toISODate(date);
-      return {
+    const options: DateOption[] = [];
+    for (let offset = 0; offset < DATE_QUICK_DAYS.length; offset += 1) {
+      const value = shiftISODate(dateCeiling, -offset);
+      if (value < dateFloor) break;
+      options.push({
         value,
-        relative: offset === 0
-          ? t("expense.dateToday")
-          : offset === 1
-            ? t("expense.dateYesterday")
-            : t("expense.daysAgo", { n: offset }),
+        relative: periodRange && value !== today ? shortDate(value) : relativeLabel(value),
         detail: formatFullDate(value)
-      };
-    });
+      });
+    }
+    return options;
   });
 
-  /** Today's date, offered as the default when adding a new entry. */
-  const todayValue = $derived(dateOptions[0]?.value ?? todayISO());
+  /** Absolute labels for past-period dates instead of "37 days ago". */
+  function dateBadgeLabel(value: string | undefined): string {
+    if (!value) return t("expense.noDate");
+    return periodRange && value < today ? shortDate(value) : relativeLabel(value);
+  }
+
+  function dateSummary(value: string | undefined): string {
+    if (!value) return t("expense.noDate");
+    const relative = periodRange && value < today ? formatFullDate(value) : relativeLabel(value);
+    const full = formatFullDate(value);
+    return relative === full ? relative : `${relative} · ${full}`;
+  }
 
   function pickDate(value: string) {
     draft.date = value;
@@ -549,7 +578,7 @@
       name: "",
       amount: 0,
       method: "",
-      date: withDate ? todayValue : ""
+      date: withDate ? dateCeiling : ""
     };
     amountInput = "";
     // New entries default to the section's preferred method (e.g. QRIS from
@@ -935,13 +964,13 @@
               <input
                 type="date"
                 bind:value={draft.date}
-                min={dateOptions[dateOptions.length - 1].value}
-                max={todayValue}
+                min={dateFloor}
+                max={dateCeiling}
               />
             </label>
             <span class="date-preview field-hint">
               {#if draft.date}
-                🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+                🗓 {dateSummary(draft.date)}
               {:else}
                 {t("expense.noDate")}
               {/if}
@@ -988,7 +1017,7 @@
               {#if item.method}<span class="tag">{item.method}</span>{/if}
               {#if withDate && item.date}
                 <span class="date-badge" title={formatFullDate(item.date)}>
-                  <span class="date-badge-relative">{relativeLabel(item.date)}</span>
+                  <span class="date-badge-relative">{dateBadgeLabel(item.date)}</span>
                   <span class="date-badge-detail">{formatFullDate(item.date)}</span>
                 </span>
               {/if}
@@ -1079,13 +1108,13 @@
                       <input
                         type="date"
                         bind:value={draft.date}
-                        min={dateOptions[dateOptions.length - 1].value}
-                        max={todayValue}
+                        min={dateFloor}
+                        max={dateCeiling}
                       />
                     </label>
                     <span class="date-preview field-hint">
                       {#if draft.date}
-                        🗓 {relativeLabel(draft.date)} · {formatFullDate(draft.date)}
+                        🗓 {dateSummary(draft.date)}
                       {:else}
                         {t("expense.noDate")}
                       {/if}

@@ -1034,6 +1034,7 @@
       withMethod
       methodDefault={DAILY_METHOD_DEFAULTS.husbandDailyFromSalary}
       withDate
+      periodId={monthId}
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSalary",
@@ -1081,6 +1082,7 @@
       withMethod
       methodDefault={DAILY_METHOD_DEFAULTS.husbandDailyFromSavings}
       withDate
+      periodId={monthId}
       onChange={(items: ExpenseItem[]) =>
         update(
           "husbandDailyFromSavings",
@@ -1109,6 +1111,7 @@
       withMethod
       methodDefault={DAILY_METHOD_DEFAULTS.wifeDailyFromSalary}
       withDate
+      periodId={monthId}
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSalary",
@@ -1145,6 +1148,7 @@
       withMethod
       methodDefault={DAILY_METHOD_DEFAULTS.wifeDailyFromSavings}
       withDate
+      periodId={monthId}
       onChange={(items: ExpenseItem[]) =>
         update(
           "wifeDailyFromSavings",

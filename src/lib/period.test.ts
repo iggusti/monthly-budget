@@ -10,6 +10,8 @@ import {
   latestPeriodId,
   listedPeriodIds,
   monthLabel,
+  periodDateCeiling,
+  periodDateRange,
   previousMonthId
 } from "./period";
 
@@ -186,5 +188,30 @@ describe("monthLabel", () => {
 
   it("rolls to the next year for December periods", () => {
     expect(monthLabel("2026-12", "en-US")).toBe("January 2027");
+  });
+});
+
+
+describe("periodDateRange", () => {
+  it("runs from the 25th of the previous month to the 24th", () => {
+    expect(periodDateRange("2026-11")).toEqual({ start: "2026-10-25", end: "2026-11-24" });
+  });
+
+  it("rolls over the year", () => {
+    expect(periodDateRange("2026-01")).toEqual({ start: "2025-12-25", end: "2026-01-24" });
+  });
+});
+
+describe("periodDateCeiling", () => {
+  it("is today while the period is open", () => {
+    expect(periodDateCeiling("2026-11", new Date(2026, 10, 10))).toBe("2026-11-10");
+  });
+
+  it("is the period end after it closed", () => {
+    expect(periodDateCeiling("2026-10", new Date(2026, 10, 10))).toBe("2026-10-24");
+  });
+
+  it("never goes before the period start", () => {
+    expect(periodDateCeiling("2026-12", new Date(2026, 10, 10))).toBe("2026-11-25");
   });
 });

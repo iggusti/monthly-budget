@@ -8,7 +8,7 @@
  * a few days before its cycle starts.
  */
 
-import { monthsOfYear } from "./types";
+import { monthsOfYear, toISODate } from "./types";
 
 /** Label of the period's end month, e.g. `2026-10` -> "November 2026". */
 export function monthLabel(id: string, locale: string): string {
@@ -16,6 +16,25 @@ export function monthLabel(id: string, locale: string): string {
   const [year, month] = id.split("-").map(Number);
   const end = new Date(year, month || 1, 24);
   return `${end.toLocaleString(locale, { month: "long" })} ${end.getFullYear()}`;
+}
+
+/**
+ * Inclusive dates covered by a period: the 25th of the previous month through
+ * the 24th of the period's own month, as `YYYY-MM-DD`.
+ */
+export function periodDateRange(id: string): { start: string; end: string } {
+  const end = `${id}-24`;
+  const start = `${previousMonthId(id)}-25`;
+  return { start, end };
+}
+
+/** Latest selectable date: the period end, clamped to today while it is open. */
+export function periodDateCeiling(id: string, now: Date = new Date()): string {
+  const { start, end } = periodDateRange(id);
+  const today = toISODate(now);
+  if (end < today) return end;
+  if (today < start) return start;
+  return today;
 }
 
 /** Day a period starts — the 25th → 24th cycle. */

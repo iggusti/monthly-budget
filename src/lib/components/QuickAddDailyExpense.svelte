@@ -7,6 +7,7 @@
    * It closes only after that promise resolves true, so a failed write keeps
    * the typed data available for a retry.
    */
+  import { untrack } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { MOTION, motionFade, motionFly } from "#lib/motion";
   import {
@@ -19,18 +20,21 @@
     type DailySectionKey
   } from "#lib/types";
   import { channelsFor, DAILY_METHOD_DEFAULTS, joinMethod } from "#lib/expense-methods";
+  import { periodDateCeiling, periodDateRange } from "#lib/period";
   import BadgeIcon from "#lib/components/BadgeIcon.svelte";
   import { lang, t } from "#lib/i18n.svelte";
 
   interface Props {
     /** Human label of the period receiving the entry, e.g. "November 2026". */
     month: string;
+    /** Period id (`YYYY-MM`) used to keep custom dates inside this cycle. */
+    periodId?: string;
     onClose: () => void;
     /** Returns false when the save failed (the sheet then stays open). */
     onSave: (sectionKey: DailySectionKey, item: DailyExpense) => Promise<boolean>;
   }
 
-  let { month, onClose, onSave }: Props = $props();
+  let { month, periodId, onClose, onSave }: Props = $props();
 
   /**
    * The four daily buckets, in the same order as sections 5–8 of a month.
@@ -55,22 +59,25 @@
     { value: "cash", label: t("expense.methodCash") }
   ]);
 
-  /** Quick-pick dates: today and the previous three local calendar days. */
-  const dateOptions = $derived(
-    [0, 1, 2, 3].map((offset) => {
-      const now = new Date();
-      const value = toISODate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset));
-      return {
-        value,
-        relative:
-          offset === 0
-            ? t("expense.dateToday")
-            : offset === 1
-              ? t("expense.dateYesterday")
-              : t("expense.daysAgo", { n: offset })
-      };
-    })
-  );
+  const periodRange = $derived(periodId ? periodDateRange(periodId) : null);
+  const today = $derived(todayISO());
+  const dateFloor = $derived(periodRange?.start ?? toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 3)));
+  const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
+
+  function shiftISODate(value: string, days: number): string {
+    const date = parseISODate(value);
+    if (!date) return value;
+    return toISODate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+  }
+
+  function formatShortDate(value: string): string {
+    const date = parseISODate(value);
+    if (!date) return value;
+    return date.toLocaleDateString(lang.value === "id" ? "id-ID" : "en-US", {
+      day: "numeric",
+      month: "short"
+    });
+  }
 
   /** Date descriptions, worded and formatted like the month page's editor. */
   function formatFullDate(value: string | undefined): string {
@@ -94,6 +101,26 @@
     return formatFullDate(value);
   }
 
+  /** Quick-pick dates anchored to the period, up to four days back. */
+  const dateOptions = $derived.by(() => {
+    const options: { value: string; relative: string }[] = [];
+    for (let offset = 0; offset < 4; offset += 1) {
+      const value = shiftISODate(dateCeiling, -offset);
+      if (value < dateFloor) break;
+      options.push({
+        value,
+        relative: periodRange && value !== today
+          ? formatShortDate(value)
+          : offset === 0
+            ? t("expense.dateToday")
+            : offset === 1
+              ? t("expense.dateYesterday")
+              : t("expense.daysAgo", { n: offset })
+      });
+    }
+    return options;
+  });
+
   /** The section preselected when the sheet opens (section 5 on the month page). */
   const DEFAULT_SECTION: DailySectionKey = "husbandDailyFromSalary";
 
@@ -103,7 +130,7 @@
   // Open with the same preset the month page uses for that section.
   let methodBase = $state(DAILY_METHOD_DEFAULTS[DEFAULT_SECTION].base);
   let methodChannel = $state(DAILY_METHOD_DEFAULTS[DEFAULT_SECTION].channel);
-  let date = $state(todayISO());
+  let date = $state(untrack(() => (periodId ? periodDateCeiling(periodId) : todayISO())));
   let saving = $state(false);
 
   const channelOptions = $derived(channelsFor(methodBase));
@@ -326,13 +353,13 @@
             class="date-input"
             type="date"
             bind:value={date}
-            min={dateOptions[dateOptions.length - 1].value}
-            max={dateOptions[0].value}
+            min={dateFloor}
+            max={dateCeiling}
           />
         </label>
         <span class="date-preview field-hint">
           {#if date}
-            🗓 {relativeLabel(date)} · {formatFullDate(date)}
+            🗓 {periodRange && date < today ? formatFullDate(date) : `${relativeLabel(date)} · ${formatFullDate(date)}`}
           {:else}
             {t("expense.noDate")}
           {/if}
