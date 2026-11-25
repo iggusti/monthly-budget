@@ -23,8 +23,10 @@ Because the browser only writes a queue document, all Telegram credentials stay
 server-side in GitHub Secrets. Budget edits and activity jobs (sign-in, sign-out,
 notification/language changes, and failures) notify the other registered family
 member; when nobody else is registered, the actor receives the card. The message is a rich Telegram HTML card with the month, the changed item,
-its category, method, date, payment status and a per-field before/after for
-edits. Multi-change edits include added/removed/net totals. A button links to
+its category, method, date, payment status for fixed expenses only (daily
+spending is already paid), and a per-field before/after for edits. A successful
+save that changes no tracked expense sends no card. Multi-change edits include
+added/removed/net totals. A button links to
 the changed month, and the copy arrives in the language selected on that
 browser (EN / ID).
 

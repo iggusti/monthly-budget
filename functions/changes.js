@@ -167,18 +167,23 @@ function itemKey(item, index) {
   return `#${index}`;
 }
 
-/** Compare every field the family edits, including the payment checkbox. */
-function sameItem(a, b) {
+/** Daily spending is already paid, so it has no payment-status concept. */
+function isDailySection(key) {
+  return String(key ?? "").includes("Daily");
+}
+
+/** Compare every editable field; status only matters for fixed expenses. */
+function sameItem(a, b, includeStatus = true) {
   return (
     String(a.name ?? "") === String(b.name ?? "") &&
     Number(a.amount ?? 0) === Number(b.amount ?? 0) &&
     String(a.method ?? "") === String(b.method ?? "") &&
     String(a.date ?? "") === String(b.date ?? "") &&
-    Boolean(a.checked) === Boolean(b.checked)
+    (!includeStatus || Boolean(a.checked) === Boolean(b.checked))
   );
 }
 
-function diffSection(beforeList, afterList) {
+function diffSection(beforeList, afterList, section) {
   const beforeMap = new Map();
   const afterMap = new Map();
 
@@ -196,7 +201,7 @@ function diffSection(beforeList, afterList) {
   for (const [key, item] of afterMap) {
     if (!beforeMap.has(key)) {
       added.push(item);
-    } else if (!sameItem(beforeMap.get(key), item)) {
+    } else if (!sameItem(beforeMap.get(key), item, !isDailySection(section.key))) {
       edited.push({ item, previous: beforeMap.get(key) });
     }
   }
@@ -212,7 +217,7 @@ function collectEvents(before, after) {
   const events = [];
 
   for (const section of SECTIONS) {
-    const { added, edited, removed } = diffSection(before?.[section.key], after?.[section.key]);
+    const { added, edited, removed } = diffSection(before?.[section.key], after?.[section.key], section);
 
     for (const item of added) events.push({ type: "add", section, item });
     for (const change of edited) {
@@ -269,11 +274,12 @@ function htmlForSingle(lang, monthTitle, event, meta) {
   const item = event.item || {};
   const amount = formatRupiah(item.amount);
   const name = item.name || "—";
+  const daily = isDailySection(event.section?.key);
   const details = [
     row(text.category, sectionLabel(lang, event.section)),
     row(text.method, item.method),
     row(text.date, formatDate(item.date)),
-    row(text.status, item.checked ? text.paid : text.unpaid)
+    ...(daily ? [] : [row(text.status, item.checked ? text.paid : text.unpaid)])
   ];
 
   if (event.type === "edit") {
@@ -291,7 +297,7 @@ function htmlForSingle(lang, monthTitle, event, meta) {
     if (String(previous.date ?? "") !== String(item.date ?? "")) {
       changes.push(changeRow(text.date, formatDate(previous.date), formatDate(item.date)));
     }
-    if (Boolean(previous.checked) !== Boolean(item.checked)) {
+    if (!daily && Boolean(previous.checked) !== Boolean(item.checked)) {
       changes.push(changeRow(text.status, previous.checked ? text.paid : text.unpaid, item.checked ? text.paid : text.unpaid));
     }
     if (!changes.length) changes.push(row(text.category, sectionLabel(lang, event.section)));

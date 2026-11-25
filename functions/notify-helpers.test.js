@@ -247,7 +247,7 @@ describe("activity jobs", () => {
     expect(sends[0].message.text).toContain("permission-denied");
   });
 
-  it("falls back to a success card when a save changed no tracked expense", () => {
+  it("stays silent when a successful save changed no tracked expense", () => {
     const sends = helpers.plannedSends({
       before: budget({ title: "Lama" }),
       after: budget({ title: "Baru" }),
@@ -264,10 +264,7 @@ describe("activity jobs", () => {
         createdAt: "2026-11-25T08:15:00"
       }
     });
-    expect(sends).toHaveLength(1);
-    expect(sends[0].message.text).toContain("Anggaran disimpan");
-    expect(sends[0].message.text).toContain("<b>Periode:</b> November 2026");
-    expect(sends[0].message.text).toContain("dari suami · 25 Nov 2026, 08.15");
+    expect(sends).toEqual([]);
   });
 
   it("uses configured chats when no device is registered yet", () => {

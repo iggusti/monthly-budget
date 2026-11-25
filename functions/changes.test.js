@@ -56,6 +56,12 @@ describe("collectEvents", () => {
     expect(events[0].item.checked).toBe(true);
   });
 
+  it("ignores a checked-only change in a daily section", () => {
+    const before = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), checked: false }] });
+    const after = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), checked: true }] });
+    expect(collectEvents(before, after)).toHaveLength(0);
+  });
+
   it("detects a date-only edit as an edit", () => {
     const before = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), date: "2026-11-01" }] });
     const after = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), date: "2026-11-02" }] });
@@ -201,6 +207,19 @@ describe("clearer notification copy", () => {
     expect(content.html).toContain("November 2026 · 25 Nov 2026, 08.15");
     expect(content.html).toContain("from husband · 25 Nov 2026, 08.15");
     expect(content.html).not.toContain("✅ Success");
+  });
+
+  it("omits payment status from daily expense cards", () => {
+    const events = collectEvents(doc(), doc({ husbandDailyFromSalary: [expense("a", "Kopi", 20000)] }));
+    const content = buildContent("id", "November 2026", events, meta);
+    expect(content.html).not.toContain("Status:");
+    expect(content.html).toContain("<b>Kategori:</b> Harian suami (gaji)");
+  });
+
+  it("keeps payment status on fixed expense cards", () => {
+    const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "Listrik", 150000)] }));
+    const content = buildContent("id", "November 2026", events, meta);
+    expect(content.html).toContain("<b>Status:</b>");
   });
 
   it("shows a payment-status change with before and after", () => {

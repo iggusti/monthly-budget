@@ -168,24 +168,10 @@ function plannedSends({ before, after, monthId, editorUid, devices, env, job, de
       ? [{ type: "month-delete" }]
       : [];
 
-  // Auth/device actions are pure activity jobs. A budget save that changed no
-  // expense (e.g. a lock toggle) falls back to a success activity card too.
+  // Auth/device actions and Firebase failures are pure activity jobs. A
+  // successful save with no tracked expense change stays silent on Telegram.
   if (job?.kind === "activity") {
     return activitySends({ activity: job, monthId, editorUid: editor, devices, env, deliveredChats });
-  }
-  if (events.length === 0 && job?.outcome) {
-    return activitySends({
-      activity: {
-        ...job,
-        kind: "activity",
-        action: job.action || "budget.save",
-        detail: job.detail || monthId
-      },
-      monthId,
-      editorUid: editor,
-      devices,
-      env
-    });
   }
   if (events.length === 0) return [];
 
