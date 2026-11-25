@@ -1009,9 +1009,6 @@
     />
     {/if}
     {#if !searchActive || matchedSections[3]}
-    {#if wifeFixedChecksLocked}
-      <p class="upcoming-daily-notice">{t("month.wifeFixedCheckLocked")}</p>
-    {/if}
     <ExpenseSection
       sectionId="section-4"
       confirmChanges={confirmFixedChanges}
@@ -1022,6 +1019,9 @@
       badge="♀"
       icon="fixed"
       tone="rose"
+      headerHint={wifeFixedChecksLocked
+        ? { label: t("month.wifeFixedCheckHint"), title: t("month.wifeFixedCheckLocked") }
+        : undefined}
       checkboxable
       checkboxesDisabled={wifeFixedChecksLocked}
       collapsible

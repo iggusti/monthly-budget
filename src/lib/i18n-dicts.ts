@@ -290,6 +290,7 @@ export const en: Dict = {
   "month.unlockedToast": "Period unlocked",
   "month.upcomingDailyNotice": "Daily expenses open when the period starts on the 25th.",
   "month.wifeFixedCheckLocked": "Wife's fixed expenses can be marked paid from the 1st of this period.",
+  "month.wifeFixedCheckHint": "From the 1st",
 };
 
 export const id: Dict = {
@@ -581,6 +582,7 @@ export const id: Dict = {
   "month.unlockedToast": "Periode dibuka",
   "month.upcomingDailyNotice": "Pengeluaran harian dibuka saat periode mulai tanggal 25.",
   "month.wifeFixedCheckLocked": "Pengeluaran tetap istri bisa ditandai lunas mulai tanggal 1 periode ini.",
+  "month.wifeFixedCheckHint": "Mulai tgl 1",
 };
 
 export const dictionaries: Record<"en" | "id", Dict> = { en, id };
