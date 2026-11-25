@@ -1327,12 +1327,14 @@
   /* Shown alone when no preset is matched (legacy value): let it fill the row. */
   .method-field.wide { grid-column: 1 / -1; }
 
-  /* Active period: original chips + "other date" row. Past periods: plain field. */
+  /* Date capture: quick-pick chips + a native picker + a live preview.
+     Four even columns with the dashboard's compact colours, but the pill
+     radius this page had before; the full date stays in the tooltip/preview. */
   .date-field { grid-column: 1 / -1; }
   .date-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
     display: inline-flex; align-items: center; justify-content: center;
-    min-height: 44px; padding: 0.4rem 0.15rem;
+    padding: 0.4rem 0.15rem;
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-pill);
     background: var(--bg-muted);
@@ -1347,7 +1349,7 @@
   }
   .date-custom { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.45rem; }
   .date-custom-label { font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap; }
-  .date-custom input { flex: 1; min-width: 0; min-height: 44px; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
+  .date-custom input { flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--surface-border); border-radius: var(--radius-sm); background: var(--surface); font-size: 0.8rem; color: var(--text-primary); }
   .date-custom input:focus { outline: none; border-color: var(--accent-gold); box-shadow: var(--focus-ring-gold); }
   .date-field > input[type="date"] { width: 100%; min-height: 44px; }
   /* The hint look comes from the shared `.field-hint` (app.css); this only

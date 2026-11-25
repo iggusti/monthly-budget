@@ -457,7 +457,7 @@
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
   .date-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
   .date-chip {
-    min-height: 44px; padding: 0.4rem 0.15rem; border-radius: var(--radius-pill);
+    padding: 0.4rem 0.15rem; border-radius: var(--radius-pill);
     border: 1px solid var(--surface-border); background: var(--bg-muted);
     color: var(--text-secondary); font-size: 0.7rem; font-weight: 700;
   }
@@ -471,7 +471,7 @@
     font-size: var(--fs-caption); font-weight: 600; color: var(--text-tertiary); white-space: nowrap;
   }
   .date-custom input { flex: 1; min-width: 0; }
-  .date-input { min-height: 44px; }
+  .field > .date-input { min-height: 44px; }
   .date-preview { margin-top: 0.45rem; }
 
   /* Mounted only while the field is empty, so filled fields keep normal
@@ -491,7 +491,7 @@
   .btn-save:hover { opacity: 0.88; }
   .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
 
-  .close-btn:focus-visible, .date-chip:focus-visible, .destination:focus-visible,
+  .close-btn:focus-visible, .destination:focus-visible, .date-chip:focus-visible,
   .btn-cancel:focus-visible, .btn-save:focus-visible {
     outline: var(--focus-outline); outline-offset: 2px;
   }
