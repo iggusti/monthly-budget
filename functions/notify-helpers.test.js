@@ -319,3 +319,50 @@ describe("activity jobs", () => {
     expect(sends[0].message.text).toContain("<b>Status:</b> Belum lunas → <b>Lunas</b>");
   });
 });
+
+
+describe("delivery safety", () => {
+  it("classifies chats that need /start or unblocking as permanent errors", () => {
+    expect(helpers.isPermanentTelegramError({
+      error_code: 400,
+      description: "Bad Request: chat not found"
+    })).toBe(true);
+    expect(helpers.isPermanentTelegramError({
+      error_code: 403,
+      description: "Forbidden: bot was blocked by the user"
+    })).toBe(true);
+    expect(helpers.isPermanentTelegramError({
+      error_code: 429,
+      description: "Too Many Requests: retry after 32"
+    })).toBe(false);
+  });
+
+  it("does not re-plan chats that were already delivered", () => {
+    const before = budget();
+    const after = budget({ husbandFixed: [expense("a", "Listrik", 150000)] });
+    const sends = helpers.plannedSends({
+      before,
+      after,
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env,
+      deliveredChats: ["222"]
+    });
+    expect(sends).toEqual([]);
+  });
+
+  it("falls back to the spouse's configured chat when only the actor has a device", () => {
+    const sends = helpers.plannedSends({
+      before: budget(),
+      after: budget({ husbandFixed: [expense("a", "Listrik", 150000)] }),
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }],
+      env,
+      job: { kind: "budget", outcome: "success", action: "budget.save", editorUid: "u1" }
+    });
+    expect(sends).toHaveLength(1);
+    expect(sends[0]).toMatchObject({ recipient: "wife", lang: "id", chatId: "222" });
+  });
+});

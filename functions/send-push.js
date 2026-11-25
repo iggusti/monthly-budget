@@ -93,6 +93,7 @@ async function deliver(token, message) {
     const error = new Error(result.description || `Telegram HTTP ${response.status}`);
     const retryAfter = helpers.retryAfterSeconds(result);
     if (retryAfter) error.retryAfter = retryAfter;
+    error.permanent = helpers.isPermanentTelegramError(result);
     throw error;
   }
 }
@@ -125,6 +126,7 @@ async function main() {
 
   for (const job of jobs) {
     const { before, after, monthId, editorUid } = job.data;
+    let delivered = Array.isArray(job.data.deliveredChats) ? [...job.data.deliveredChats] : [];
     try {
       const sends = helpers.plannedSends({
         before: before || null,
@@ -133,7 +135,8 @@ async function main() {
         editorUid: editorUid || null,
         devices,
         env,
-        job: job.data
+        job: job.data,
+        deliveredChats: delivered
       });
 
       if (!sends.length) {
@@ -143,6 +146,9 @@ async function main() {
       for (const send of sends) {
         await pace();
         await deliver(token, send.message);
+        // Persist after every chat so a later failure never re-sends this one.
+        delivered.push(send.chatId);
+        await job.ref.update({ deliveredChats: delivered });
         console.log(`Sent ${send.recipient}/${send.lang} Telegram message for ${monthId}`);
       }
 
@@ -151,9 +157,10 @@ async function main() {
         processedAt: new Date().toISOString(),
         processingAt: null,
         retryAfterAt: null,
-        recipients: sends.length
+        recipients: delivered.length,
+        deliveredChats: delivered
       });
-      if (sends.length) sent += 1;
+      if (delivered.length) sent += 1;
       else skipped += 1;
     } catch (error) {
       const message = String(error?.message || error);
@@ -162,12 +169,26 @@ async function main() {
 
       // A Telegram throttle is temporary: keep the job queued without burning
       // an attempt, so a long API outage cannot silently drop notifications.
+      if (error?.permanent) {
+        await job.ref.update({
+          status: "error",
+          lastError: `${message} (permanent)`,
+          processingAt: null,
+          retryAfterAt: null,
+          recipients: delivered.length,
+          deliveredChats: delivered
+        });
+        failed += 1;
+        continue;
+      }
+
       if (retryAfter) {
         await job.ref.update({
           status: "pending",
           lastError: message,
           processingAt: null,
-          retryAfterAt: new Date(Date.now() + (retryAfter + RETRY_COOLDOWN_SECONDS) * 1000).toISOString()
+          retryAfterAt: new Date(Date.now() + (retryAfter + RETRY_COOLDOWN_SECONDS) * 1000).toISOString(),
+          deliveredChats: delivered
         });
         continue;
       }
@@ -178,7 +199,8 @@ async function main() {
         attempts,
         lastError: message,
         processingAt: null,
-        retryAfterAt: null
+        retryAfterAt: null,
+        deliveredChats: delivered
       });
       failed += 1;
     }

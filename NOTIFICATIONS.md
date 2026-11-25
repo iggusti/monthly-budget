@@ -28,6 +28,11 @@ edits. Multi-change edits include added/removed/net totals. A button links to
 the changed month, and the copy arrives in the language selected on that
 browser (EN / ID).
 
+The sender records which chats accepted each job, so a partial failure never
+re-sends to a chat that already received the message. Errors that cannot
+heal by retrying (chat has not started the bot, or blocked it) are marked
+failed immediately.
+
 ## One-time setup
 
 1. **Create the bot** — open [@BotFather](https://t.me/BotFather) on Telegram,

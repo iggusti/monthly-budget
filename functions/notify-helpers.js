@@ -106,8 +106,24 @@ function buildMessage(env, group, content, monthId, chatId = resolveChatId(env, 
   return payload;
 }
 
+/** Recipients we know from Secrets, used when devices are not registered yet. */
+function configuredGroups(env, skipRecipient = null) {
+  return ["husband", "wife"]
+    .filter((recipient) => recipient !== skipRecipient && resolveChatIds(env, recipient).length > 0)
+    .map((recipient) => ({ recipient, lang: "id", uids: [] }));
+}
+
+/** Errors that will not fix themselves by retrying the same chat. */
+function isPermanentTelegramError(result) {
+  const code = Number(result?.error_code || 0);
+  const description = String(result?.description || "").toLowerCase();
+  if (code === 400 && /chat not found|chat_id is invalid|can't initiate|bot can't initiate/.test(description)) return true;
+  if (code === 403 && /blocked|kicked|deactivated/.test(description)) return true;
+  return false;
+}
+
 /** Activity jobs notify the other device; if none exists, tell the actor. */
-function activitySends({ activity, monthId, editorUid, devices, env }) {
+function activitySends({ activity, monthId, editorUid, devices, env, deliveredChats = [] }) {
   const payload = { ...activity, monthId: activity?.monthId || monthId || null };
   const allGroups = groupRecipients(devices, null);
   const otherGroups = groupRecipients(devices, editorUid);
@@ -115,12 +131,10 @@ function activitySends({ activity, monthId, editorUid, devices, env }) {
   if (groups.length === 0) {
     // Login and "disable notifications" can happen before any device record
     // exists. Still deliver the card to whichever chats are configured.
-    groups = ["husband", "wife"]
-      .filter((recipient) => resolveChatIds(env, recipient).length > 0)
-      .map((recipient) => ({ recipient, lang: "id", uids: [] }));
+    groups = configuredGroups(env);
   }
   const messages = [];
-  const sentChats = new Set();
+  const sentChats = new Set(deliveredChats);
 
   for (const group of groups) {
     const chatIds = resolveChatIds(env, group.recipient);
@@ -146,7 +160,7 @@ function activitySends({ activity, monthId, editorUid, devices, env }) {
  * Turn one queued job into the list of Telegram payloads it should produce.
  * Returns an empty list when nothing changed or nobody else is registered.
  */
-function plannedSends({ before, after, monthId, editorUid, devices, env, job }) {
+function plannedSends({ before, after, monthId, editorUid, devices, env, job, deliveredChats = [] }) {
   const editor = editorUid || job?.editorUid || null;
   const events = after
     ? collectEvents(before || undefined, after)
@@ -157,7 +171,7 @@ function plannedSends({ before, after, monthId, editorUid, devices, env, job }) 
   // Auth/device actions are pure activity jobs. A budget save that changed no
   // expense (e.g. a lock toggle) falls back to a success activity card too.
   if (job?.kind === "activity") {
-    return activitySends({ activity: job, monthId, editorUid: editor, devices, env });
+    return activitySends({ activity: job, monthId, editorUid: editor, devices, env, deliveredChats });
   }
   if (events.length === 0 && job?.outcome) {
     return activitySends({
@@ -175,12 +189,16 @@ function plannedSends({ before, after, monthId, editorUid, devices, env, job }) 
   }
   if (events.length === 0) return [];
 
-  const groups = groupRecipients(devices, editor);
+  let groups = groupRecipients(devices, editor);
+  if (groups.length === 0) {
+    const actor = (Array.isArray(devices) ? devices : []).find((device) => device?.uid === editor);
+    groups = configuredGroups(env, actor?.recipient || null);
+  }
   if (groups.length === 0) return [];
 
   const monthTitle = after?.title || before?.title || monthId;
   const messages = [];
-  const sentChats = new Set();
+  const sentChats = new Set(deliveredChats);
 
   for (const group of groups) {
     const chatIds = resolveChatIds(env, group.recipient);
@@ -218,5 +236,7 @@ module.exports = {
   groupRecipients,
   buildMessage,
   activitySends,
+  configuredGroups,
+  isPermanentTelegramError,
   plannedSends
 };
