@@ -9,7 +9,7 @@
    */
   import { untrack } from "svelte";
   import { fade, fly } from "svelte/transition";
-  import { MOTION, motionFade, motionSheet } from "#lib/motion";
+  import { MOTION, motionFade, motionSheetIn, motionSheetOut } from "#lib/motion";
   import {
     daysBetween,
     makeId,
@@ -117,6 +117,62 @@
   let date = $state(untrack(() => (periodId ? periodDateCeiling(periodId) : todayISO())));
   let saving = $state(false);
 
+  // Swipe-down dismissal for the bottom sheet. The gesture only owns the
+  // header/grabber area so the form body keeps scrolling normally.
+  let sheetOutFrom = $state(0);
+  let dragging = $state(false);
+  let snapping = $state(false);
+  let dragStartY = 0;
+  let dragStartTime = 0;
+  let snapTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function closeSheet(from = 0) {
+    sheetOutFrom = from;
+    dragging = false;
+    snapping = false;
+    if (snapTimer) clearTimeout(snapTimer);
+    onClose();
+  }
+
+  function onDragStart(event: PointerEvent) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    if (snapTimer) clearTimeout(snapTimer);
+    snapping = false;
+    dragging = true;
+    dragStartY = event.clientY;
+    dragStartTime = event.timeStamp;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  function onDragMove(event: PointerEvent) {
+    if (!dragging || !dialogEl) return;
+    const delta = Math.max(0, event.clientY - dragStartY);
+    dialogEl.style.transform = `translateY(${delta}px)`;
+  }
+
+  function onDragEnd(event: PointerEvent) {
+    if (!dragging || !dialogEl) return;
+    dragging = false;
+    const delta = Math.max(0, event.clientY - dragStartY);
+    const quickFlick = delta > 40 && event.timeStamp - dragStartTime < 250;
+    const threshold = Math.min(120, (dialogEl.offsetHeight || 400) * 0.25);
+
+    if (delta > threshold || quickFlick) {
+      // Keep the sheet under the finger; the outro continues from `delta`.
+      sheetOutFrom = delta;
+      onClose();
+      return;
+    }
+
+    snapping = true;
+    dialogEl.style.transform = "translateY(0)";
+    snapTimer = setTimeout(() => {
+      snapping = false;
+      if (dialogEl) dialogEl.style.transform = "";
+    }, 240);
+  }
+
   const channelOptions = $derived(channelsFor(methodBase));
   const channelLabel = $derived(
     methodBase === "cash" ? t("expense.methodChannelBank") : t("expense.methodChannel")
@@ -179,13 +235,13 @@
     saving = true;
     const saved = await onSave(sectionKey, item);
     saving = false;
-    if (saved) onClose();
+    if (saved) closeSheet();
   }
 
   function onKeydown(event: KeyboardEvent) {
     if (event.key === "Escape") {
       event.preventDefault();
-      onClose();
+      closeSheet();
     }
   }
 
@@ -235,18 +291,30 @@
     aria-modal="true"
     aria-label={t("dashboard.quickAdd")}
     bind:this={dialogEl}
-    transition:motionSheet={MOTION.base}
+    in:motionSheetIn={MOTION.base}
+    out:motionSheetOut={{ from: sheetOutFrom }}
   >
-    <div class="sheet-head">
-      <div class="head-text">
-        <h2 class="sheet-title">{t("dashboard.quickAdd")}</h2>
-        <p class="sheet-sub">{t("dashboard.quickAddFor", { month })}</p>
+    <div
+      class="drag-zone"
+      class:dragging
+      class:snapping
+      onpointerdown={onDragStart}
+      onpointermove={onDragMove}
+      onpointerup={onDragEnd}
+      onpointercancel={onDragEnd}
+    >
+      <div class="sheet-grabber" aria-hidden="true"></div>
+      <div class="sheet-head">
+        <div class="head-text">
+          <h2 class="sheet-title">{t("dashboard.quickAdd")}</h2>
+          <p class="sheet-sub">{t("dashboard.quickAddFor", { month })}</p>
+        </div>
+        <button class="close-btn" type="button" aria-label={t("common.close")} onclick={() => closeSheet()}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
       </div>
-      <button class="close-btn" type="button" aria-label={t("common.close")} onclick={onClose}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-          <path d="M6 6l12 12M18 6L6 18" />
-        </svg>
-      </button>
     </div>
 
     <!-- `min`/`max` only guide the native picker; `novalidate` keeps a typed
@@ -402,6 +470,10 @@
     border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
     overflow: hidden;
   }
+  .drag-zone { touch-action: none; }
+  .drag-zone.dragging .sheet-head { cursor: grabbing; }
+  .drag-zone.snapping { transition: transform 220ms var(--ease-spring); }
+  .sheet-grabber { display: none; }
   .sheet-head {
     display: flex; align-items: flex-start; gap: 1rem;
     padding: 1.1rem 1.25rem 0.85rem;
@@ -511,6 +583,10 @@
 
   @media (max-width: 640px) {
     .sheet-overlay { align-items: flex-end; padding: 0; }
+    .sheet-grabber {
+      display: block; width: 2.5rem; height: 4px; margin: 0.5rem auto 0;
+      border-radius: var(--radius-pill); background: var(--surface-border);
+    }
     .sheet {
       max-width: none;
       max-height: calc(100dvh - var(--sheet-keyboard, 0px) - env(safe-area-inset-top) - 0.75rem);

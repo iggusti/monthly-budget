@@ -27,18 +27,39 @@ export function motionFly(y: number, ms: number, delay = 0) {
   };
 }
 
-/**
- * Modal sheet slide: rises from below by part of its own height and eases out.
- * Measuring the node keeps the motion proportional on both the centred panel
- * and the phone bottom sheet. Collapses to an instant change for reduced motion.
- */
-export function motionSheet(node: HTMLElement, ms: number = MOTION.base): TransitionConfig {
+/** How far a modal sheet travels, proportional to its height and viewport. */
+function sheetDistance(node: HTMLElement): number {
   const viewport = typeof window === "undefined" ? 0 : window.innerHeight;
-  const distance = prefersReducedMotion() ? 0 : Math.min(node.offsetHeight || 0, viewport * 0.45);
+  return prefersReducedMotion() ? 0 : Math.min(node.offsetHeight || 0, viewport * 0.45);
+}
+
+/**
+ * Modal sheet intro: rises from below by part of its own height and eases out.
+ * Collapses to an instant change for reduced motion.
+ */
+export function motionSheetIn(node: HTMLElement, ms: number = MOTION.base): TransitionConfig {
+  const from = sheetDistance(node);
   return {
     duration: motionDuration(ms),
     easing: cubicOut,
-    css: (t) => `transform: translateY(${(1 - t) * distance}px)`
+    css: (t) => `transform: translateY(${(1 - t) * from}px)`
+  };
+}
+
+/**
+ * Modal sheet outro. `from` lets a swipe-down close continue from the finger
+ * position instead of jumping back to rest first.
+ */
+export function motionSheetOut(
+  node: HTMLElement,
+  params: { ms?: number; from?: number } = {}
+): TransitionConfig {
+  const to = sheetDistance(node);
+  const from = params.from ?? 0;
+  return {
+    duration: motionDuration(params.ms ?? MOTION.base),
+    easing: cubicOut,
+    css: (t) => `transform: translateY(${t * from + (1 - t) * to}px)`
   };
 }
 
