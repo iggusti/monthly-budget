@@ -296,6 +296,7 @@
   >
     <div
       class="drag-zone"
+      role="presentation"
       class:dragging
       class:snapping
       onpointerdown={onDragStart}
