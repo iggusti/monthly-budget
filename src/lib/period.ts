@@ -18,14 +18,20 @@ export function monthLabel(id: string, locale: string): string {
   return `${end.toLocaleString(locale, { month: "long" })} ${end.getFullYear()}`;
 }
 
+/** ID of the calendar month after `id` (`YYYY-MM`). */
+export function nextMonthId(id: string): string {
+  const [year, month] = id.split("-").map(Number);
+  if (month >= 12) return `${year + 1}-01`;
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
 /**
- * Inclusive dates covered by a period: the 25th of the previous month through
- * the 24th of the period's own month, as `YYYY-MM-DD`.
+ * Inclusive dates covered by a period: the 25th of the period's own month
+ * through the 24th of the following month, as `YYYY-MM-DD`.
+ * `2026-10` runs 25 Oct – 24 Nov, matching the card label.
  */
 export function periodDateRange(id: string): { start: string; end: string } {
-  const end = `${id}-24`;
-  const start = `${previousMonthId(id)}-25`;
-  return { start, end };
+  return { start: `${id}-25`, end: `${nextMonthId(id)}-24` };
 }
 
 /** Latest selectable date: the period end, clamped to today while it is open. */

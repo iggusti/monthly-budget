@@ -356,16 +356,18 @@
   /** Inclusive bounds for the "other date" picker. */
   const dateFloor = $derived(periodRange?.start ?? toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 3)));
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
+  /** Only a closed period uses absolute labels; the active one stays relative. */
+  const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
   /** Absolute labels for past-period dates instead of "37 days ago". */
   function dateBadgeLabel(value: string | undefined): string {
     if (!value) return t("expense.noDate");
-    return periodRange && value < today ? shortDate(value) : relativeLabel(value);
+    return isPastPeriod ? shortDate(value) : relativeLabel(value);
   }
 
   function dateSummary(value: string | undefined): string {
     if (!value) return t("expense.noDate");
-    const relative = periodRange && value < today ? formatFullDate(value) : relativeLabel(value);
+    const relative = isPastPeriod ? formatFullDate(value) : relativeLabel(value);
     const full = formatFullDate(value);
     return relative === full ? relative : `${relative} · ${full}`;
   }

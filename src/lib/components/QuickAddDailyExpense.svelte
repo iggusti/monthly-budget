@@ -63,6 +63,7 @@
   const today = $derived(todayISO());
   const dateFloor = $derived(periodRange?.start ?? toISODate(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - 3)));
   const dateCeiling = $derived(periodId ? periodDateCeiling(periodId) : today);
+  const isPastPeriod = $derived(periodRange ? periodRange.end < today : false);
 
   /** Date descriptions, worded and formatted like the month page's editor. */
   function formatFullDate(value: string | undefined): string {
@@ -307,7 +308,7 @@
         />
         <span class="date-preview field-hint">
           {#if date}
-            🗓 {periodRange && date < today ? formatFullDate(date) : `${relativeLabel(date)} · ${formatFullDate(date)}`}
+            🗓 {isPastPeriod ? formatFullDate(date) : `${relativeLabel(date)} · ${formatFullDate(date)}`}
           {:else}
             {t("expense.noDate")}
           {/if}
