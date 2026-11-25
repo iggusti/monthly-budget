@@ -1288,6 +1288,26 @@
     .overview-body-clip { grid-template-columns: 1fr; }
     .months-grid { grid-template-columns: 1fr; }
     .hero { padding: 2rem 0 1rem; }
+
+    /* Backup: stack the copy above a tidy two-column grid of tap targets. */
+    .backup-panel { display: block; padding: 1rem; }
+    .backup-copy { margin-bottom: 0.9rem; }
+    .backup-copy h2 { font-size: 1rem; }
+    .backup-copy p { line-height: 1.45; }
+    .backup-copy small { line-height: 1.35; }
+    .backup-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+    .backup-btn { width: 100%; min-height: 44px; padding: 0.65rem 0.7rem; font-size: 0.8rem; line-height: 1.25; text-align: left; white-space: normal; }
+    .backup-btn :global(svg) { flex-shrink: 0; }
+    .backup-actions > .backup-btn.primary { grid-column: 1 / -1; justify-content: center; }
+    .restore-preview { margin-top: 0.9rem; flex-direction: column; align-items: stretch; gap: 0.8rem; padding: 0.85rem; }
+    .restore-copy small { overflow-wrap: anywhere; }
+    .restore-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .restore-actions .backup-btn { justify-content: center; }
+  }
+
+  @media (max-width: 380px) {
+    .backup-actions, .restore-actions { grid-template-columns: 1fr; }
+    .backup-actions > .backup-btn.primary { grid-column: auto; }
   }
 
   @media (prefers-reduced-motion: reduce) {
