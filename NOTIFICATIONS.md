@@ -5,8 +5,10 @@ with a changed name/amount/method/date (plus `checked` for fixed expenses
 only), or deleted. Deleting a whole month also notifies the other person.
 Auth/device actions and Firebase failures produce activity cards. Nothing is
 sent for income edits, daily `checked` changes, successful saves with no
-tracked expense change, or the editor's own browser. In-app toasts are a
-separate, immediate channel for every local action.
+tracked expense change, or the editor's own browser. Toggling the wife-to-husband
+transfer flag is tracked as well: the other phone gets `Transfer received` or
+`Transfer marked pending`. In-app toasts are a separate, immediate channel for
+every local action.
 
 Telegram replaces Firebase Cloud Messaging completely. There is no Cloud
 Function, no paid Firebase plan, and no browser notification permission prompt.

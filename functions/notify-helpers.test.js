@@ -162,6 +162,21 @@ describe("plannedSends", () => {
     })).toEqual([]);
   });
 
+  it("sends a card when only the transfer toggle changes", () => {
+    const sends = plannedSends({
+      before: budget({ transferReceived: false }),
+      after: budget({ transferReceived: true }),
+      monthId: "2026-11",
+      editorUid: "u1",
+      devices,
+      env
+    });
+    expect(sends).toHaveLength(1);
+    expect(sends[0]).toMatchObject({ recipient: "wife", lang: "id", chatId: "222" });
+    expect(sends[0].message.text).toContain("Transfer diterima");
+    expect(sends[0].message.reply_markup.inline_keyboard[0][0].url).toContain("/month/2026-11");
+  });
+
   it("sends one localized message per remaining recipient", () => {
     const sends = plannedSends({
       before: budget(),

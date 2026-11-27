@@ -33,6 +33,8 @@ const TEXT = {
     method: "Metode",
     date: "Tanggal",
     status: "Status",
+    transferReceived: "Transfer diterima",
+    transferPending: "Transfer ditandai belum diterima",
     created: "Dibuat",
     updated: "Diperbarui",
     paid: "Lunas",
@@ -67,6 +69,8 @@ const TEXT = {
     method: "Method",
     date: "Date",
     status: "Status",
+    transferReceived: "Transfer received",
+    transferPending: "Transfer marked pending",
     created: "Created",
     updated: "Updated",
     paid: "Paid",
@@ -86,7 +90,7 @@ const TEXT = {
   }
 };
 
-const ICONS = { add: "🟢", edit: "✏️", delete: "🔴", "month-delete": "🗑️", many: "📊" };
+const ICONS = { add: "🟢", edit: "✏️", delete: "🔴", transfer: "🔁", "month-delete": "🗑️", many: "📊" };
 
 const ACTIVITY_LABEL = {
   id: {
@@ -220,6 +224,12 @@ function diffSection(beforeList, afterList, section) {
 function collectEvents(before, after) {
   const events = [];
 
+  // The wife-to-husband equal-split toggle is a family-visible change even
+  // though it is a budget flag rather than an expense line.
+  if (Boolean(before?.transferReceived) !== Boolean(after?.transferReceived)) {
+    events.push({ type: "transfer", received: Boolean(after?.transferReceived) });
+  }
+
   for (const section of SECTIONS) {
     const { added, edited, removed } = diffSection(before?.[section.key], after?.[section.key], section);
 
@@ -233,9 +243,10 @@ function collectEvents(before, after) {
   return events;
 }
 
-function eventTitle(lang, type) {
+function eventTitle(lang, type, event = {}) {
   const text = TEXT[lang];
   if (type === "month-delete") return text.monthDelete;
+  if (type === "transfer") return event.received ? text.transferReceived : text.transferPending;
   return text[type];
 }
 
@@ -269,10 +280,15 @@ function htmlForSingle(lang, monthTitle, event, meta) {
   const text = TEXT[lang];
   const when = meta.createdAt ? formatTime(meta.createdAt) : "";
   const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
-  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type))}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
+  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type, event))}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
   if (event.type === "month-delete") {
     return `${head}\n${escapeHtml(text.monthDeletedBody)}\n\n${footer(lang, meta)}`;
+  }
+
+  if (event.type === "transfer") {
+    const status = event.received ? text.transferReceived : text.transferPending;
+    return `${head}\n<b>${escapeHtml(status)}</b>\n\n${row(text.status, status)}\n\n${footer(lang, meta)}`;
   }
 
   const item = event.item || {};
@@ -322,7 +338,11 @@ function htmlForMany(lang, monthTitle, events, meta) {
   const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
   const lines = events.slice(0, 6).map((event, index) => {
-    const label = event.type === "month-delete" ? text.monthDelete : eventTitle(lang, event.type);
+    if (event.type === "transfer") {
+      const status = event.received ? text.transferReceived : text.transferPending;
+      return `${index + 1}. <b>${escapeHtml(status)}</b>`;
+    }
+    const label = event.type === "month-delete" ? text.monthDelete : eventTitle(lang, event.type, event);
     const name = event.item ? event.item.name || "—" : monthTitle || "—";
     const amount = event.item ? formatRupiah(event.item.amount) : "";
     const whenItem = event.item ? formatTime(event.item.updatedAt || event.item.createdAt) : "";
@@ -339,6 +359,10 @@ function htmlForMany(lang, monthTitle, events, meta) {
   let changed = 0;
   let delta = 0;
   for (const event of events) {
+    if (event.type === "transfer") {
+      changed += 1;
+      continue;
+    }
     const amount = Number(event.item?.amount || 0);
     if (event.type === "add") {
       added += amount;
@@ -409,6 +433,15 @@ function buildContent(lang, monthTitle, events, meta = {}) {
       };
     }
 
+    if (event.type === "transfer") {
+      const status = event.received ? text.transferReceived : text.transferPending;
+      return {
+        title: status,
+        body: `${monthTitle || ""}\n${status}`.replace(/^\n/, ""),
+        html: htmlForSingle(lang, monthTitle, event, meta)
+      };
+    }
+
     const item = event.item;
     const amount = formatRupiah(item.amount);
 
@@ -423,7 +456,7 @@ function buildContent(lang, monthTitle, events, meta = {}) {
     }
 
     return {
-      title: eventTitle(lang, event.type),
+      title: eventTitle(lang, event.type, event),
       body: `${item.name || "—"} · ${amount}\n${sectionLabel(lang, event.section)}`,
       html: htmlForSingle(lang, monthTitle, event, meta)
     };
@@ -432,6 +465,12 @@ function buildContent(lang, monthTitle, events, meta = {}) {
   const lines = events.slice(0, 4).map((event) => {
     if (event.type === "month-delete") {
       return `− ${monthTitle || ""}`;
+    }
+    if (event.type === "transfer") {
+      return `• ${eventTitle(lang, event.type, event)}`;
+    }
+    if (event.type === "transfer") {
+      return `• ${eventTitle(lang, event.type, event)}`;
     }
     const sign = event.type === "add" ? "+" : event.type === "delete" ? "−" : "±";
     return `${sign} ${event.item.name || "—"} · ${formatRupiah(event.item.amount)}`;

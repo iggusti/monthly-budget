@@ -159,8 +159,11 @@ Details:
   entered in a form or shown in expense rows; Telegram cards include `Created`
   and `Updated` rows so the family can see when a line appeared and when it was
   last edited.
-- A successful save that changes no tracked expense sends no Telegram card;
-  the old generic `Budget saved` card was intentionally removed.
+- Toggling the wife-to-husband equal-split transfer flag also sends a card:
+  `Transfer received` or `Transfer marked pending`. Other budget-only edits
+  (title, period, lock) stay silent on Telegram.
+- A successful save that changes no tracked expense or transfer flag sends no
+  Telegram card; the old generic `Budget saved` card was intentionally removed.
 - Deleting a whole month sends a `Month deleted` card to the other phones.
   Expense and month-delete cards link straight to that month's page; activity
   cards have no month to link to.

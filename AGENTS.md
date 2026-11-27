@@ -119,6 +119,10 @@ without a quota project.
 - Period dates are editable: `periodStart` / `periodEnd` hold `YYYY-MM-DD`. The
   readable `period` label is derived from them with `formatPeriod()` in
   `types.ts` — never hand-write the label when those dates change.
+- `transferReceived` is a budget flag, not an expense line. `collectEvents()`
+  treats its toggle as a tracked change so the other phone receives a
+  `Transfer received` / `Transfer marked pending` card; other budget-only edits
+  remain Telegram-silent.
 - Periods roll on the 25th → 24th cycle (`currentPeriodId` in `period.ts`), but
   the dashboard lists one period ahead from the 21st (`latestPeriodId`,
   `PERIOD_CARD_DAY`) so the upcoming card appears early. Between the 21st and the

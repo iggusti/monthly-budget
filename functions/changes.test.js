@@ -56,6 +56,14 @@ describe("collectEvents", () => {
     expect(events[0].item.checked).toBe(true);
   });
 
+  it("reports the wife-to-husband transfer toggle", () => {
+    const received = collectEvents(doc({ transferReceived: false }), doc({ transferReceived: true }));
+    expect(received).toEqual([{ type: "transfer", received: true }]);
+
+    const pending = collectEvents(doc({ transferReceived: true }), doc({ transferReceived: false }));
+    expect(pending).toEqual([{ type: "transfer", received: false }]);
+  });
+
   it("ignores a checked-only change in a daily section", () => {
     const before = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), checked: false }] });
     const after = doc({ husbandDailyFromSalary: [{ ...expense("a", "Kopi", 20000), checked: true }] });
@@ -114,6 +122,33 @@ describe("buildContent", () => {
     expect(content.html).toContain("Rp 150.000");
     expect(content.html).toContain("<b>Category:</b> Husband fixed expenses");
     expect(content.html).toContain("from husband");
+  });
+
+  it("describes the transfer toggle with a month deep link", () => {
+    const received = buildContent("en", "November 2026", [{ type: "transfer", received: true }], meta);
+    expect(received.title).toBe("Transfer received");
+    expect(received.body).toBe("November 2026\nTransfer received");
+    expect(received.html).toContain("🔁 Transfer received");
+    expect(received.html).toContain("<b>Status:</b> Transfer received");
+
+    const pending = buildContent("id", "November 2026", [{ type: "transfer", received: false }], meta);
+    expect(pending.title).toBe("Transfer ditandai belum diterima");
+    expect(pending.html).toContain("<b>Status:</b> Transfer ditandai belum diterima");
+  });
+
+  it("combines a transfer toggle with expense changes", () => {
+    const events = collectEvents(
+      doc({ transferReceived: false }),
+      doc({
+        transferReceived: true,
+        husbandFixed: [expense("a", "Listrik", 150000)]
+      })
+    );
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(events).toHaveLength(2);
+    expect(content.title).toBe("2 expense changes");
+    expect(content.html).toContain("Transfer received");
+    expect(content.html).toContain("Listrik");
   });
 
   it("shows when an expense was created and last updated", () => {
