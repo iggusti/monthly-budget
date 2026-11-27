@@ -298,9 +298,8 @@ function footer(lang, meta, timestamp = meta.createdAt) {
 function htmlForSingle(lang, monthTitle, event, meta) {
   const text = TEXT[lang];
   const timestamp = eventTimestamp(event, meta);
-  const when = timestamp ? formatTime(timestamp) : "";
-  const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
-  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type, event))}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
+  // The clock lives in the footer only; the header keeps just the month.
+  const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type, event))}</b>\n<i>${escapeHtml(monthTitle || "")}</i>\n`;
 
   if (event.type === "month-delete") {
     return `${head}\n${escapeHtml(text.monthDeletedBody)}\n\n${footer(lang, meta, timestamp)}`;
@@ -350,9 +349,8 @@ function htmlForSingle(lang, monthTitle, event, meta) {
 function htmlForMany(lang, monthTitle, events, meta) {
   const text = TEXT[lang];
   const timestamp = eventsTimestamp(events, meta);
-  const when = timestamp ? formatTime(timestamp) : "";
-  const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
-  const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
+  // The clock lives in the footer only; the header keeps just the month.
+  const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(monthTitle || "")}</i>\n`;
 
   const lines = events.slice(0, 6).map((event, index) => {
     if (event.type === "transfer") {
@@ -416,8 +414,7 @@ function buildActivityContent(lang, activity, meta = {}) {
   const rawDetail = activity.detail || "";
   const detail = ACTIVITY_DETAILS[lang][rawDetail] || rawDetail;
   const detailLabel = activity.action?.startsWith("budget.") ? text.period : text.detail;
-  const when = activity.createdAt ? formatTime(activity.createdAt) : "";
-  const stamp = [`${icon} ${outcome}`, when, activity.monthId].filter(Boolean).join(" · ");
+  const stamp = [`${icon} ${outcome}`, activity.monthId].filter(Boolean).join(" · ");
 
   const lines = [
     `<b>${icon} ${escapeHtml(label)}</b>`,

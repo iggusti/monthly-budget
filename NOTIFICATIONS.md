@@ -29,9 +29,9 @@ server-side in GitHub Secrets. Budget edits and activity jobs (sign-in, sign-out
 notification/language changes, and failures) notify the other registered family
 member; when nobody else is registered, the actor receives the card. The message is a rich Telegram HTML card with the month, the changed item,
 its category, method, date, payment status for fixed expenses only (daily
-spending is already paid), and a per-field before/after for edits. The card
-time comes from the item itself: `createdAt` for a new line and `updatedAt` for
-an edit or delete, so the body does not need separate timestamp rows.
+spending is already paid), and a per-field before/after for edits. The single
+card time sits in the footer only: `createdAt` for a new line and `updatedAt`
+for an edit or delete. The header keeps the month; the body has no timestamp rows.
 A successful
 save that changes no tracked expense sends no card. Multi-change edits include
 added/removed/net totals. A button links to

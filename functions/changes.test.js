@@ -161,6 +161,7 @@ describe("buildContent", () => {
     const content = buildContent("en", "November 2026", events, meta);
     expect(content.html).toContain("25 Nov 2026");
     expect(content.html).not.toContain("27 Nov 2026");
+    expect(content.html.split("\n")[1]).toBe("<i>November 2026</i>");
     expect(content.html).not.toContain("<b>Created:</b>");
     expect(content.html).not.toContain("<b>Updated:</b>");
   });
@@ -300,14 +301,15 @@ describe("clearer notification copy", () => {
     devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }]
   };
 
-  it("adds the queue time to a budget card", () => {
+  it("keeps the queue time in the footer of a budget card", () => {
     const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "Listrik", 150000)] }));
     const content = buildContent("en", "November 2026", events, {
       ...meta,
       createdAt: "2026-11-25T08:15:00"
     });
-    expect(content.html).toContain("November 2026 · 25 Nov 2026, 08.15");
+    expect(content.html.split("\n")[1]).toBe("<i>November 2026</i>");
     expect(content.html).toContain("from husband · 25 Nov 2026, 08.15");
+    expect(content.html).not.toContain("November 2026 · 25 Nov 2026");
     expect(content.html).not.toContain("✅ Success");
   });
 

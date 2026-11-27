@@ -115,8 +115,8 @@ without a quota project.
   preserves the original `createdAt` and only advances `updatedAt` when an
   editable field changes. Never ask the user for these values in a form or show
   the clock in expense rows. Telegram cards use `createdAt` for a new line and
-  `updatedAt` for an edit/delete in their single header/footer time; do not add
-  separate timestamp rows to the card body.
+  `updatedAt` for an edit/delete in their single footer time; the header keeps
+  only the month, and the body has no timestamp rows.
 - Period dates are editable: `periodStart` / `periodEnd` hold `YYYY-MM-DD`. The
   readable `period` label is derived from them with `formatPeriod()` in
   `types.ts` — never hand-write the label when those dates change.

@@ -157,8 +157,8 @@ Details:
 - Every expense line stores app-generated `createdAt` / `updatedAt` ISO timestamps
   (the same English field names in the app and in Firestore). They are never
   entered in a form or shown in expense rows. Telegram cards show one time in
-  the header/footer: `createdAt` for a new line, `updatedAt` for an edit (or
-  delete); the body stays free of separate timestamp rows.
+  the footer only: `createdAt` for a new line, `updatedAt` for an edit (or
+  delete); the header keeps the month and the body stays free of timestamp rows.
 - Toggling the wife-to-husband equal-split transfer flag also sends a card:
   `Transfer received` or `Transfer marked pending`. Other budget-only edits
   (title, period, lock) stay silent on Telegram.
