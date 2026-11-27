@@ -151,7 +151,7 @@ describe("buildContent", () => {
     expect(content.html).toContain("Listrik");
   });
 
-  it("shows when an expense was created and last updated", () => {
+  it("uses createdAt for a new expense without body timestamp rows", () => {
     const item = {
       ...expense("a", "Listrik", 150000),
       createdAt: "2026-11-25T12:02:00.000Z",
@@ -159,13 +159,13 @@ describe("buildContent", () => {
     };
     const events = collectEvents(doc(), doc({ husbandFixed: [item] }));
     const content = buildContent("en", "November 2026", events, meta);
-    expect(content.html).toContain("<b>Created:</b>");
-    expect(content.html).toContain("<b>Updated:</b>");
     expect(content.html).toContain("25 Nov 2026");
-    expect(content.html).toContain("27 Nov 2026");
+    expect(content.html).not.toContain("27 Nov 2026");
+    expect(content.html).not.toContain("<b>Created:</b>");
+    expect(content.html).not.toContain("<b>Updated:</b>");
   });
 
-  it("includes both timestamps on an edit card", () => {
+  it("uses updatedAt for an edit without body timestamp rows", () => {
     const beforeItem = {
       ...expense("a", "Listrik", 150000),
       createdAt: "2026-11-25T12:02:00.000Z",
@@ -181,8 +181,41 @@ describe("buildContent", () => {
       doc({ husbandFixed: [afterItem] })
     );
     const content = buildContent("en", "November 2026", events, meta);
-    expect(content.html).toContain("<b>Created:</b> 25 Nov 2026");
-    expect(content.html).toContain("<b>Updated:</b> 27 Nov 2026");
+    expect(content.html).toContain("27 Nov 2026");
+    expect(content.html).not.toContain("25 Nov 2026");
+    expect(content.html).not.toContain("<b>Created:</b>");
+    expect(content.html).not.toContain("<b>Updated:</b>");
+  });
+
+  it("uses the last update time for a deleted expense", () => {
+    const item = {
+      ...expense("a", "Listrik", 150000),
+      createdAt: "2026-11-25T12:02:00.000Z",
+      updatedAt: "2026-11-27T12:04:00.000Z"
+    };
+    const events = collectEvents(doc({ husbandFixed: [item] }), doc());
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("27 Nov 2026");
+    expect(content.html).not.toContain("<b>Created:</b>");
+  });
+
+  it("uses the latest item time for a batched card", () => {
+    const first = {
+      ...expense("a", "Listrik", 150000),
+      createdAt: "2026-11-25T12:00:00.000Z",
+      updatedAt: "2026-11-25T12:00:00.000Z"
+    };
+    const second = {
+      ...expense("b", "Air", 200000),
+      createdAt: "2026-11-27T12:00:00.000Z",
+      updatedAt: "2026-11-27T12:00:00.000Z"
+    };
+    const events = collectEvents(doc(), doc({ husbandFixed: [first, second] }));
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("27 Nov 2026");
+    expect(content.html).not.toContain("25 Nov 2026");
+    expect(content.html).not.toContain("<b>Created:</b>");
+    expect(content.html).not.toContain("<b>Updated:</b>");
   });
 
   it("shows the previous amount on an edit", () => {

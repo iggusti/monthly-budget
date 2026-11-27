@@ -35,8 +35,6 @@ const TEXT = {
     status: "Status",
     transferReceived: "Transfer diterima",
     transferPending: "Transfer ditandai belum diterima",
-    created: "Dibuat",
-    updated: "Diperbarui",
     paid: "Lunas",
     unpaid: "Belum lunas",
     fromHusband: "dari suami",
@@ -71,8 +69,6 @@ const TEXT = {
     status: "Status",
     transferReceived: "Transfer received",
     transferPending: "Transfer marked pending",
-    created: "Created",
-    updated: "Updated",
     paid: "Paid",
     unpaid: "Unpaid",
     fromHusband: "from husband",
@@ -164,6 +160,29 @@ function formatTime(value) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+/**
+ * Timestamp shown in a card header/footer: a new line uses its creation time,
+ * an edit (or delete) uses its last update time. Non-item events keep the
+ * queue job time as a fallback.
+ */
+function eventTimestamp(event, meta = {}) {
+  if (!event) return meta?.createdAt || null;
+  const item = event.item || {};
+  if (event.type === "add") return item.createdAt || meta?.createdAt || null;
+  if (event.type === "edit") return item.updatedAt || meta?.createdAt || null;
+  if (event.type === "delete") return item.updatedAt || item.createdAt || meta?.createdAt || null;
+  return meta?.createdAt || null;
+}
+
+/** Latest relevant timestamp for a batched card. */
+function eventsTimestamp(events, meta = {}) {
+  const stamps = (Array.isArray(events) ? events : [])
+    .map((event) => eventTimestamp(event, null))
+    .filter(Boolean)
+    .sort();
+  return stamps.length ? stamps[stamps.length - 1] : meta.createdAt || null;
 }
 
 function sectionLabel(lang, section) {
@@ -268,9 +287,9 @@ function editorLabel(lang, meta) {
   return text.fromUnknown;
 }
 
-function footer(lang, meta) {
+function footer(lang, meta, timestamp = meta.createdAt) {
   const outcome = meta.outcome === "error" ? `⚠️ ${TEXT[lang].failed}` : "";
-  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const when = timestamp ? formatTime(timestamp) : "";
   const parts = [outcome, editorLabel(lang, meta), when].filter(Boolean);
   const suffix = parts.length ? ` · ${escapeHtml(parts.join(" · "))}` : "";
   return `───────────\n<i>${escapeHtml(TEXT[lang].footer)}${suffix}</i>`;
@@ -278,17 +297,18 @@ function footer(lang, meta) {
 
 function htmlForSingle(lang, monthTitle, event, meta) {
   const text = TEXT[lang];
-  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const timestamp = eventTimestamp(event, meta);
+  const when = timestamp ? formatTime(timestamp) : "";
   const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
   const head = `<b>${ICONS[event.type] || "•"} ${escapeHtml(eventTitle(lang, event.type, event))}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
   if (event.type === "month-delete") {
-    return `${head}\n${escapeHtml(text.monthDeletedBody)}\n\n${footer(lang, meta)}`;
+    return `${head}\n${escapeHtml(text.monthDeletedBody)}\n\n${footer(lang, meta, timestamp)}`;
   }
 
   if (event.type === "transfer") {
     const status = event.received ? text.transferReceived : text.transferPending;
-    return `${head}\n<b>${escapeHtml(status)}</b>\n\n${row(text.status, status)}\n\n${footer(lang, meta)}`;
+    return `${head}\n<b>${escapeHtml(status)}</b>\n\n${row(text.status, status)}\n\n${footer(lang, meta, timestamp)}`;
   }
 
   const item = event.item || {};
@@ -299,9 +319,7 @@ function htmlForSingle(lang, monthTitle, event, meta) {
     row(text.category, sectionLabel(lang, event.section)),
     row(text.method, item.method),
     row(text.date, formatDate(item.date)),
-    ...(daily ? [] : [row(text.status, item.checked ? text.paid : text.unpaid)]),
-    row(text.created, formatTime(item.createdAt)),
-    row(text.updated, formatTime(item.updatedAt))
+    ...(daily ? [] : [row(text.status, item.checked ? text.paid : text.unpaid)])
   ];
 
   if (event.type === "edit") {
@@ -322,18 +340,17 @@ function htmlForSingle(lang, monthTitle, event, meta) {
     if (!daily && Boolean(previous.checked) !== Boolean(item.checked)) {
       changes.push(changeRow(text.status, previous.checked ? text.paid : text.unpaid, item.checked ? text.paid : text.unpaid));
     }
-    changes.push(row(text.created, formatTime(item.createdAt || previous.createdAt)));
-    changes.push(row(text.updated, formatTime(item.updatedAt)));
-    if (changes.length === 2) changes.push(row(text.category, sectionLabel(lang, event.section)));
-    return `${head}\n<b>${escapeHtml(name)}</b>\n<b>${amount}</b>\n\n${changes.join("\n")}\n\n${footer(lang, meta)}`;
+    if (!changes.length) changes.push(row(text.category, sectionLabel(lang, event.section)));
+    return `${head}\n<b>${escapeHtml(name)}</b>\n<b>${amount}</b>\n\n${changes.join("\n")}\n\n${footer(lang, meta, timestamp)}`;
   }
 
-  return `${head}\n<b>${escapeHtml(name)}</b>\n<b>${amount}</b>\n\n${details.join("\n")}\n\n${footer(lang, meta)}`;
+  return `${head}\n<b>${escapeHtml(name)}</b>\n<b>${amount}</b>\n\n${details.join("\n")}\n\n${footer(lang, meta, timestamp)}`;
 }
 
 function htmlForMany(lang, monthTitle, events, meta) {
   const text = TEXT[lang];
-  const when = meta.createdAt ? formatTime(meta.createdAt) : "";
+  const timestamp = eventsTimestamp(events, meta);
+  const when = timestamp ? formatTime(timestamp) : "";
   const stamp = [monthTitle || "", when].filter(Boolean).join(" · ");
   const head = `<b>${ICONS.many} ${events.length} ${escapeHtml(text.changes)}</b>\n<i>${escapeHtml(stamp)}</i>\n`;
 
@@ -345,8 +362,7 @@ function htmlForMany(lang, monthTitle, events, meta) {
     const label = event.type === "month-delete" ? text.monthDelete : eventTitle(lang, event.type, event);
     const name = event.item ? event.item.name || "—" : monthTitle || "—";
     const amount = event.item ? formatRupiah(event.item.amount) : "";
-    const whenItem = event.item ? formatTime(event.item.updatedAt || event.item.createdAt) : "";
-    const subline = [label, sectionLabel(lang, event.section), whenItem]
+    const subline = [label, sectionLabel(lang, event.section)]
       .filter(Boolean)
       .map((part) => escapeHtml(part))
       .join(" · ");
@@ -387,7 +403,7 @@ function htmlForMany(lang, monthTitle, events, meta) {
     `${escapeHtml(text.net)}: ${delta >= 0 ? "+" : "−"}${formatRupiah(Math.abs(delta))}`
   ].join("\n");
 
-  return `${head}\n${lines.join("\n\n")}${more}\n\n${summary}\n\n${footer(lang, meta)}`;
+  return `${head}\n${lines.join("\n\n")}${more}\n\n${summary}\n\n${footer(lang, meta, timestamp)}`;
 }
 
 /** Compose a card for an audit action (auth, device toggle, or no-diff save). */
