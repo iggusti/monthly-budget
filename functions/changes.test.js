@@ -116,6 +116,40 @@ describe("buildContent", () => {
     expect(content.html).toContain("from husband");
   });
 
+  it("shows when an expense was created and last updated", () => {
+    const item = {
+      ...expense("a", "Listrik", 150000),
+      createdAt: "2026-11-25T12:02:00.000Z",
+      updatedAt: "2026-11-27T12:04:00.000Z"
+    };
+    const events = collectEvents(doc(), doc({ husbandFixed: [item] }));
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("<b>Created:</b>");
+    expect(content.html).toContain("<b>Updated:</b>");
+    expect(content.html).toContain("25 Nov 2026");
+    expect(content.html).toContain("27 Nov 2026");
+  });
+
+  it("includes both timestamps on an edit card", () => {
+    const beforeItem = {
+      ...expense("a", "Listrik", 150000),
+      createdAt: "2026-11-25T12:02:00.000Z",
+      updatedAt: "2026-11-25T12:02:00.000Z"
+    };
+    const afterItem = {
+      ...beforeItem,
+      amount: 175000,
+      updatedAt: "2026-11-27T12:04:00.000Z"
+    };
+    const events = collectEvents(
+      doc({ husbandFixed: [beforeItem] }),
+      doc({ husbandFixed: [afterItem] })
+    );
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("<b>Created:</b> 25 Nov 2026");
+    expect(content.html).toContain("<b>Updated:</b> 27 Nov 2026");
+  });
+
   it("shows the previous amount on an edit", () => {
     const events = collectEvents(
       doc({ husbandFixed: [expense("a", "Listrik", 150000)] }),

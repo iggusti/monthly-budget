@@ -12,6 +12,7 @@ import {
   sumAmount,
   totalExpenses,
   toISODate,
+  withExpenseTimestamps,
   type MonthBudget
 } from "./types";
 
@@ -252,5 +253,110 @@ describe("misc helpers", () => {
 
   it("creates distinct item ids", () => {
     expect(makeId()).not.toBe(makeId());
+  });
+});
+
+describe("withExpenseTimestamps", () => {
+  const now = new Date("2026-11-27T10:00:00.000Z");
+  const created = "2026-11-25T01:02:00.000Z";
+
+  it("stamps a newly added expense as created and updated now", () => {
+    const before = budgetWith();
+    const after = budgetWith({
+      husbandFixed: [{ id: "a", name: "Listrik", amount: 150000 }]
+    });
+    const stamped = withExpenseTimestamps(before, after, now);
+    expect(stamped.husbandFixed[0]).toMatchObject({
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
+    });
+  });
+
+  it("keeps createdAt and refreshes updatedAt only when fields change", () => {
+    const before = budgetWith({
+      husbandFixed: [
+        {
+          id: "a",
+          name: "Listrik",
+          amount: 150000,
+          createdAt: created,
+          updatedAt: created
+        }
+      ]
+    });
+    const unchanged = withExpenseTimestamps(
+      before,
+      budgetWith({
+        // The editor rebuilds the object without timestamp fields.
+        husbandFixed: [{ id: "a", name: "Listrik", amount: 150000 }]
+      }),
+      now
+    );
+    expect(unchanged.husbandFixed[0]).toMatchObject({
+      createdAt: created,
+      updatedAt: created
+    });
+
+    const edited = withExpenseTimestamps(
+      before,
+      budgetWith({
+        husbandFixed: [{ id: "a", name: "Listrik", amount: 175000 }]
+      }),
+      now
+    );
+    expect(edited.husbandFixed[0]).toMatchObject({
+      createdAt: created,
+      updatedAt: now.toISOString()
+    });
+  });
+
+  it("backfills legacy items without treating them as edits", () => {
+    const before = budgetWith({
+      wifeDailyFromSalary: [{ id: "b", name: "Kopi", amount: 12000, method: "Cash" }]
+    });
+    const after = budgetWith({
+      wifeDailyFromSalary: [{ id: "b", name: "Kopi", amount: 12000, method: "Cash" }]
+    });
+    const stamped = withExpenseTimestamps(before, after, now);
+    expect(stamped.wifeDailyFromSalary[0].createdAt).toBe(now.toISOString());
+    expect(stamped.wifeDailyFromSalary[0].updatedAt).toBe(now.toISOString());
+  });
+
+  it("keeps createdAt but refreshes updatedAt when a line moves section", () => {
+    const item = {
+      id: "d",
+      name: "Sembako",
+      amount: 100000,
+      createdAt: created,
+      updatedAt: created
+    };
+    const before = budgetWith({ husbandFixed: [item] });
+    const after = budgetWith({ wifeFixed: [item] });
+    const stamped = withExpenseTimestamps(before, after, now);
+    expect(stamped.wifeFixed[0]).toMatchObject({
+      createdAt: created,
+      updatedAt: now.toISOString()
+    });
+  });
+
+  it("preserves stored timestamps on an unchanged read-modify-write", () => {
+    const before = budgetWith({
+      husbandDailyFromSavings: [
+        {
+          id: "c",
+          name: "Bensin",
+          amount: 50000,
+          method: "QRIS",
+          createdAt: created,
+          updatedAt: "2026-11-26T02:00:00.000Z"
+        }
+      ]
+    });
+    const after = budgetWith({ husbandDailyFromSavings: before.husbandDailyFromSavings });
+    const stamped = withExpenseTimestamps(before, after, now);
+    expect(stamped.husbandDailyFromSavings[0]).toMatchObject({
+      createdAt: created,
+      updatedAt: "2026-11-26T02:00:00.000Z"
+    });
   });
 });

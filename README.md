@@ -154,6 +154,11 @@ Details:
 - Tracked expense fields are name, amount, method and date for all expenses,
   plus `checked` for fixed expenses only. Daily spending is already paid, so
   its Status row and `checked` changes are ignored. Income edits send no push.
+- Every expense line stores app-generated `createdAt` / `updatedAt` ISO timestamps
+  (the same English field names in the app and in Firestore). They are never
+  entered in a form or shown in expense rows; Telegram cards include `Created`
+  and `Updated` rows so the family can see when a line appeared and when it was
+  last edited.
 - A successful save that changes no tracked expense sends no Telegram card;
   the old generic `Budget saved` card was intentionally removed.
 - Deleting a whole month sends a `Month deleted` card to the other phones.

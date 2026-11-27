@@ -27,6 +27,10 @@ export interface FixedExpense {
   amount: number;
   /** True when this fixed expense has been settled (checked off). */
   checked?: boolean;
+  /** ISO timestamp when this line was first created (set by the app). */
+  createdAt?: string;
+  /** ISO timestamp of the last edit to this line (set by the app). */
+  updatedAt?: string;
 }
 
 /**
@@ -44,6 +48,10 @@ export interface DailyExpense {
    * Optional: entries created before the date field existed have no value.
    */
   date?: string;
+  /** ISO timestamp when this line was first created (set by the app). */
+  createdAt?: string;
+  /** ISO timestamp of the last edit to this line (set by the app). */
+  updatedAt?: string;
 }
 
 /** Keys of the four daily-expense buckets a budget holds. */
@@ -78,6 +86,10 @@ export interface ExpenseItem {
   date?: string;
   /** True when a fixed expense has been settled (checked off). */
   checked?: boolean;
+  /** ISO timestamp when this line was first created (set by the app). */
+  createdAt?: string;
+  /** ISO timestamp of the last edit to this line (set by the app). */
+  updatedAt?: string;
 }
 
 /** Complete budget for one budget period (for example "25 January - 24 February 2026"). */
@@ -231,6 +243,79 @@ export function formatPeriod(
   const startText = start.toLocaleDateString(locale, { day: "numeric", month: "short" });
   const endText = end.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
   return `${startText} - ${endText}`;
+}
+
+/** Expense arrays that carry line-item timestamps (income fields are numbers). */
+const TIMESTAMPED_EXPENSE_KEYS = [
+  "husbandFixed",
+  "wifeFixed",
+  "husbandDailyFromSalary",
+  "husbandDailyFromSavings",
+  "wifeDailyFromSalary",
+  "wifeDailyFromSavings"
+] as const;
+
+/** Editable fields only, so backfilling timestamps never looks like an edit. */
+function expenseFingerprint(item: Record<string, unknown>): string {
+  return JSON.stringify({
+    name: String(item.name ?? ""),
+    amount: Number(item.amount) || 0,
+    method: String(item.method ?? ""),
+    date: String(item.date ?? ""),
+    checked: Boolean(item.checked)
+  });
+}
+
+/**
+ * Stamp every expense line with `createdAt`/`updatedAt` before it is written.
+ *
+ * The editor rebuilds line objects without these fields, so the previous
+ * document is the source of truth for `createdAt`. A line is considered
+ * updated only when one of its editable fields changed; legacy lines without
+ * timestamps are backfilled without being marked as newly edited.
+ */
+export function withExpenseTimestamps(
+  before: MonthBudget | null | undefined,
+  after: MonthBudget,
+  now: Date = new Date()
+): MonthBudget {
+  const stamp = now.toISOString();
+  const result: MonthBudget = { ...after };
+  const target = result as unknown as Record<string, unknown>;
+  const previousIds = new Map<string, Record<string, unknown>>();
+
+  for (const key of TIMESTAMPED_EXPENSE_KEYS) {
+    const items = (before?.[key] ?? []) as unknown as Record<string, unknown>[];
+    for (const item of items) previousIds.set(String(item.id), item);
+  }
+
+  for (const key of TIMESTAMPED_EXPENSE_KEYS) {
+    const previousItems = (before?.[key] ?? []) as unknown as Record<string, unknown>[];
+    const previousById = new Map(
+      previousItems.map((item) => [String(item.id), item as Record<string, unknown>])
+    );
+
+    target[key] = ((after[key] ?? []) as unknown as Record<string, unknown>[]).map((item) => {
+      const id = String(item.id);
+      const sameSection = previousById.get(id);
+      const moved = !sameSection ? previousIds.get(id) : undefined;
+      const previous = sameSection ?? moved;
+      const createdAt = previous
+        ? String(previous.createdAt ?? item.createdAt ?? stamp)
+        : String(item.createdAt ?? stamp);
+      // A drag-move lands in a different bucket: keep the original creation
+      // time but count the move as an update.
+      const changed = sameSection
+        ? expenseFingerprint(item) !== expenseFingerprint(sameSection)
+        : Boolean(moved);
+      const updatedAt = changed
+        ? stamp
+        : String(item.updatedAt ?? previous?.updatedAt ?? createdAt);
+      return { ...item, createdAt, updatedAt };
+    });
+  }
+
+  return result;
 }
 
 /** Sum a list of items that all carry an `amount`. */

@@ -4,7 +4,7 @@ import {
   NOTIFICATIONS_COLLECTION,
   getFirestoreApi
 } from "./firebase";
-import { normalizeBudget, type MonthBudget } from "./types";
+import { normalizeBudget, withExpenseTimestamps, type MonthBudget } from "./types";
 import { logActivity } from "./activity";
 
 /**
@@ -164,11 +164,16 @@ export async function saveBudget(budget: MonthBudget): Promise<void> {
       console.error(`Failed to read previous state of budget ${budget.id}:`, error);
     }
 
-    const payload: MonthBudget = {
-      ...budget,
-      updatedAt: new Date().toISOString(),
-      lastEditBy: uid
-    };
+    const now = new Date();
+    const payload: MonthBudget = withExpenseTimestamps(
+      before ? normalizeBudget(budget.id, before as Partial<MonthBudget>) : null,
+      {
+        ...budget,
+        updatedAt: now.toISOString(),
+        lastEditBy: uid
+      },
+      now
+    );
     await setDoc(ref, payload, { merge: true });
 
     await enqueueNotification({

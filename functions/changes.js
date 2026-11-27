@@ -33,6 +33,8 @@ const TEXT = {
     method: "Metode",
     date: "Tanggal",
     status: "Status",
+    created: "Dibuat",
+    updated: "Diperbarui",
     paid: "Lunas",
     unpaid: "Belum lunas",
     fromHusband: "dari suami",
@@ -65,6 +67,8 @@ const TEXT = {
     method: "Method",
     date: "Date",
     status: "Status",
+    created: "Created",
+    updated: "Updated",
     paid: "Paid",
     unpaid: "Unpaid",
     fromHusband: "from husband",
@@ -279,7 +283,9 @@ function htmlForSingle(lang, monthTitle, event, meta) {
     row(text.category, sectionLabel(lang, event.section)),
     row(text.method, item.method),
     row(text.date, formatDate(item.date)),
-    ...(daily ? [] : [row(text.status, item.checked ? text.paid : text.unpaid)])
+    ...(daily ? [] : [row(text.status, item.checked ? text.paid : text.unpaid)]),
+    row(text.created, formatTime(item.createdAt)),
+    row(text.updated, formatTime(item.updatedAt))
   ];
 
   if (event.type === "edit") {
@@ -300,7 +306,9 @@ function htmlForSingle(lang, monthTitle, event, meta) {
     if (!daily && Boolean(previous.checked) !== Boolean(item.checked)) {
       changes.push(changeRow(text.status, previous.checked ? text.paid : text.unpaid, item.checked ? text.paid : text.unpaid));
     }
-    if (!changes.length) changes.push(row(text.category, sectionLabel(lang, event.section)));
+    changes.push(row(text.created, formatTime(item.createdAt || previous.createdAt)));
+    changes.push(row(text.updated, formatTime(item.updatedAt)));
+    if (changes.length === 2) changes.push(row(text.category, sectionLabel(lang, event.section)));
     return `${head}\n<b>${escapeHtml(name)}</b>\n<b>${amount}</b>\n\n${changes.join("\n")}\n\n${footer(lang, meta)}`;
   }
 
@@ -317,7 +325,12 @@ function htmlForMany(lang, monthTitle, events, meta) {
     const label = event.type === "month-delete" ? text.monthDelete : eventTitle(lang, event.type);
     const name = event.item ? event.item.name || "—" : monthTitle || "—";
     const amount = event.item ? formatRupiah(event.item.amount) : "";
-    return `${index + 1}. <b>${escapeHtml(name)}</b>${amount ? ` — ${escapeHtml(amount)}` : ""}\n   <i>${escapeHtml(label)}</i> · ${escapeHtml(sectionLabel(lang, event.section))}`;
+    const whenItem = event.item ? formatTime(event.item.updatedAt || event.item.createdAt) : "";
+    const subline = [label, sectionLabel(lang, event.section), whenItem]
+      .filter(Boolean)
+      .map((part) => escapeHtml(part))
+      .join(" · ");
+    return `${index + 1}. <b>${escapeHtml(name)}</b>${amount ? ` — ${escapeHtml(amount)}` : ""}\n   <i>${subline}</i>`;
   });
   const more = events.length > 6 ? `\n\n+${events.length - 6} ${escapeHtml(text.more)}` : "";
 
