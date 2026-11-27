@@ -5,6 +5,9 @@
  * tested (and reasoned about) without credentials.
  */
 
+/** Wall-clock zone used for every timestamp printed in a Telegram card. */
+const NOTIFICATION_TIME_ZONE = "Asia/Jakarta";
+
 /** The six expense buckets, in the order the UI shows them. */
 const SECTIONS = [
   { key: "husbandFixed", label: { id: "Pengeluaran tetap suami", en: "Husband fixed expenses" } },
@@ -146,7 +149,12 @@ function formatDate(value) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: NOTIFICATION_TIME_ZONE
+  }).format(date);
 }
 
 function formatTime(value) {
@@ -158,7 +166,8 @@ function formatTime(value) {
     month: "short",
     year: "numeric",
     hour: "2-digit",
-    minute: "2-digit"
+    minute: "2-digit",
+    timeZone: NOTIFICATION_TIME_ZONE
   }).format(date);
 }
 

@@ -301,6 +301,17 @@ describe("clearer notification copy", () => {
     devices: [{ uid: "u1", recipient: "husband", lang: "en", enabled: true }]
   };
 
+  it("prints card clocks in Asia/Jakarta, not the runner's UTC", () => {
+    const item = {
+      ...expense("a", "Listrik", 150000),
+      createdAt: "2026-11-25T10:15:00.000Z"
+    };
+    const events = collectEvents(doc(), doc({ husbandFixed: [item] }));
+    const content = buildContent("en", "November 2026", events, meta);
+    expect(content.html).toContain("25 Nov 2026, 17.15");
+    expect(content.html).not.toContain("25 Nov 2026, 10.15");
+  });
+
   it("keeps the queue time in the footer of a budget card", () => {
     const events = collectEvents(doc(), doc({ husbandFixed: [expense("a", "Listrik", 150000)] }));
     const content = buildContent("en", "November 2026", events, {
@@ -308,7 +319,7 @@ describe("clearer notification copy", () => {
       createdAt: "2026-11-25T08:15:00"
     });
     expect(content.html.split("\n")[1]).toBe("<i>November 2026</i>");
-    expect(content.html).toContain("from husband · 25 Nov 2026, 08.15");
+    expect(content.html).toContain("from husband · 25 Nov 2026, 15.15");
     expect(content.html).not.toContain("November 2026 · 25 Nov 2026");
     expect(content.html).not.toContain("✅ Success");
   });
@@ -351,7 +362,7 @@ describe("clearer notification copy", () => {
     }, meta);
     expect(content.title).toContain("Bahasa notifikasi diperbarui");
     expect(content.html).toContain("Bahasa Indonesia");
-    expect(content.html).toContain("25 Nov 2026, 08.15");
+    expect(content.html).toContain("25 Nov 2026, 15.15");
   });
 
   it("translates recipient details for notification toggles", () => {

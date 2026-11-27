@@ -159,6 +159,8 @@ Details:
   entered in a form or shown in expense rows. Telegram cards show one time in
   the footer only: `createdAt` for a new line, `updatedAt` for an edit (or
   delete); the header keeps the month and the body stays free of timestamp rows.
+  Telegram clocks are always rendered in **Asia/Jakarta**, independent of the
+  GitHub runner's UTC clock.
 - Toggling the wife-to-husband equal-split transfer flag also sends a card:
   `Transfer received` or `Transfer marked pending`. Other budget-only edits
   (title, period, lock) stay silent on Telegram.

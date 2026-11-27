@@ -32,6 +32,8 @@ its category, method, date, payment status for fixed expenses only (daily
 spending is already paid), and a per-field before/after for edits. The single
 card time sits in the footer only: `createdAt` for a new line and `updatedAt`
 for an edit or delete. The header keeps the month; the body has no timestamp rows.
+Times are always formatted in **Asia/Jakarta**, even though the sender runs on
+a UTC GitHub runner.
 A successful
 save that changes no tracked expense sends no card. Multi-change edits include
 added/removed/net totals. A button links to
